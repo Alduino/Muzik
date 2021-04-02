@@ -1,0 +1,11 @@
+{
+    "name": "@muzik/config-component-babel",
+    "version": "1.0.0",
+    "description": "Default tooling configuration for Muzik components",
+    "main": "index.js",
+    "dependencies": {
+        "@babel/core": "^7.13.14",
+        "@babel/preset-react": "^7.13.13",
+        "@muzik/config-lib-babel": "workspace:^1.0.0"
+    }
+}

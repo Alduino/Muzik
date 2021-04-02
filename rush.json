@@ -50,6 +50,28 @@
         {
             "packageName": "@muzik/app-desktop",
             "projectFolder": "apps/desktop"
+        },
+
+        {
+            "packageName": "@muzik/config-lib-babel",
+            "projectFolder": "config/lib-babel"
+        },
+        {
+            "packageName": "@muzik/config-component-babel",
+            "projectFolder": "config/component-babel"
+        },
+        {
+            "packageName": "@muzik/config-app-babel",
+            "projectFolder": "config/app-babel"
+        },
+
+        {
+            "packageName": "@muzik/config-webpack",
+            "projectFolder": "config/webpack"
+        },
+        {
+            "packageName": "@muzik/config-app-webpack",
+            "projectFolder": "config/app-webpack"
         }
     ]
 }
