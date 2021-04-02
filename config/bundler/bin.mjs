@@ -14,6 +14,7 @@ import nodeResolve from "@rollup/plugin-node-resolve";
 import typescript from "@rollup/plugin-typescript";
 import {terser} from "rollup-plugin-terser";
 import json from "@rollup/plugin-json";
+import dts from "rollup-plugin-dts";
 
 const __dirname = dirname(import.meta.url.substring("file://".length));
 
@@ -169,9 +170,7 @@ const inputOptions = {
         commonjs(),
         typescript({
             allowSyntheticDefaultImports: true,
-            declaration: !!options.declarationDir,
-            emitDeclarationOnly: !!options.declarationDir,
-            declarationDir: options.declarationDir,
+            declaration: false,
             tsconfig: localTsconfigPath
         }),
         json()
