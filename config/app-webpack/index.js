@@ -1,8 +1,8 @@
 const baseConfig = require("@muzik/config-webpack");
 const {HotModuleReplacementPlugin} = require("webpack");
 
-module.exports = (...config) => (env, argv) => {
-    const config = baseConfig(...config)(env, argv);
+module.exports = (...args) => (env, argv) => {
+    const config = baseConfig(...args)(env, argv);
 
     if (argv.mode === "development") {
         config.plugins.push(new HotModuleReplacementPlugin());
