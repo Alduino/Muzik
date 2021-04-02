@@ -1,4 +1,5 @@
 const {resolve} = require("path");
+const {HotModuleReplacementPlugin} = require("webpack");
 const {CleanWebpackPlugin} = require("clean-webpack-plugin");
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 
@@ -61,7 +62,8 @@ module.exports = (env, argv) => {
                 typescript: {
                     configFile: resolve(__dirname, "../../tsconfig.json")
                 }
-            })
+            }),
+            new HotModuleReplacementPlugin()
         );
         config.devtool = "source-map";
         config.watch = true;
