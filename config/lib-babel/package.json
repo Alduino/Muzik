@@ -3,6 +3,10 @@
     "version": "1.0.0",
     "description": "Default tooling configuration for Muzik libraries",
     "main": "index.js",
+    "scripts": {
+        "build": "echo 'No build script'",
+        "build:watch": "echo 'No build script'"
+    },
     "dependencies": {
         "@babel/preset-env": "^7.13.12",
         "@babel/preset-typescript": "^7.13.0",
