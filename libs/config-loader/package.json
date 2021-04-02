@@ -3,6 +3,10 @@
     "version": "1.0.0",
     "description": "Reads and writes YAML config files from correct directories",
     "main": "dist/index.js",
+    "scripts": {
+        "build": "webpack",
+        "build:watch": "webpack --mode=development"
+    },
     "dependencies": {
         "yaml": "^1.10.2"
     },
