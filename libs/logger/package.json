@@ -1,7 +1,7 @@
 {
-    "name": "@muzik/database",
+    "name": "@muzik/logger",
     "version": "1.0.0",
-    "description": "Database interface",
+    "description": "Automatic log child creation",
     "main": "dist/index.cjs.js",
     "module": "dist/index.esm.js",
     "types": "dist/types/index.d.ts",
@@ -10,14 +10,11 @@
         "build:watch": "muzik-bundle --watch -f cjs,esm -t types -e src/index.ts -o dist/index"
     },
     "dependencies": {
-        "@muzik/config-loader": "workspace:^1.0.0",
-        "@muzik/logger": "workspace:^1.0.0",
-        "knex": "^0.95.4",
-        "sqlite3": "^5.0.2",
+        "@roarr/middleware-serialize-error": "^1.0.0",
+        "roarr": "^4.2.5",
         "tslib": "^2.1.0"
     },
     "devDependencies": {
-        "@muzik/config-bundler": "workspace:^1.0.0",
-        "@types/node": "^14.14.37"
+        "@muzik/config-bundler": "workspace:^1.0.0"
     }
 }

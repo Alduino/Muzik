@@ -70,11 +70,9 @@ importers:
       tslib: 2.1.0
       yaml: 1.10.2
     devDependencies:
-      '@babel/core': 7.13.14
       '@muzik/config-bundler': link:../../config/bundler
       '@types/node': 14.14.37
     specifiers:
-      '@babel/core': ^7.13.14
       '@muzik/config-bundler': workspace:^1.0.0
       '@types/node': ^14.14.37
       tslib: ^2.1.0
@@ -82,22 +80,32 @@ importers:
   libs/database:
     dependencies:
       '@muzik/config-loader': link:../config-loader
+      '@muzik/logger': link:../logger
       knex: 0.95.4_sqlite3@5.0.2
-      roarr: 4.2.5
       sqlite3: 5.0.2
       tslib: 2.1.0
     devDependencies:
-      '@babel/core': 7.13.14
       '@muzik/config-bundler': link:../../config/bundler
       '@types/node': 14.14.37
     specifiers:
-      '@babel/core': ^7.13.14
       '@muzik/config-bundler': workspace:^1.0.0
       '@muzik/config-loader': workspace:^1.0.0
+      '@muzik/logger': workspace:^1.0.0
       '@types/node': ^14.14.37
       knex: ^0.95.4
-      roarr: ^4.2.5
       sqlite3: ^5.0.2
+      tslib: ^2.1.0
+  libs/logger:
+    dependencies:
+      '@roarr/middleware-serialize-error': 1.0.0
+      roarr: 4.2.5
+      tslib: 2.1.0
+    devDependencies:
+      '@muzik/config-bundler': link:../../config/bundler
+    specifiers:
+      '@muzik/config-bundler': workspace:^1.0.0
+      '@roarr/middleware-serialize-error': ^1.0.0
+      roarr: ^4.2.5
       tslib: ^2.1.0
 lockfileVersion: 5.2
 packages:
@@ -1222,6 +1230,15 @@ packages:
     hasBin: true
     resolution:
       integrity: sha512-So/n1C44gFi4sUe9S2RAhql6X3/dpn/mvZg+Lk+z6mKMTkAtV6WuzLPIoiwwiKKYfrxz6CfdiLINbKEniPGrrQ==
+  /@roarr/middleware-serialize-error/1.0.0:
+    dependencies:
+      roarr: 2.15.4
+      serialize-error: 2.1.0
+    dev: false
+    engines:
+      node: '>=8.0'
+    resolution:
+      integrity: sha512-7KtDjsfBlzfpEK3djotK9GefhwQaRqc4TYjbSjUqbW5ey4CQCQpdmwaypHyKnV2lLla3WSTjk6UpIe523JFkpA==
   /@rollup/plugin-commonjs/18.0.0_rollup@2.44.0:
     dependencies:
       '@rollup/pluginutils': 3.1.0_rollup@2.44.0
@@ -3864,6 +3881,19 @@ packages:
     hasBin: true
     resolution:
       integrity: sha512-uWjbaKIK3T1OSVptzX7Nl6PvQ3qAGtKEtVRjRuazjfL3Bx5eI409VZSqgND+4UNnmzLVdPj9FqFJNPqBZFve4w==
+  /roarr/2.15.4:
+    dependencies:
+      boolean: 3.0.3
+      detect-node: 2.0.5
+      globalthis: 1.0.2
+      json-stringify-safe: 5.0.1
+      semver-compare: 1.0.0
+      sprintf-js: 1.1.2
+    dev: false
+    engines:
+      node: '>=8.0'
+    resolution:
+      integrity: sha512-CHhPh+UNHD2GTXNYhPWLnU8ONHdI+5DI+4EYIAOaiD63rHeYlZvyh8P+in5999TTSFgUYuKUAjzRI4mdh/p+2A==
   /roarr/3.3.0:
     dependencies:
       approximate-now: 1.0.2
@@ -4005,6 +4035,12 @@ packages:
     hasBin: true
     resolution:
       integrity: sha512-PoeGJYh8HK4BTO/a9Tf6ZG3veo/A7ZVsYrSA6J8ny9nb3B1VrpkuN+z9OE5wfE5p6H4LchYZsegiQgbJD94ZFQ==
+  /serialize-error/2.1.0:
+    dev: false
+    engines:
+      node: '>=0.10.0'
+    resolution:
+      integrity: sha1-ULZ51WNc34Rme9yOWa9OW4HV9go=
   /serialize-javascript/4.0.0:
     dependencies:
       randombytes: 2.1.0
@@ -4088,6 +4124,10 @@ packages:
     dev: false
     resolution:
       integrity: sha1-/p965lc3GzOxDLgNoUPPgknPazs=
+  /sprintf-js/1.1.2:
+    dev: false
+    resolution:
+      integrity: sha512-VE0SOVEHCk7Qc8ulkWw3ntAzXuqf7S2lvwQaDLRnUeIEaKNQJzV6BwmLKhOqT61aGhfUMrXeaBk+oDGCzvhcug==
   /sqlite3/5.0.2:
     dependencies:
       node-addon-api: 3.1.0
