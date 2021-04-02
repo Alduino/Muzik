@@ -1,15 +1,16 @@
 {
     "compilerOptions": {
-        "module": "commonjs",
-        "target": "es2019",
+        "module": "ESNext",
+        "target": "es2015",
+        "lib": ["es5", "es6", "es7", "es2017", "es2018", "es2019", "es2020"],
         "sourceMap": true,
         "jsx": "react",
         "strict": true,
         "alwaysStrict": true,
         "moduleResolution": "node",
         "esModuleInterop": true,
-        "noImplicitAny": true,
-        "declaration": true
+        "allowSyntheticDefaultImports": true,
+        "noImplicitAny": true
     },
     "exclude": ["node_modules"]
 }

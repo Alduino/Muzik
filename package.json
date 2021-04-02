@@ -4,7 +4,9 @@
     "private": true,
     "scripts": {
         "preinstall": "npx only-allow pnpm",
-        "format": "prettier . --write"
+        "format": "prettier . --write",
+        "r:build:watch": "pnpm recursive run build:watch --workspace-concurrency Infinity",
+        "r:build": "pnpm recursive run build"
     },
     "devDependencies": {
         "prettier": "^2.2.1"

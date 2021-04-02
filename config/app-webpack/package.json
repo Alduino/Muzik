@@ -1,9 +1,0 @@
-{
-    "name": "@muzik/config-app-webpack",
-    "version": "1.0.0",
-    "description": "Webpack configuration for Muzik apps",
-    "main": "index.js",
-    "dependencies": {
-        "@muzik/config-webpack": "workspace:^1.0.0"
-    }
-}

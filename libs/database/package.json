@@ -2,24 +2,22 @@
     "name": "@muzik/database",
     "version": "1.0.0",
     "description": "Database interface",
-    "main": "dist/index.js",
+    "main": "dist/index.cjs.js",
+    "module": "dist/index.esm.js",
+    "types": "dist/types/index.d.ts",
     "scripts": {
-        "build": "webpack",
-        "build:watch": "webpack --mode=development"
+        "build": "muzik-bundle -f cjs,esm -t types -e src/index.ts -o dist/index",
+        "build:watch": "muzik-bundle --watch -f cjs,esm -t types -e src/index.ts -o dist/index"
     },
     "dependencies": {
         "@muzik/config-loader": "workspace:^1.0.0",
-        "sqlite3": "^5.0.2"
+        "knex": "^0.95.4",
+        "sqlite3": "^5.0.2",
+        "tslib": "^2.1.0"
     },
     "devDependencies": {
         "@babel/core": "^7.13.14",
-        "@types/node": "^14.14.37",
-        "@muzik/babel-preset-muzik": "workspace:^1.0.0",
-        "@muzik/config-webpack": "workspace:^1.0.0",
-        "babel-loader": "^8.2.2",
-        "file-loader": "^6.2.0",
-        "native-addon-loader": "^2.0.1",
-        "webpack": "^5.30.0",
-        "webpack-cli": "^4.6.0"
+        "@muzik/config-bundler": "workspace:^1.0.0",
+        "@types/node": "^14.14.37"
     }
 }
