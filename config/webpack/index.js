@@ -2,10 +2,10 @@ const {resolve} = require("path");
 const {CleanWebpackPlugin} = require("clean-webpack-plugin");
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 
-module.exports = dirname => (env, argv) => {
+module.exports = (dirname, entry) => (env, argv) => {
     const config = {
         mode: "production",
-        entry: ["./src/index.tsx"],
+        entry: entry,
         target: "node",
         output: {
             path: resolve(dirname, "dist"),
@@ -56,7 +56,11 @@ module.exports = dirname => (env, argv) => {
 
     if (argv.mode === "development") {
         config.mode = "development";
-        config.plugins.push(new ForkTsCheckerWebpackPlugin());
+        config.plugins.push(new ForkTsCheckerWebpackPlugin({
+            typescript: {
+                configFile: "../../tsconfig.json"
+            }
+        }));
         config.devtool = "source-map";
         config.watch = true;
     }
