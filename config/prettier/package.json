@@ -1,0 +1,9 @@
+{
+  "name": "@muzik/config-prettier",
+  "version": "1.0.0",
+  "description": "Linter config",
+  "main": "index.js",
+  "dependencies": {
+    "prettier": "^2.2.1"
+  }
+}

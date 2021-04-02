@@ -1,1 +1,3 @@
-module.exports = require("@muzik/config-webpack")(__dirname, ["./src/index.ts"]);
+module.exports = require("@muzik/config-webpack")(__dirname, [
+    "./src/index.ts"
+]);
