@@ -2,12 +2,11 @@
     "name": "@muzik/database",
     "version": "1.0.0",
     "description": "Database interface",
-    "main": "dist/index.cjs.js",
-    "module": "dist/index.esm.js",
-    "types": "dist/types.d.ts",
+    "main": "dist/src/index.js",
+    "types": "dist/src/index.d.ts",
     "scripts": {
-        "build": "muzik-bundle -f cjs,esm -t types -e src/index.ts -o dist/index",
-        "build:watch": "muzik-bundle --watch -f cjs,esm -t types -e src/index.ts -o dist/index"
+        "build": "tsc",
+        "build:watch": "tsc --watch"
     },
     "dependencies": {
         "@muzik/config-loader": "workspace:^1.0.0",
