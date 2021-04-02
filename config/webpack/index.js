@@ -59,7 +59,7 @@ module.exports = (dirname, entry) => (env, argv) => {
         config.plugins.push(
             new ForkTsCheckerWebpackPlugin({
                 typescript: {
-                    configFile: "../../tsconfig.json"
+                    configFile: resolve(__dirname, "../../tsconfig.json")
                 }
             })
         );
