@@ -8,6 +8,10 @@
       <excludeFolder url="file://$MODULE_DIR$/apps/desktop/.rush" />
       <excludeFolder url="file://$MODULE_DIR$/common/temp" />
       <excludeFolder url="file://$MODULE_DIR$/common/autoinstallers/prettier/.rush" />
+      <excludeFolder url="file://$MODULE_DIR$/libs/config-loader/cache" />
+      <excludeFolder url="file://$MODULE_DIR$/libs/config-loader/dist" />
+      <excludeFolder url="file://$MODULE_DIR$/libs/database/cache" />
+      <excludeFolder url="file://$MODULE_DIR$/libs/database/dist" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
