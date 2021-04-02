@@ -10,8 +10,8 @@
     "scripts": {
         "build": "webpack",
         "build:watch": "webpack --mode=development",
-        "start": "qode ./dist/index.js",
-        "start:debug": "qode --inspect ./dist/index.js"
+        "start": "qode ./dist/index.js | roarr",
+        "start:debug": "qode --inspect ./dist/index.js | roarr"
     },
     "dependencies": {
         "@nodegui/nodegui": "^0.30.2",
@@ -24,6 +24,7 @@
         "@babel/preset-env": "^7.13.12",
         "@babel/preset-react": "^7.13.13",
         "@babel/preset-typescript": "^7.13.0",
+        "@roarr/cli": "^3.2.3",
         "@types/node": "^14.14.37",
         "@types/react": "^16.14.0",
         "@nodegui/packer": "^1.4.1",
