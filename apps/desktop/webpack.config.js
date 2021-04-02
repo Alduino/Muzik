@@ -1,1 +1,1 @@
-module.exports = require("@muzik/config-app-webpack");
+module.exports = require("@muzik/config-app-webpack")(__dirname);

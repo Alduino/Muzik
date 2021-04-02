@@ -1,0 +1,13 @@
+{
+  "name": "@muzik/babel-preset-muzik",
+  "version": "1.0.0",
+  "description": "Babel preset for React + Typescript",
+  "dependencies": {
+    "@babel/preset-env": "^7.13.12",
+    "@babel/preset-react": "^7.13.13",
+    "@babel/preset-typescript": "^7.13.0"
+  },
+  "peerDependencies": {
+    "@babel/core": "^7.13.0"
+  }
+}

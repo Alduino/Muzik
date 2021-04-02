@@ -7,7 +7,7 @@
         "muzik": "bin/muzik.sh"
     },
     "scripts": {
-        "build": "webpack -p",
+        "build": "webpack",
         "build:watch": "webpack --mode=development",
         "start": "qode ./dist/index.js",
         "start:debug": "qode --inspect ./dist/index.js"
@@ -18,11 +18,15 @@
         "react": "^16.14.0"
     },
     "devDependencies": {
+        "@babel/core": "^7.13.14",
         "@types/node": "^14.14.37",
         "@types/react": "^16.14.0",
         "@nodegui/packer": "^1.4.1",
-        "@muzik/config-app-babel": "workspace:^1.0.0",
         "@muzik/config-app-webpack": "workspace:^1.0.0",
+        "@muzik/babel-preset-muzik": "workspace:^1.0.0",
+        "babel-loader": "^8.2.2",
+        "file-loader": "^6.2.0",
+        "native-addon-loader": "^2.0.1",
         "webpack": "^5.30.0",
         "webpack-cli": "^4.6.0"
     }

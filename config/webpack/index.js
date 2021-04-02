@@ -2,13 +2,13 @@ const {resolve} = require("path");
 const {CleanWebpackPlugin} = require("clean-webpack-plugin");
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 
-module.exports = (env, argv) => {
+module.exports = dirname => (env, argv) => {
     const config = {
         mode: "production",
         entry: ["./src/index.tsx"],
         target: "node",
         output: {
-            path: resolve(__dirname, "dist"),
+            path: resolve(dirname, "dist"),
             filename: "index.js"
         },
         module: {

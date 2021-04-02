@@ -1,0 +1,16 @@
+{
+    "name": "@muzik/lib-database",
+    "version": "1.0.0",
+    "description": "Database interface",
+    "scripts": {
+        "build": "webpack",
+        "build:watch": "webpack --mode=development"
+    },
+    "dependencies": {},
+    "devDependencies": {
+        "@types/node": "^14.14.37",
+        "@muzik/config-webpack": "workspace:^1.0.0",
+        "webpack": "^5.30.0",
+        "webpack-cli": "^4.6.0"
+    }
+}

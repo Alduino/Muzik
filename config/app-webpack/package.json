@@ -3,10 +3,6 @@
     "version": "1.0.0",
     "description": "Webpack configuration for Muzik apps",
     "main": "index.js",
-    "scripts": {
-        "build": "echo 'No build script'",
-        "build:watch": "echo 'No build script'"
-    },
     "dependencies": {
         "@muzik/config-webpack": "workspace:^1.0.0"
     }

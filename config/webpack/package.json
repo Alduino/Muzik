@@ -3,18 +3,16 @@
     "version": "1.0.0",
     "description": "Base Webpack configuration for Muzik",
     "main": "index.js",
-    "scripts": {
-        "build": "echo 'No build script'",
-        "build:watch": "echo 'No build script'"
-    },
     "dependencies": {
-        "@babel/core": "^7.13.14",
-        "babel-loader": "^8.2.2",
         "clean-webpack-plugin": "^3.0.0",
-        "file-loader": "^6.2.0",
         "fork-ts-checker-webpack-plugin": "^6.2.0",
-        "native-addon-loader": "^2.0.1",
         "typescript": "^4.2.3",
         "webpack": "^5.30.0"
+    },
+    "peerDependencies": {
+        "@babel/core": "^7.13.0",
+        "babel-loader": "^8.2.2",
+        "file-loader": "^6.2.0",
+        "native-addon-loader": "^2.0.1"
     }
 }
