@@ -56,11 +56,13 @@ module.exports = (dirname, entry) => (env, argv) => {
 
     if (argv.mode === "development") {
         config.mode = "development";
-        config.plugins.push(new ForkTsCheckerWebpackPlugin({
-            typescript: {
-                configFile: "../../tsconfig.json"
-            }
-        }));
+        config.plugins.push(
+            new ForkTsCheckerWebpackPlugin({
+                typescript: {
+                    configFile: "../../tsconfig.json"
+                }
+            })
+        );
         config.devtool = "source-map";
         config.watch = true;
     }
