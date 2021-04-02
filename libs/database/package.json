@@ -12,7 +12,6 @@
     "dependencies": {
         "@muzik/config-loader": "workspace:^1.0.0",
         "@muzik/logger": "workspace:^1.0.0",
-        "knex": "^0.95.4",
         "sqlite3": "^5.0.2",
         "tslib": "^2.1.0",
         "roarr": "^4.2.5"
