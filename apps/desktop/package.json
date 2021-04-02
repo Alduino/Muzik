@@ -10,8 +10,8 @@
     "scripts": {
         "build": "webpack",
         "build:watch": "webpack --mode=development",
-        "start": "qode ./dist/index.js | roarr",
-        "start:debug": "qode --inspect ./dist/index.js | roarr"
+        "start": "ROARR_LOG=true qode ./dist/index.js | roarr",
+        "start:debug": "ROARR_LOG=true qode --inspect ./dist/index.js | roarr"
     },
     "dependencies": {
         "@nodegui/nodegui": "^0.30.2",
