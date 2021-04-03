@@ -7,4 +7,9 @@ process.title = "Muzak";
 Renderer.render(<App />);
 
 // @ts-ignore
-if (module.hot) module.hot.accept("./app", () => Renderer.forceUpdate());
+if (module.hot) {
+    console.log("Using HMR");
+
+    // @ts-ignore
+    module.hot.accept("./app", () => Renderer.forceUpdate());
+}
