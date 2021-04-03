@@ -241,7 +241,9 @@ const outputEsmPath = options.out + ".esm.js";
 if (options.formats.includes("esm") && sourcePackage.module !== outputEsmPath)
     console.log(`- set "module" field in package.json to ${outputEsmPath}`);
 
-const outputTypesPath = options.declaration && join(dirname(options.out), options.declaration + ".d.ts");
+const outputTypesPath =
+    options.declaration &&
+    join(dirname(options.out), options.declaration + ".d.ts");
 if (options.declaration && sourcePackage.types !== outputTypesPath)
     console.log(`- set "types" field in package.json to ${outputTypesPath}`);
 

@@ -16,11 +16,6 @@
         "ecmaVersion": 12,
         "sourceType": "module"
     },
-    "plugins": [
-        "react",
-        "react-hooks",
-        "@typescript-eslint"
-    ],
-    "rules": {
-    }
+    "plugins": ["react", "react-hooks", "@typescript-eslint"],
+    "rules": {}
 }
