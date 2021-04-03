@@ -61,10 +61,7 @@ module.exports = (env, argv) => {
 
     if (argv.mode === "development") {
         config.mode = "development";
-        config.plugins.push(
-            new ForkTsCheckerWebpackPlugin(),
-            new HotModuleReplacementPlugin()
-        );
+        config.plugins.push(new ForkTsCheckerWebpackPlugin());
         config.devtool = "source-map";
         config.watch = true;
     }
