@@ -1,4 +1,4 @@
-import {Database} from "better-sqlite3";
+import Table from "./Table";
 
 export interface Album {
     id: number;
@@ -7,13 +7,10 @@ export interface Album {
     artist: string;
 }
 
-export default class AlbumTable {
-    constructor(private db: Database) {}
-
+export default class AlbumTable extends Table {
     initialise(): void {
-        this.db
-            .prepare(
-                `
+        this.db.run(
+            `
             CREATE TABLE IF NOT EXISTS albums (
                 id INT PRIMARY KEY NOT NULL,
                 name TEXT NOT NULL,
@@ -21,11 +18,12 @@ export default class AlbumTable {
                 artist TEXT NOT NULL
             )
         `
-            )
-            .run();
+        );
     }
 
     get(id: number): Album {
-        return this.db.prepare("SELECT * FROM albums WHERE id = ?").get(id);
+        return this.run<Album>`
+            SELECT * FROM albums WHERE id = ${id}
+        `;
     }
 }

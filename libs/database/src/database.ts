@@ -1,6 +1,7 @@
-import createDatabase, {Database as SqliteDatabase} from "better-sqlite3";
+import initSql, {Database as SqliteDatabase} from "sql.js";
 import {dirname} from "path";
-import {mkdir} from "fs/promises";
+import {existsSync} from "fs";
+import {mkdir, readFile} from "fs/promises";
 import {configLocator} from "./config-locator";
 import {log} from "./logger";
 import AlbumTable from "./table/albumTable";
@@ -30,7 +31,10 @@ export class Database {
         log.debug("Loading database at %s", path);
         await mkdir(dirname(path), {recursive: true});
 
-        const db = createDatabase(path);
+        const data = existsSync(path) ? await readFile(path) : null;
+
+        const SQL = await initSql();
+        const db = new SQL.Database(data);
 
         return new Database(db);
     }
