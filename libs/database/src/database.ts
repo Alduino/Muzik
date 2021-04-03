@@ -14,19 +14,19 @@ export class Database {
 
     private _albums = new AlbumTable(this.db);
 
-    get albums() {
+    get albums(): AlbumTable {
         this.checkInitialised();
         return this._albums;
     }
 
     private _songs = new SongTable(this.db);
 
-    get songs() {
+    get songs(): SongTable {
         this.checkInitialised();
         return this._songs;
     }
 
-    public static async create(path: string) {
+    public static async create(path: string): Promise<Database> {
         log.debug("Loading database at %s", path);
         await mkdir(dirname(path), {recursive: true});
 
@@ -37,7 +37,7 @@ export class Database {
         return new Database(db);
     }
 
-    initialise() {
+    initialise(): void {
         if (this.initialised) {
             throw new Error("Database is already initialised");
         }

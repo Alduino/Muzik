@@ -14,7 +14,7 @@ export interface Song extends DirectSong {
 export default class SongTable {
     constructor(private db: Database) {}
 
-    initialise() {
+    initialise(): void {
         this.db
             .prepare(
                 `

@@ -10,7 +10,7 @@ export interface Album {
 export default class AlbumTable {
     constructor(private db: Database) {}
 
-    initialise() {
+    initialise(): void {
         this.db
             .prepare(
                 `

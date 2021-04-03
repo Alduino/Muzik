@@ -1,4 +1,5 @@
 import log, {Logger} from "roarr";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore Doesn't really need types anyway
 import createSerializeErrorMiddleware from "@roarr/middleware-serialize-error";
 

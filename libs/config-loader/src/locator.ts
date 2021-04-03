@@ -1,6 +1,6 @@
 import {join} from "path";
 
-export function getRootDirectory() {
+export function getRootDirectory(): string {
     switch (process.platform) {
         case "win32": {
             const appData = process.env.APPDATA;
@@ -8,19 +8,23 @@ export function getRootDirectory() {
 
             return appData;
         }
-        case "linux":
+        case "linux": {
             const home = process.env.HOME;
             if (!home) throw new Error("$HOME is not set");
 
             return join(home, ".config");
+        }
         default:
             throw new Error("OS not supported");
     }
 }
 
-export function getConfigDirectory(appName: string, root = getRootDirectory()) {
+export function getConfigDirectory(
+    appName: string,
+    root = getRootDirectory()
+): string {
     const validCharactersName = appName
-        .replace(/[^a-z0-9\/]+/g, " ")
+        .replace(/[^a-z0-9/]+/g, " ")
         .trim()
         .replace(/ /g, "-");
     return join(root, validCharactersName);
@@ -30,7 +34,7 @@ export function getConfigFile(
     appName: string,
     fileName: string,
     root?: string
-) {
+): string {
     const dir = getConfigDirectory(appName, root);
     return join(dir, fileName);
 }
@@ -38,11 +42,11 @@ export function getConfigFile(
 export class Locator {
     constructor(private appName: string, private root = getRootDirectory()) {}
 
-    get dir() {
+    get dir(): string {
         return getConfigDirectory(this.appName, this.root);
     }
 
-    getFile(name: string) {
+    getFile(name: string): string {
         return getConfigFile(this.appName, name, this.root);
     }
 }
