@@ -1,0 +1,17 @@
+{
+    "name": "@muzik/song-scanner",
+    "version": "1.0.0",
+    "description": "Scans for songs in a directory and writes them to a database",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "build:watch": "tsc --watch"
+    },
+    "dependencies": {
+        "@muzik/logger": "workspace:^1.0.0",
+        "roarr": "^4.2.5"
+    },
+    "peerDependencies": {
+    }
+}
