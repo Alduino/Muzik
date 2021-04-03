@@ -52,7 +52,11 @@ module.exports = (env, argv) => {
         plugins: [new CleanWebpackPlugin()],
         resolve: {
             extensions: [".tsx", ".ts", ".js", ".jsx", ".json"]
-        }
+        },
+        externals: [
+            // fixes weird issue
+            "long"
+        ]
     };
 
     if (argv.mode === "development") {

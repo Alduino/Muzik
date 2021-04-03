@@ -7,8 +7,12 @@ process.title = "Muzak";
 
 Renderer.render(<App />);
 
-if (module.hot) {
-    console.log("Using HMR");
+// Webpack's typescript doesn't like this for some reason
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+const hot = module.hot;
 
-    module.hot.accept("./app", () => Renderer.forceUpdate());
+if (hot) {
+    console.log("Using HMR");
+    hot.accept("./app", () => Renderer.forceUpdate());
 }
