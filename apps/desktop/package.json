@@ -30,6 +30,7 @@
         "@roarr/cli": "^3.2.3",
         "@types/node": "^14.14.37",
         "@types/react": "^16.14.0",
+        "@types/webpack-env": "^1.16.0",
         "@nodegui/packer": "^1.4.1",
         "babel-loader": "^8.2.2",
         "file-loader": "^6.2.0",
