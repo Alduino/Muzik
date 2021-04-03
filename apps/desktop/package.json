@@ -8,10 +8,10 @@
         "muzik": "bin/muzik.sh"
     },
     "scripts": {
-        "build": "tsc",
-        "build:watch": "tsc --watch",
-        "start": "ROARR_LOG=true qode ./dist/src/index.js | roarr",
-        "start:debug": "ROARR_LOG=true qode --inspect ./dist/src/index.js | roarr"
+        "build": "webpack",
+        "build:watch": "webpack --mode=development",
+        "start": "ROARR_LOG=true qode ./dist/index.js | roarr",
+        "start:debug": "ROARR_LOG=true qode --inspect ./dist/index.js | roarr"
     },
     "dependencies": {
         "@muzik/database": "workspace:^1.0.0",
@@ -20,6 +20,7 @@
         "@nodegui/react-nodegui": "^0.11.0",
         "react": "^16.14.0",
         "react-async-hook": "^3.6.2",
+        "regenerator-runtime": "^0.13.7",
         "roarr": "^4.2.5",
         "tslib": "^2.1.0"
     },
