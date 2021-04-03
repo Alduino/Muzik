@@ -30,9 +30,7 @@ export class Database {
         log.debug("Loading database at %s", path);
         await mkdir(dirname(path), {recursive: true});
 
-        const db = createDatabase(path, {
-            verbose: log.debug.bind(log)
-        });
+        const db = createDatabase(path);
 
         return new Database(db);
     }
