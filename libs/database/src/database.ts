@@ -1,65 +1,56 @@
-import initSql, {Database as SqliteDatabase} from "sql.js";
-import {dirname} from "path";
-import {existsSync} from "fs";
-import {mkdir, readFile, writeFile} from "fs/promises";
+import {dirname, join} from "path";
+import {mkdir} from "fs/promises";
 import {configLocator} from "./config-locator";
 import {log} from "./logger";
-import AlbumTable from "./table/albumTable";
-import SongTable from "./table/songTable";
+import AlbumTable, {Album} from "./table/albumTable";
+import SongTable, {Song as DbSong} from "./table/songTable";
+
+export interface Song extends DbSong {
+    album: Album;
+}
 
 export class Database {
-    public static defaultLocation = configLocator.getFile("db.sqlite");
+    public static defaultLocation = configLocator.dir;
     private initialised = false;
+    private albums = new AlbumTable(join(this.root, "albums"));
+    private songs = new SongTable(join(this.root, "songs"));
 
-    private constructor(
-        private readonly db: SqliteDatabase,
-        private readonly savePath: string
-    ) {}
-
-    private _albums = new AlbumTable(this.db);
-
-    get albums(): AlbumTable {
-        this.checkInitialised();
-        return this._albums;
-    }
-
-    private _songs = new SongTable(this.db);
-
-    get songs(): SongTable {
-        this.checkInitialised();
-        return this._songs;
-    }
+    private constructor(private readonly root: string) {}
 
     public static async create(path: string): Promise<Database> {
         log.debug("Loading database at %s", path);
         await mkdir(dirname(path), {recursive: true});
 
-        const data = existsSync(path) ? await readFile(path) : null;
-        if (!data)
-            log.debug(
-                "Database does not already exist, will create when saved"
-            );
-
-        const SQL = await initSql();
-        const db = new SQL.Database(data);
-
-        return new Database(db, path);
+        log.trace("Creating database");
+        return new Database(path);
     }
 
-    initialise(): void {
+    async initialise(): Promise<void> {
         if (this.initialised) {
             throw new Error("Database is already initialised");
         }
 
         log.debug("Initialising the database");
-        this._songs.initialise();
-        this._albums.initialise();
+        await this.songs.initialise();
+        await this.albums.initialise();
     }
 
-    async save(): Promise<void> {
-        log.debug("Saving database to %s", this.savePath);
-        const data = this.db.export();
-        await writeFile(this.savePath, data);
+    getAlbum(id: number): Promise<Album | null> {
+        return this.albums.get(id);
+    }
+
+    async getSong(id: number): Promise<Song | null> {
+        const song = await this.songs.get(id);
+        if (song === null) return null;
+
+        const album = await this.albums.get(song.albumId);
+        if (album === null)
+            throw new Error(`Album of song ${id} does not exist`);
+
+        return {
+            ...song,
+            album
+        };
     }
 
     private checkInitialised(): void {

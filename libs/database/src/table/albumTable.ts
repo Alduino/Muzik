@@ -7,23 +7,15 @@ export interface Album {
     artist: string;
 }
 
-export default class AlbumTable extends Table {
-    initialise(): void {
-        this.db.run(
-            `
-            CREATE TABLE IF NOT EXISTS albums (
-                id INT PRIMARY KEY NOT NULL,
-                name TEXT NOT NULL,
-                artPath TEXT NOT NULL,
-                artist TEXT NOT NULL
-            )
-        `
-        );
+export default class AlbumTable extends Table<Album> {
+    async initialise(): Promise<void> {
+        await super.initialise();
+        await this.table.createIndex("id");
     }
 
-    get(id: number): Album {
-        return this.run<Album>`
-            SELECT * FROM albums WHERE id = ${id}
-        `;
+    get(id: number): Promise<Album | null> {
+        return this.table.find({
+            id: v => id === parseInt(v)
+        });
     }
 }
