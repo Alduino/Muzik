@@ -51,9 +51,16 @@ export default class JsonTable<T> {
 
     constructor(private dir: string) {}
 
+    private async maybeCreateOffsets() {
+        if (!existsSync(this.offsetsPath)) {
+            await writeFile(this.offsetsPath, "");
+        }
+    }
+
     async initialise(): Promise<void> {
         await mkdir(this.dir, {recursive: true});
         await this.loadOrSaveInfo();
+        await this.maybeCreateOffsets();
     }
 
     async createIndex(key: ValidKeys<T>): Promise<void> {
