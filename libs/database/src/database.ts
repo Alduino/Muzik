@@ -2,8 +2,13 @@ import {dirname, join} from "path";
 import {mkdir} from "fs/promises";
 import {configLocator} from "./config-locator";
 import {log} from "./logger";
-import AlbumTable, {Album} from "./table/albumTable";
+import AlbumTable, {Album as DbAlbum} from "./table/albumTable";
 import SongTable, {Song as DbSong} from "./table/songTable";
+import ArtistTable, {Artist} from "./table/artistTable";
+
+export interface Album extends DbAlbum {
+    artist: Artist;
+}
 
 export interface Song extends DbSong {
     album: Album;
@@ -12,6 +17,7 @@ export interface Song extends DbSong {
 export class Database {
     public static defaultLocation = configLocator.dir;
     private initialised = false;
+    private artists = new ArtistTable(join(this.root, "artists"));
     private albums = new AlbumTable(join(this.root, "albums"));
     private songs = new SongTable(join(this.root, "songs"));
 
@@ -35,15 +41,29 @@ export class Database {
         await this.albums.initialise();
     }
 
-    getAlbum(id: number): Promise<Album | null> {
-        return this.albums.get(id);
+    getArtist(id: number): Promise<Artist | null> {
+        return this.artists.get(id);
+    }
+
+    async getAlbum(id: number): Promise<Album | null> {
+        const album = await this.albums.get(id);
+        if (album === null) return null;
+
+        const artist = await this.getArtist(id);
+        if (artist == null)
+            throw new Error(`Artist of album ${id} does not exist`);
+
+        return {
+            ...album,
+            artist
+        };
     }
 
     async getSong(id: number): Promise<Song | null> {
         const song = await this.songs.get(id);
         if (song === null) return null;
 
-        const album = await this.albums.get(song.albumId);
+        const album = await this.getAlbum(song.albumId);
         if (album === null)
             throw new Error(`Album of song ${id} does not exist`);
 
