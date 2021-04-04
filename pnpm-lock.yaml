@@ -46,6 +46,7 @@ importers:
       '@babel/preset-env': 7.13.12_@babel+core@7.13.14
       '@babel/preset-react': 7.13.13_@babel+core@7.13.14
       '@muzik/rollup-plugin-autoreload': link:../../tooling/rollup-plugin-autoreload
+      '@muzik/rollup-plugin-disallow-module': link:../../tooling/rollup-plugin-disallow-module
       '@nodegui/packer': 1.4.1_@nodegui+nodegui@0.30.2
       '@roarr/cli': 3.2.3
       '@rollup/plugin-babel': 5.3.0_5e7fd6efeecd0601cdf62a5dd59ff63a
@@ -54,6 +55,7 @@ importers:
       '@rollup/plugin-json': 4.1.0_rollup@2.44.0
       '@rollup/plugin-node-resolve': 11.2.1_rollup@2.44.0
       '@rollup/plugin-replace': 2.4.2_rollup@2.44.0
+      '@rollup/plugin-wasm': 5.1.2_rollup@2.44.0
       '@types/node': 14.14.37
       '@types/react': 16.14.5
       '@types/react-dom': 17.0.3
@@ -66,7 +68,10 @@ importers:
       npm-run-all: 4.1.5
       rollup: 2.44.0
       rollup-plugin-node-globals: 1.4.0
+      rollup-plugin-polyfill-node: 0.6.2_rollup@2.44.0
+      rollup-plugin-progress: 1.1.2
       rollup-plugin-terser: 7.0.2_rollup@2.44.0
+      rollup-plugin-visualizer: 5.3.0_rollup@2.44.0
       typescript: 4.2.3
       wait-on: 5.3.0
     specifiers:
@@ -80,6 +85,7 @@ importers:
       '@muzik/database': workspace:^1.0.0
       '@muzik/logger': workspace:^1.0.0
       '@muzik/rollup-plugin-autoreload': workspace:^1.0.0
+      '@muzik/rollup-plugin-disallow-module': workspace:^1.0.0
       '@nodegui/nodegui': ^0.30.2
       '@nodegui/packer': ^1.4.1
       '@nodegui/react-nodegui': ^0.11.0
@@ -91,6 +97,7 @@ importers:
       '@rollup/plugin-json': ^4.1.0
       '@rollup/plugin-node-resolve': ^11.2.1
       '@rollup/plugin-replace': ^2.4.2
+      '@rollup/plugin-wasm': ^5.1.2
       '@types/node': ^14.14.37
       '@types/react': ^16.14.0
       '@types/react-dom': ^17.0.3
@@ -116,7 +123,10 @@ importers:
       roarr: ^4.2.5
       rollup: ^2.44.0
       rollup-plugin-node-globals: ^1.4.0
+      rollup-plugin-polyfill-node: ^0.6.2
+      rollup-plugin-progress: ^1.1.2
       rollup-plugin-terser: ^7.0.2
+      rollup-plugin-visualizer: ^5.3.0
       tslib: ^2.1.0
       typescript: ^4.2.3
       wait-on: ^5.3.0
@@ -191,7 +201,6 @@ importers:
   tooling/rollup-plugin-autoreload:
     dependencies:
       eventsource: 1.1.0
-      roarr: 4.2.5
       rollup: 2.44.0
       tslib: 2.1.0
     devDependencies:
@@ -199,7 +208,13 @@ importers:
     specifiers:
       '@types/eventsource': ^1.1.5
       eventsource: ^1.1.0
-      roarr: ^4.2.5
+      rollup: ^2.44.0
+      tslib: ^2.1.0
+  tooling/rollup-plugin-disallow-module:
+    dependencies:
+      rollup: 2.44.0
+      tslib: 2.1.0
+    specifiers:
       rollup: ^2.44.0
       tslib: ^2.1.0
 lockfileVersion: 5.2
@@ -2456,6 +2471,17 @@ packages:
       rollup: ^1.20.0||^2.0.0
     resolution:
       integrity: sha512-efx8Ud1FWaHmj3Es5parp6uRt1DPyKq9A8t1GEZoNsYB4UTQQIL8PsjxcJOlH+P3QKRsSv1rIJhiMvuG4+kfwg==
+  /@rollup/plugin-inject/4.0.2_rollup@2.44.0:
+    dependencies:
+      '@rollup/pluginutils': 3.1.0_rollup@2.44.0
+      estree-walker: 1.0.1
+      magic-string: 0.25.7
+      rollup: 2.44.0
+    dev: true
+    peerDependencies:
+      rollup: ^1.20.0 || ^2.0.0
+    resolution:
+      integrity: sha512-TSLMA8waJ7Dmgmoc8JfPnwUwVZgLjjIAM6MqeIFqPO2ODK36JqE0Cf2F54UTgCUuW8da93Mvoj75a6KAVWgylw==
   /@rollup/plugin-json/4.1.0_rollup@2.44.0:
     dependencies:
       '@rollup/pluginutils': 3.1.0_rollup@2.44.0
@@ -2504,6 +2530,16 @@ packages:
       typescript: '>=3.7.0'
     resolution:
       integrity: sha512-Qd2E1pleDR4bwyFxqbjt4eJf+wB0UKVMLc7/BAFDGVdAXQMCsD4DUv5/7/ww47BZCYxWtJqe1Lo0KVNswBJlRw==
+  /@rollup/plugin-wasm/5.1.2_rollup@2.44.0:
+    dependencies:
+      rollup: 2.44.0
+    dev: true
+    engines:
+      node: '>=10.0.0'
+    peerDependencies:
+      rollup: ^1.20.0 || ^2.0.0
+    resolution:
+      integrity: sha512-eiOuMHBNY0EGTq3LCebg4IQ6/SOvKjmGetzqKajJWcbDQkrQZvHihZKKnBJYY7NuuvjNqCLdEViYr5aAZms63g==
   /@rollup/pluginutils/3.1.0_rollup@2.44.0:
     dependencies:
       '@types/estree': 0.0.39
@@ -5261,6 +5297,13 @@ packages:
       node: '>= 0.4'
     resolution:
       integrity: sha512-USlDT524woQ08aoZFzh3/Z6ch9Y/EWXEHQ/AaRN0SkKq4t2Jw2R2339tSXmwuVoY7LLlBCbOIlx2myP/L5zk0g==
+  /is-docker/2.1.1:
+    dev: true
+    engines:
+      node: '>=8'
+    hasBin: true
+    resolution:
+      integrity: sha512-ZOoqiXfEwtGknTiuDEy8pN2CfE3TxMHprvNer1mXiqwkOT77Rw3YVrUQ52EqAOU3QAWDQ+bQdx7HJzrv7LS2Hw==
   /is-extglob/2.1.1:
     dev: true
     engines:
@@ -5378,6 +5421,14 @@ packages:
   /is-typedarray/1.0.0:
     resolution:
       integrity: sha1-5HnICFjfDBsR3dppQPlgEfzaSpo=
+  /is-wsl/2.2.0:
+    dependencies:
+      is-docker: 2.1.1
+    dev: true
+    engines:
+      node: '>=8'
+    resolution:
+      integrity: sha512-fKzAra0rGJUUBwGBgNkHZuToZcn+TtXHpeCgmkMJMMYx1sQDYaCSyjJBSCa2nH1DGm7s3n1oBnohoVTBaN7Lww==
   /is-yarn-global/0.3.0:
     dev: true
     resolution:
@@ -5844,6 +5895,13 @@ packages:
     dev: true
     resolution:
       integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==
+  /nanoid/3.1.22:
+    dev: true
+    engines:
+      node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1
+    hasBin: true
+    resolution:
+      integrity: sha512-/2ZUaJX2ANuLtTvqTlgqBQNJoQO398KyJgZloL0PZkC0dpysjncRUPsFe3DUPzz/y3h+u7C46np8RMuvF3jsSQ==
   /natural-compare/1.4.0:
     dev: true
     resolution:
@@ -6044,6 +6102,15 @@ packages:
       wrappy: 1.0.2
     resolution:
       integrity: sha1-WDsap3WWHUsROsF9nFC6753Xa9E=
+  /open/7.4.2:
+    dependencies:
+      is-docker: 2.1.1
+      is-wsl: 2.2.0
+    dev: true
+    engines:
+      node: '>=8'
+    resolution:
+      integrity: sha512-MVHddDVweXZF3awtlAS+6pgKLlm/JgxZ90+/NBurBoQctVOOB/zDdVjcyPzQ+0laDGbsWgrRkflI65sQeOgT9Q==
   /opener/1.5.2:
     dev: true
     hasBin: true
@@ -6951,6 +7018,20 @@ packages:
     dev: true
     resolution:
       integrity: sha512-xRkB+W/m1KLIzPUmG0ofvR+CPNcvuCuNdjVBVS7ALKSxr3EDhnzNceGkGi1m8MToSli13AzKFYH4ie9w3I5L3g==
+  /rollup-plugin-polyfill-node/0.6.2_rollup@2.44.0:
+    dependencies:
+      '@rollup/plugin-inject': 4.0.2_rollup@2.44.0
+    dev: true
+    peerDependencies:
+      rollup: '*'
+    resolution:
+      integrity: sha512-gMCVuR0zsKq0jdBn8pSXN1Ejsc458k2QsFFvQdbHoM0Pot5hEnck+pBP/FDwFS6uAi77pD3rDTytsaUStsOMlA==
+  /rollup-plugin-progress/1.1.2:
+    dependencies:
+      chalk: 2.4.2
+    dev: true
+    resolution:
+      integrity: sha512-6ehSZOMTZdAlRpe45kf56BnIOsDYC2GKWhGlK/Dh/Ae/AMUneMDyKdiv9ZlRrW/HVc986frTZcc2Zka+oF6W7Q==
   /rollup-plugin-terser/7.0.2_rollup@2.44.0:
     dependencies:
       '@babel/code-frame': 7.12.13
@@ -6962,6 +7043,21 @@ packages:
       rollup: ^2.0.0
     resolution:
       integrity: sha512-w3iIaU4OxcF52UUXiZNsNeuXIMDvFrr+ZXK6bFZ0Q60qyVfq4uLptoS4bbq3paG3x216eQllFZX7zt6TIImguQ==
+  /rollup-plugin-visualizer/5.3.0_rollup@2.44.0:
+    dependencies:
+      nanoid: 3.1.22
+      open: 7.4.2
+      rollup: 2.44.0
+      source-map: 0.7.3
+      yargs: 16.2.0
+    dev: true
+    engines:
+      node: '>=10.16'
+    hasBin: true
+    peerDependencies:
+      rollup: ^2.0.0
+    resolution:
+      integrity: sha512-beMaHDF1BgqYLY7URjSzawzQP/sBi+1cnInwXOsUdkWy84VZNQRXanitfmdz0lkSKupkE/KtiU61qbedAU5Kfg==
   /rollup-pluginutils/2.8.2:
     dependencies:
       estree-walker: 0.6.1

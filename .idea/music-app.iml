@@ -16,6 +16,9 @@
       <excludeFolder url="file://$MODULE_DIR$/libs/song-scanner/dist" />
       <excludeFolder url="file://$MODULE_DIR$/.parcel-cache" />
       <excludeFolder url="file://$MODULE_DIR$/apps/desktop/build" />
+      <excludeFolder url="file://$MODULE_DIR$/tooling/rollup-plugin-autoreload/dist" />
+      <excludeFolder url="file://$MODULE_DIR$/tooling/rollup-plugin-disallow-module/dist" />
+      <excludeFolder url="file://$MODULE_DIR$/tooling/rollup-plugin-disallow-module/node_modules" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

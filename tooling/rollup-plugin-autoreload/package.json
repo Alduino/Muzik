@@ -11,7 +11,6 @@
     },
     "dependencies": {
         "tslib": "^2.1.0",
-        "roarr": "^4.2.5",
         "rollup": "^2.44.0",
         "eventsource": "^1.1.0"
     },

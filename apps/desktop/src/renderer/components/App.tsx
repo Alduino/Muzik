@@ -3,6 +3,7 @@ import {useSelector} from "react-redux";
 import {Center, Circle, Flex, useColorModeValue} from "@chakra-ui/react";
 import {PuffLoader} from "react-spinners";
 import {RootState} from "../reducers/root";
+import {Initialiser} from "./Initialiser";
 
 const LoadedApp: FC = () => <p>Loaded</p>;
 
@@ -24,6 +25,7 @@ export const App: FC = () => {
 
     return (
         <Flex minHeight="100vh" direction="column">
+            <Initialiser />
             {isLoaded ? <LoadedApp /> : <LoadingApp />}
         </Flex>
     );

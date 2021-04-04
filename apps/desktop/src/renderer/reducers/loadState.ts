@@ -7,13 +7,13 @@ export const slice = createSlice({
         currentDescription: ""
     },
     reducers: {
-        load(state) {
+        setLoadComplete(state) {
             state.value = true;
         },
-        setCurrentlyLoading(state, action: PayloadAction<string>) {
+        setCurrentDescription(state, action: PayloadAction<string>) {
             state.currentDescription = action.payload;
         }
     }
 });
 
-export const {load} = slice.actions;
+export const {setLoadComplete, setCurrentDescription} = slice.actions;

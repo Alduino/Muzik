@@ -1,0 +1,16 @@
+{
+    "name": "@muzik/rollup-plugin-disallow-module",
+    "version": "1.0.0",
+    "description": "Blocks specified modules from being imported",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "keywords": ["rollup-plugin", "disallow-module"],
+    "scripts": {
+        "build": "tsc",
+        "build:watch": "tsc --watch"
+    },
+    "dependencies": {
+        "tslib": "^2.1.0",
+        "rollup": "^2.44.0"
+    }
+}
