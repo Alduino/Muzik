@@ -1,0 +1,20 @@
+{
+    "name": "@muzik/app-song-importer",
+    "version": "1.0.0",
+    "description": "Simple command-line app that runs Muzik's importer",
+    "main": "dist/src/index.js",
+    "types": "dist/src/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "build:watch": "tsc --watch",
+        "start:dev": "ROARR_LOG=true node . | roarr"
+    },
+    "dependencies": {
+        "@muzik/database": "workspace:^1.0.0",
+        "@muzik/logger": "workspace:^1.0.0",
+        "roarr": "^4.2.5"
+    },
+    "devDependencies": {
+        "@roarr/cli": "^3.2.3"
+    }
+}
