@@ -19,4 +19,8 @@ import {Root} from "./Root";
     );
 
     document.body.appendChild(rootElement);
+
+    if (module.hot) {
+        module.hot.accept([], () => location.reload());
+    }
 })();

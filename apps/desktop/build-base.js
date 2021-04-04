@@ -9,14 +9,14 @@ import {terser} from "rollup-plugin-terser";
 const defaultPlugins = [
     wasm(),
     typescript(),
+    json(),
     nodeResolve(),
     commonjs({extensions: [".js", ".ts", ".jsx", ".tsx"]}),
     babel({
         babelHelpers: "bundled",
         extensions: [".js", ".jsx", ".es6", ".es", ".mjs", ".ts", ".tsx"],
         exclude: "node_modules/*"
-    }),
-    json()
+    })
 ];
 
 if (process.env.NODE_ENV === "production") {

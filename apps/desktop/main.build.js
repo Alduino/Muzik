@@ -1,5 +1,4 @@
 import {defaultPlugins} from "./build-base";
-import autoreload from "@muzik/rollup-plugin-autoreload";
 
 export default {
     input: "src/main/index.ts",
@@ -9,6 +8,6 @@ export default {
         sourcemap: true
     },
     preserveEntrySignatures: false,
-    plugins: [...defaultPlugins, autoreload({server: false})],
+    plugins: defaultPlugins,
     external: ["electron"]
 };

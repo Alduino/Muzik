@@ -2,7 +2,6 @@ import "regenerator-runtime/runtime";
 import isDev from "electron-is-dev";
 import {app, BrowserWindow} from "electron";
 import {join} from "path";
-import onAutoreload from "@muzik/rollup-plugin-autoreload/runtime";
 
 let mainWindow: BrowserWindow | null;
 
@@ -39,13 +38,6 @@ app.on("window-all-closed", () => {
 
 app.on("activate", () => {
     if (mainWindow === null) return createWindow();
-});
-
-onAutoreload(() => {
-    if (mainWindow !== null) {
-        console.log("Reloading");
-        mainWindow.reload();
-    }
 });
 
 export {};
