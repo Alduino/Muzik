@@ -1,5 +1,5 @@
+import AbortController, {AbortSignal} from "node-abort-controller";
 import {ipcMain} from "electron";
-import {randomBytes} from "crypto";
 import {
     EventMessage,
     eventName,
@@ -16,11 +16,6 @@ export type Responder<TRequest, TResponse, TProgress> = (
     abort: AbortSignal
 ) => Promise<TResponse> | TResponse;
 
-function randomString(length: number) {
-    const bytes = randomBytes(Math.ceil(length / 2));
-    return bytes.toString("hex").substring(0, length);
-}
-
 const currentListeners = new Set<string>();
 
 export function handle<TResponse, TRequest = never, TProgress = never>(
@@ -34,11 +29,7 @@ export function handle<TResponse, TRequest = never, TProgress = never>(
     ipcMain.on(MESSAGE_EVENT, async (event, arg: EventMessage<TRequest>) => {
         if (arg.name !== name) return;
 
-        const messageId = `message_${name}.${randomString(16)}`;
-
-        event.returnValue = {
-            messageId
-        };
+        const messageId = arg.id;
 
         const progressSender = (progress: TProgress) => {
             event.reply(eventName(messageId, TYPE_PROGRESS), progress);

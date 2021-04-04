@@ -1,5 +1,4 @@
 import type {IpcRenderer} from "electron";
-
 import {
     EventMessage,
     eventName,
@@ -13,12 +12,24 @@ import {
 declare global {
     interface Window {
         electron: {
-            ipc: IpcRenderer;
+            ipcSend: IpcRenderer["send"];
+            ipcSendSync: IpcRenderer["sendSync"];
+            ipcOn: IpcRenderer["on"];
+            ipcOff: IpcRenderer["off"];
         };
     }
 }
 
-const {ipc} = window.electron;
+function randomString(length: number) {
+    const characters = "0123456789abcdefghijklmnopqrstuvwxyz";
+    const arr = Array.from(
+        {length},
+        () => characters[Math.floor(Math.random() * characters.length)]
+    );
+    return arr.join("");
+}
+
+const {ipcSend, ipcOn, ipcOff} = window.electron;
 
 export async function invoke<TResponse, TRequest = never, TProgress = never>(
     name: string,
@@ -27,18 +38,14 @@ export async function invoke<TResponse, TRequest = never, TProgress = never>(
     abort?: AbortSignal
 ): Promise<TResponse> {
     console.debug("Invoking", name);
-    const id: string = ipc.sendSync(MESSAGE_EVENT, {
-        name,
-        data: arg
-    } as EventMessage<TRequest>);
-
+    const id = `message_${name}.${randomString(16)}`;
     console.debug("Invoke ID:", id);
 
     let triggerComplete: (v: TResponse) => void;
     let triggerError: (error: unknown) => void;
 
     function handleAbort() {
-        ipc.send(eventName(id, TYPE_ABORT));
+        ipcSend(eventName(id, TYPE_ABORT));
     }
 
     function handleProgress(_: unknown, arg: TProgress) {
@@ -53,22 +60,31 @@ export async function invoke<TResponse, TRequest = never, TProgress = never>(
         triggerComplete(arg);
     }
 
+    const promise = new Promise<TResponse>((yay, nay) => {
+        triggerComplete = yay;
+        triggerError = nay;
+
+        abort?.addEventListener("abort", handleAbort);
+
+        ipcOn(eventName(id, TYPE_PROGRESS), handleProgress);
+        ipcOn(eventName(id, TYPE_ERROR), handleError);
+        ipcOn(eventName(id, TYPE_COMPLETE), handleComplete);
+    });
+
+    ipcSend(MESSAGE_EVENT, {
+        name,
+        id,
+        data: arg
+    });
+
     try {
-        return await new Promise<TResponse>((yay, nay) => {
-            triggerComplete = yay;
-            triggerError = nay;
-
-            abort?.addEventListener("abort", handleAbort);
-
-            ipc.on(eventName(id, TYPE_PROGRESS), handleProgress);
-            ipc.on(eventName(id, TYPE_ERROR), handleError);
-            ipc.on(eventName(id, TYPE_COMPLETE), handleComplete);
-        });
+        return await promise;
     } catch (err) {
         abort?.removeEventListener("abort", handleAbort);
-        ipc.off(eventName(id, TYPE_PROGRESS), handleProgress);
-        ipc.off(eventName(id, TYPE_ERROR), handleError);
-        ipc.off(eventName(id, TYPE_COMPLETE), handleComplete);
         throw err;
+    } finally {
+        ipcOff(eventName(id, TYPE_PROGRESS), handleProgress);
+        ipcOff(eventName(id, TYPE_ERROR), handleError);
+        ipcOff(eventName(id, TYPE_COMPLETE), handleComplete);
     }
 }

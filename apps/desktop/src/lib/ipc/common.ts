@@ -6,6 +6,7 @@ export const TYPE_ABORT = "abort";
 
 export interface EventMessage<T> {
     name: string;
+    id: string;
     data: T;
 }
 

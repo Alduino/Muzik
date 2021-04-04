@@ -1,1 +1,1 @@
-export const initialiseDatabaseEvent = "initialiseDatabase";
+export const EVENT_DATABASE_INIT = "initialiseDatabase";

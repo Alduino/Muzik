@@ -2,6 +2,8 @@ import "regenerator-runtime/runtime";
 import isDev from "electron-is-dev";
 import {app, BrowserWindow} from "electron";
 import {join} from "path";
+import {handle} from "../lib/ipc/main";
+import {EVENT_DATABASE_INIT} from "../ipc-constants";
 
 let mainWindow: BrowserWindow | null;
 
@@ -25,6 +27,18 @@ async function createWindow() {
         mainWindow = null;
     });
 
+    mainWindow.webContents
+        .on("did-start-loading", () => {
+            console.log("Started loading");
+        })
+        .on("did-stop-loading", () => {
+            console.log("Finished loading");
+        });
+
+    mainWindow.webContents.on("did-fail-load", () => {
+        console.error("Failed to load page");
+    });
+
     if (isDev) {
         mainWindow.webContents.openDevTools();
     }
@@ -38,6 +52,10 @@ app.on("window-all-closed", () => {
 
 app.on("activate", () => {
     if (mainWindow === null) return createWindow();
+});
+
+handle(EVENT_DATABASE_INIT, () => {
+    console.log("Got database init request");
 });
 
 export {};

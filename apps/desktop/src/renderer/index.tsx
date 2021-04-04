@@ -4,6 +4,17 @@ import {I18nextProvider} from "react-i18next";
 import {render} from "react-dom";
 import {i18nConfig, i18n} from "./translations";
 import {Root} from "./Root";
+import initialiseMuzik from "./muzikInit";
+
+if (module.hot) {
+    console.debug("Using HMR");
+    module.hot.accept(() => {
+        console.log("Reloading");
+        location.reload();
+    });
+}
+
+initialiseMuzik();
 
 (async () => {
     if (i18n.isInitialized) return;
@@ -19,8 +30,4 @@ import {Root} from "./Root";
     );
 
     document.body.appendChild(rootElement);
-
-    if (module.hot) {
-        module.hot.accept([], () => location.reload());
-    }
 })();
