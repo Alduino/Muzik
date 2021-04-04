@@ -6,7 +6,7 @@
         "preinstall": "npx only-allow pnpm",
         "format": "prettier . --write && eslint --fix .",
         "lint": "eslint .",
-        "r:build:watch": "pnpm recursive run build:watch --workspace-concurrency Infinity",
+        "r:build:watch": "pnpm run build:watch --recursive --parallel --filter \\!@muzik/app-desktop",
         "r:build": "pnpm recursive run build"
     },
     "devDependencies": {

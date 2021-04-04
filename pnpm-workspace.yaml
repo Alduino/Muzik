@@ -2,4 +2,5 @@ packages:
     - "apps/*"
     - "components/*"
     - "config/*"
+    - "tooling/*"
     - "libs/*"

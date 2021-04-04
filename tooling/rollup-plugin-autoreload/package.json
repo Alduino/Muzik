@@ -1,0 +1,21 @@
+{
+    "name": "@muzik/rollup-plugin-autoreload",
+    "version": "1.0.0",
+    "description": "Reloads the page whenever a build completes",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "keywords": ["rollup-plugin", "autoreload"],
+    "scripts": {
+        "build": "tsc",
+        "build:watch": "tsc --watch"
+    },
+    "dependencies": {
+        "tslib": "^2.1.0",
+        "roarr": "^4.2.5",
+        "rollup": "^2.44.0",
+        "eventsource": "^1.1.0"
+    },
+    "devDependencies": {
+        "@types/eventsource": "^1.1.5"
+    }
+}

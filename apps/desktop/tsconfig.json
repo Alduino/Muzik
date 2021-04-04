@@ -1,7 +1,17 @@
 {
-    "extends": "../../tsconfig.json",
     "compilerOptions": {
-        "outDir": "dist"
+        "module": "esnext",
+        "target": "es2015",
+        "lib": ["es2020", "dom"],
+        "sourceMap": true,
+        "jsx": "react",
+        "moduleResolution": "node",
+        "strict": true,
+        "alwaysStrict": true,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "noImplicitAny": true,
+        "resolveJsonModule": true
     },
-    "include": ["src"]
+    "exclude": ["node_modules"]
 }
