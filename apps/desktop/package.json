@@ -59,13 +59,9 @@
         "tslib": "^2.1.0"
     },
     "devDependencies": {
-        "@babel/core": "^7.13.14",
-        "@babel/preset-env": "^7.13.12",
-        "@babel/preset-react": "^7.13.13",
         "@muzik/rollup-plugin-disallow-module": "workspace:^1.0.0",
         "@nodegui/packer": "^1.4.1",
         "@roarr/cli": "^3.2.3",
-        "@rollup/plugin-babel": "^5.3.0",
         "@rollup/plugin-commonjs": "^18.0.0",
         "@rollup/plugin-html": "^0.2.3",
         "@rollup/plugin-json": "^4.1.0",
