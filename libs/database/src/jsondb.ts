@@ -62,6 +62,39 @@ export default class JsonTable<T> {
 
     constructor(private dir: string) {}
 
+    /**
+     * Deletes a single line of a file
+     * @remarks Use {@see deleteFileSegment} if possible, it is faster
+     * @param path - Path to the file
+     * @param line - The line number to delete
+     * @private
+     */
+    private static async deleteLine(path: string, line: number): Promise<void> {
+        const oldPath = `${path}.tmp`;
+
+        // move old version to a temporary file so we can stream from it
+        await rename(path, oldPath);
+
+        const oldStream = await createReadStream(oldPath);
+        const newFd = await openFile(path, "wx");
+
+        const rl = createRl(oldStream);
+
+        let currentLine = 0;
+        for await (const lineValue of rl) {
+            if (line !== currentLine) {
+                await newFd.write(lineValue + "\n");
+            }
+
+            currentLine++;
+        }
+
+        rl.close();
+        await newFd.close();
+
+        await unlink(oldPath);
+    }
+
     async initialise(): Promise<void> {
         await mkdir(this.dir, {recursive: true});
         await this.loadOrSaveInfo();
@@ -304,7 +337,7 @@ export default class JsonTable<T> {
 
         for (const index of this.info.indices) {
             const path = await this.getIndexPath(index);
-            await this.deleteLine(path, id);
+            await JsonTable.deleteLine(path, id);
         }
     }
 
@@ -397,39 +430,6 @@ export default class JsonTable<T> {
         }
 
         await oldFd.close();
-        await newFd.close();
-
-        await unlink(oldPath);
-    }
-
-    /**
-     * Deletes a single line of a file
-     * @remarks Use {@see deleteFileSegment} if possible, it is faster
-     * @param path - Path to the file
-     * @param line - The line number to delete
-     * @private
-     */
-    private async deleteLine(path: string, line: number): Promise<void> {
-        const oldPath = `${path}.tmp`;
-
-        // move old version to a temporary file so we can stream from it
-        await rename(path, oldPath);
-
-        const oldStream = await createReadStream(oldPath);
-        const newFd = await openFile(path, "wx");
-
-        const rl = createRl(oldStream);
-
-        let currentLine = 0;
-        for await (const lineValue of rl) {
-            if (line !== currentLine) {
-                await newFd.write(lineValue + "\n");
-            }
-
-            currentLine++;
-        }
-
-        rl.close();
         await newFd.close();
 
         await unlink(oldPath);
