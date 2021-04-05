@@ -456,7 +456,7 @@ export default class JsonTable<T> {
             ...preferredIndices,
             ...keys.filter(key => this.info.indices.includes(key))
         ]);
-        const indexedKeys = Array.from(Object.values(indexedKeysSet));
+        const indexedKeys = Array.from(indexedKeysSet.values());
 
         return {
             keys,
