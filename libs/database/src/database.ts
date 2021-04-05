@@ -42,10 +42,14 @@ export class Database {
     }
 
     getArtist(id: number): Promise<Artist | null> {
+        this.checkInitialised();
+
         return this.artists.get(id);
     }
 
     async getAlbum(id: number): Promise<Album | null> {
+        this.checkInitialised();
+
         const album = await this.albums.get(id);
         if (album === null) return null;
 
@@ -60,6 +64,8 @@ export class Database {
     }
 
     async getSong(id: number): Promise<Song | null> {
+        this.checkInitialised();
+
         const song = await this.songs.get(id);
         if (song === null) return null;
 
