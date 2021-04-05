@@ -135,7 +135,7 @@ export default class JsonTable<T> {
             return this.findFromData(
                 keys,
                 predicates as FullPredicates<T>
-            ).then(res => res !== null);
+            ).then(res => res.id === -1);
 
         // otherwise try and find its index
         return this.existsFromIndex(
