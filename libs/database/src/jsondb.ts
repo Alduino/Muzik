@@ -237,7 +237,10 @@ export default class JsonTable<T> {
 
         const offsetsDataBuffer = Buffer.allocUnsafe(8);
         offsetsDataBuffer.writeUInt32LE(dataIndex, 0);
-        offsetsDataBuffer.writeUInt32LE(dataValue.length, 4);
+        offsetsDataBuffer.writeUInt32LE(
+            Buffer.byteLength(dataValue, "utf-8"),
+            4
+        );
 
         // append to every file
         await appendFile(this.dataPath, dataValue + "\n");
@@ -272,7 +275,10 @@ export default class JsonTable<T> {
         for (let i = 0; i < dataValues.length; i++) {
             const value = dataValues[i];
             offsetsDataBuffer.writeUInt32LE(dataIndex, i * 8);
-            offsetsDataBuffer.writeUInt32LE(value.length, i * 8 + 4);
+            offsetsDataBuffer.writeUInt32LE(
+                Buffer.byteLength(dataValue, "utf-8"),
+                i * 8 + 4
+            );
             dataIndex += value.length + 1;
         }
 

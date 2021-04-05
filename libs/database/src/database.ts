@@ -111,6 +111,30 @@ export class Database {
         return this.songs.add(song, albumId).then(song => this.wrapSong(song));
     }
 
+    hasArtist(name: string): Promise<boolean> {
+        return this.artists.hasNamed(name);
+    }
+
+    hasAlbum(name: string, artistId: number): Promise<boolean> {
+        return this.albums.hasNamed(name, artistId);
+    }
+
+    hasSong(name: string, albumId: number): Promise<boolean> {
+        return this.songs.hasNamed(name, albumId);
+    }
+
+    getArtistId(name: string): number {
+        return this.artists.getId(name);
+    }
+
+    getAlbumId(name: string, artistId: number): number {
+        return this.albums.getId(name, artistId);
+    }
+
+    getSongId(name: string, albumId: number): number {
+        return this.songs.getId(name, albumId);
+    }
+
     private checkInitialised(): void {
         if (!this.initialised) {
             throw new Error("Database is not initialised");

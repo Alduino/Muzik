@@ -21,13 +21,20 @@ export default class AlbumTable extends Table<Album> {
         });
     }
 
+    hasNamed(name: string, artistId: number): Promise<boolean> {
+        const id = this.getId(name, artistId);
+        return this.table.includes({id: v => parseInt(v) === id});
+    }
+
     async add(
         name: string,
         artPath: string | null,
         artistId: number
     ): Promise<Album> {
+        const id = this.getId(name, artistId);
+
         const album: Album = {
-            id: await this.table.getNextSerial("id"),
+            id,
             artistId,
             name,
             artPath

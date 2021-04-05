@@ -20,12 +20,19 @@ export default class SongTable extends Table<Song> {
         });
     }
 
+    hasNamed(name: string, albumId: number): Promise<boolean> {
+        const id = this.getId(name, albumId);
+        return this.table.includes({id: v => parseInt(v) === id});
+    }
+
     async add(
         source: Omit<Song, "id" | "albumId">,
         albumId: number
     ): Promise<Song> {
+        const id = this.getId(source.name, albumId);
+
         const song: Song = {
-            id: await this.table.getNextSerial("id"),
+            id,
             albumId,
             ...source
         };

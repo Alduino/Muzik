@@ -18,9 +18,16 @@ export default class ArtistTable extends Table<Artist> {
         });
     }
 
+    hasNamed(name: string): Promise<boolean> {
+        const id = this.getId(name);
+        return this.table.includes({id: v => parseInt(v) === id});
+    }
+
     async add(name: string): Promise<Artist> {
+        const id = this.getId(name);
+
         const artist: Artist = {
-            id: await this.table.getNextSerial("id"),
+            id,
             name
         };
 
