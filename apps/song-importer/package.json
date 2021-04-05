@@ -7,11 +7,12 @@
     "scripts": {
         "build": "tsc",
         "build:watch": "tsc --watch",
-        "start:dev": "ROARR_LOG=true node . | roarr"
+        "start:dev": "ROARR_LOG=true node . \"$SEARCH_DIR\" | roarr"
     },
     "dependencies": {
         "@muzik/database": "workspace:^1.0.0",
         "@muzik/logger": "workspace:^1.0.0",
+        "@muzik/song-scanner": "workspace:^1.0.0",
         "roarr": "^4.2.5"
     },
     "devDependencies": {
