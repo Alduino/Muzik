@@ -40,6 +40,8 @@ export class Database {
         await this.songs.initialise();
         await this.albums.initialise();
         await this.artists.initialise();
+
+        this.initialised = true;
     }
 
     getArtist(id: number): Promise<Artist | null> {
