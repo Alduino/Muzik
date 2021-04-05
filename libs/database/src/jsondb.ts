@@ -600,7 +600,18 @@ export default class JsonTable<T> {
         const fd = await openFile(this.dataPath, "r");
 
         const buffer = Buffer.allocUnsafe(length);
-        await fd.read(buffer, 0, length, offset);
+
+        let totalRead = 0;
+        while (totalRead < length) {
+            const {bytesRead} = await fd.read(
+                buffer,
+                totalRead,
+                length - totalRead,
+                offset
+            );
+            totalRead += bytesRead;
+        }
+
         await fd.close();
 
         return buffer.toString("utf-8");
