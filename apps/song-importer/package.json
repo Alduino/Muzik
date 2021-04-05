@@ -7,7 +7,7 @@
     "scripts": {
         "build": "tsc",
         "build:watch": "tsc --watch",
-        "start:dev": "ROARR_LOG=true node . \"$SEARCH_DIR\" | roarr"
+        "start:dev": "ROARR_LOG=true node . \"$SEARCH_DIR\" | roarr --fe '{\"context.logLevel\":{gt:10}}'"
     },
     "dependencies": {
         "@muzik/database": "workspace:^1.0.0",
