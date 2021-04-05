@@ -17,7 +17,7 @@ export interface Song extends DbSong {
 export class Database {
     public static defaultLocation = configLocator.dir;
     private initialised = false;
-    public artists = new ArtistTable(join(this.root, "artists"));
+    private artists = new ArtistTable(join(this.root, "artists"));
     private albums = new AlbumTable(join(this.root, "albums"));
     private songs = new SongTable(join(this.root, "songs"));
 
