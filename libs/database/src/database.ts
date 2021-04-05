@@ -44,6 +44,28 @@ export class Database {
         this.initialised = true;
     }
 
+    async wrapAlbum(album: DbAlbum): Promise<Album> {
+        const artist = await this.getArtist(album.artistId);
+        if (artist == null)
+            throw new Error(`Artist of album ${album.id} does not exist`);
+
+        return {
+            ...album,
+            artist
+        };
+    }
+
+    async wrapSong(song: DbSong): Promise<Song> {
+        const album = await this.getAlbum(song.albumId);
+        if (album === null)
+            throw new Error(`Album of song ${song.id} does not exist`);
+
+        return {
+            ...song,
+            album
+        };
+    }
+
     getArtist(id: number): Promise<Artist | null> {
         this.checkInitialised();
 
@@ -56,14 +78,7 @@ export class Database {
         const album = await this.albums.get(id);
         if (album === null) return null;
 
-        const artist = await this.getArtist(id);
-        if (artist == null)
-            throw new Error(`Artist of album ${id} does not exist`);
-
-        return {
-            ...album,
-            artist
-        };
+        return this.wrapAlbum(album);
     }
 
     async getSong(id: number): Promise<Song | null> {
@@ -72,14 +87,28 @@ export class Database {
         const song = await this.songs.get(id);
         if (song === null) return null;
 
-        const album = await this.getAlbum(song.albumId);
-        if (album === null)
-            throw new Error(`Album of song ${id} does not exist`);
+        return this.wrapSong(song);
+    }
 
-        return {
-            ...song,
-            album
-        };
+    addArtist(name: string): Promise<Artist> {
+        return this.artists.add(name);
+    }
+
+    addAlbum(
+        name: string,
+        artPath: string | null,
+        artistId: number
+    ): Promise<Album> {
+        return this.albums
+            .add(name, artPath, artistId)
+            .then(album => this.wrapAlbum(album));
+    }
+
+    addSong(
+        song: Omit<DbSong, "id" | "albumId">,
+        albumId: number
+    ): Promise<Song> {
+        return this.songs.add(song, albumId).then(song => this.wrapSong(song));
     }
 
     private checkInitialised(): void {

@@ -43,6 +43,7 @@ type Predicates<T> = Partial<FullPredicates<T>>;
 
 interface Info<T> {
     indices: ValidKeys<T>[];
+    serials: {[name: string]: number};
 }
 
 export default class JsonTable<T> {
@@ -55,7 +56,8 @@ export default class JsonTable<T> {
     private readonly infoPath = this.getPath(JsonTable.FN_INFO);
 
     private info: Info<T> = {
-        indices: []
+        indices: [],
+        serials: {}
     };
 
     constructor(private dir: string) {}
@@ -257,6 +259,28 @@ export default class JsonTable<T> {
 
             await appendFile(path, indexValues + "\n");
         }
+    }
+
+    /**
+     * Returns the next serial value
+     * @remarks Same as `allocateSerials(name, 1)`
+     * @param name - The name of the serial
+     */
+    getNextSerial(name: string): Promise<number> {
+        return this.allocateSerials(name, 1);
+    }
+
+    /**
+     * Allocates many serial keys, and returns the first one
+     * @remarks Other values can be calculated by adding the index to the return value
+     * @param name - The name of the serial
+     * @param count - The amount to allocate
+     */
+    async allocateSerials(name: string, count: number): Promise<number> {
+        const current = this.info.serials[name] ?? -1;
+        this.info.serials[name] = current + count;
+        await this.saveInfo();
+        return current + 1;
     }
 
     /**

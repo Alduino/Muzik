@@ -19,4 +19,19 @@ export default class SongTable extends Table<Song> {
             id: v => id === parseInt(v)
         });
     }
+
+    async add(
+        source: Omit<Song, "id" | "albumId">,
+        albumId: number
+    ): Promise<Song> {
+        const song: Song = {
+            id: await this.table.getNextSerial("id"),
+            albumId,
+            ...source
+        };
+
+        await this.table.add(song);
+
+        return song;
+    }
 }
