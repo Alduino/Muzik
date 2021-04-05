@@ -39,6 +39,7 @@ export class Database {
         log.debug("Initialising the database");
         await this.songs.initialise();
         await this.albums.initialise();
+        await this.artists.initialise();
     }
 
     getArtist(id: number): Promise<Artist | null> {
