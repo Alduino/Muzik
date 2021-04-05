@@ -45,22 +45,36 @@ export default async function scan(db: Database, dir: string): Promise<void> {
         const albumKey = getAlbumKey(album, artist);
 
         if (!artistIdMapping.has(artist)) {
-            log.trace("Creating artist %s", artist);
-            const dbArtist = await db.addArtist(artist);
-            artistIdMapping.set(artist, dbArtist.id);
+            if (await db.hasArtist(artist)) {
+                log.trace("Loading artist %s", artist);
+                artistIdMapping.set(artist, db.getArtistId(artist));
+            } else {
+                log.trace("Creating artist %s", artist);
+                const dbArtist = await db.addArtist(artist);
+                artistIdMapping.set(artist, dbArtist.id);
+            }
         }
 
         const artistId = artistIdMapping.get(artist) as number;
 
         if (!albumIdMapping.has(albumKey)) {
-            log.trace("Creating album %s for artist %s", album, artist);
-            const art = albumArts.get(albumKey) ?? null;
-            const dbAlbum = await db.addAlbum(album, art, artistId);
-            albumIdMapping.set(albumKey, dbAlbum.id);
+            if (await db.hasAlbum(album, artistId)) {
+                log.trace("Loading album %s", album);
+                albumIdMapping.set(albumKey, db.getAlbumId(album, artistId));
+            } else {
+                log.trace("Creating album %s for artist %s", album, artist);
+                const art = albumArts.get(albumKey) ?? null;
+                const dbAlbum = await db.addAlbum(album, art, artistId);
+                albumIdMapping.set(albumKey, dbAlbum.id);
+            }
         }
 
         const albumId = albumIdMapping.get(albumKey) as number;
 
-        await db.addSong(song, albumId);
+        if (await db.hasSong(song.name, albumId)) {
+            log.trace("Skipping song that already exists (%s)", song.name);
+        } else {
+            await db.addSong(song, albumId);
+        }
     }
 }
