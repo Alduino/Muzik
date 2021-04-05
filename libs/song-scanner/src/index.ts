@@ -8,12 +8,23 @@ function getAlbumKey(albumName: string, artistName: string) {
     return artistName.replace(/:/g, "[:]") + ":" + albumName;
 }
 
-export default async function scan(db: Database, dir: string): Promise<void> {
+export default async function scan(
+    db: Database,
+    dir: string,
+    progress: (percentage: number) => void
+): Promise<void> {
+    progress(0);
+
+    const ONE_THIRD = 100 / 3;
+
     log.debug("Searching for songs in %s", dir);
     const supportedSongs = await getSongFiles(dir);
 
     log.debug("Loading id3 data");
     const songInfos = await getSongInfo(supportedSongs);
+    progress(ONE_THIRD);
+
+    const songCount = songInfos.length;
 
     log.debug("Searching for album art");
     const albumSongs = new Map<string, SongInfo[]>();
@@ -31,15 +42,20 @@ export default async function scan(db: Database, dir: string): Promise<void> {
     }
 
     log.trace("Locating art per album");
+    let currentSongIndex = 0;
     for (const [albumKey, songs] of albumSongs) {
         const art = await getAlbumArt(songs);
         albumArts.set(albumKey, art);
+
+        currentSongIndex++;
+        progress(ONE_THIRD + (currentSongIndex / songCount) * ONE_THIRD);
     }
 
     log.debug("Writing data");
     const artistIdMapping = new Map<string, number>();
     const albumIdMapping = new Map<string, number>();
 
+    currentSongIndex = 0;
     for (const songInfo of songInfos) {
         const {artist, album, ...song} = songInfo;
         const albumKey = getAlbumKey(album, artist);
@@ -76,5 +92,8 @@ export default async function scan(db: Database, dir: string): Promise<void> {
         } else {
             await db.addSong(song, albumId);
         }
+
+        currentSongIndex++;
+        progress(ONE_THIRD * 2 + (currentSongIndex / songCount) * ONE_THIRD);
     }
 }

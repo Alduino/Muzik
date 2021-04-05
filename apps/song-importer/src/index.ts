@@ -13,5 +13,14 @@ import scan from "@muzik/song-scanner";
     const db = await Database.create(Database.defaultLocation);
     await db.initialise();
 
-    await scan(db, scanDir);
+    let lastProgressLogTime = 0;
+
+    await scan(db, scanDir, progress => {
+        const now = Date.now();
+
+        if (now - lastProgressLogTime > 100) {
+            log.debug("Progress: %s%", Math.round(progress));
+            lastProgressLogTime = now;
+        }
+    });
 })();
