@@ -1,6 +1,15 @@
 import {join} from "path";
 import {createReadStream, existsSync} from "fs";
-import {mkdir, open as openFile, readFile, writeFile} from "fs/promises";
+import {
+    appendFile,
+    mkdir,
+    open as openFile,
+    readFile,
+    rename,
+    stat,
+    unlink,
+    writeFile
+} from "fs/promises";
 import {createInterface as createRl} from "readline";
 import {log} from "./logger";
 
@@ -51,16 +60,11 @@ export default class JsonTable<T> {
 
     constructor(private dir: string) {}
 
-    private async maybeCreateOffsets() {
-        if (!existsSync(this.offsetsPath)) {
-            await writeFile(this.offsetsPath, "");
-        }
-    }
-
     async initialise(): Promise<void> {
         await mkdir(this.dir, {recursive: true});
         await this.loadOrSaveInfo();
         await this.maybeCreateOffsets();
+        await this.maybeCreateDataFile();
     }
 
     async createIndex(key: ValidKeys<T>): Promise<void> {
@@ -74,6 +78,39 @@ export default class JsonTable<T> {
     }
 
     /**
+     * Returns true if some value matches the predicate
+     * @remarks May be slightly faster than {@see find} if no predicates use the data
+     * @param predicates - Key is row name, value is predicate function. Note all values are in their toString() form.
+     * @param preferredIndices - Preferred indices to check, in order
+     */
+    includes(
+        predicates: Predicates<T>,
+        preferredIndices: ValidKeys<T>[] = []
+    ): Promise<boolean> {
+        const {keys, indexedKeys} = this.getComparisonValues(
+            predicates,
+            preferredIndices
+        );
+
+        // casting to FullPredicates is not strictly correct, but it makes typing simpler below,
+        // as in this case we know better than TypeScript.
+
+        // if there are no indexed keys we just get from the data
+        if (indexedKeys.length === 0)
+            return this.findFromData(
+                keys,
+                predicates as FullPredicates<T>
+            ).then(res => res !== null);
+
+        // otherwise try and find its index
+        return this.existsFromIndex(
+            keys,
+            indexedKeys,
+            predicates as FullPredicates<T>
+        );
+    }
+
+    /**
      * Returns the first value that matches all the predicates
      * @param predicates - Key is row name, value is predicate function. Note all values are in their toString() form.
      * @param preferredIndices - Preferred indices to check, in order
@@ -83,6 +120,301 @@ export default class JsonTable<T> {
         predicates: Predicates<T>,
         preferredIndices: ValidKeys<T>[] = []
     ): Promise<T | null> {
+        const {keys, indexedKeys} = this.getComparisonValues(
+            predicates,
+            preferredIndices
+        );
+
+        // casting to FullPredicates is not strictly correct, but it makes typing simpler below,
+        // as in this case we know better than TypeScript.
+
+        // if there are no indexed keys we just get from the data
+        if (indexedKeys.length === 0)
+            return this.findFromData(
+                keys,
+                predicates as FullPredicates<T>
+            ).then(v => v.value);
+
+        // otherwise begin a search for the value
+        return this.findFromIndex(
+            keys,
+            indexedKeys,
+            predicates as FullPredicates<T>
+        );
+    }
+
+    /**
+     * Returns the first id that matches. Note, `id` is a transparent value that you shouldn't rely on.
+     * @param predicates - Key is row name, value is predicate function. Note all values are in their toString() form.
+     * @param preferredIndices - Preferred indices to check, in order
+     * @returns - A transparent identifier for the matching row
+     */
+    getIdentifier(
+        predicates: Predicates<T>,
+        preferredIndices: ValidKeys<T>[] = []
+    ): Promise<number> {
+        const {keys, indexedKeys} = this.getComparisonValues(
+            predicates,
+            preferredIndices
+        );
+
+        return this.getIndex(
+            keys,
+            indexedKeys,
+            predicates as FullPredicates<T>
+        );
+    }
+
+    /**
+     * Deletes the value at the specified identifier
+     * @remarks Identifier is not valid after this operation
+     * @param identifier - A transparent identifier of the row, returned by {@see getIdentifier}
+     */
+    async delete(identifier: number): Promise<void> {
+        if (identifier < 0) throw new Error("Invalid identifier");
+        await this.deleteRow(identifier);
+        await this.recalculateOffsets(identifier);
+    }
+
+    /**
+     * Replaces the value at the specified identifier
+     * @remarks Identifier is not valid after this operation
+     * @param identifier - A transparent identifier of the row, returned by {@see getIdentifier}
+     * @param value - The value to replace with
+     */
+    async replace(identifier: number, value: T): Promise<void> {
+        if (identifier < 0) throw new Error("Invalid identifier");
+        await this.deleteRow(identifier);
+        await this.add(value);
+        await this.recalculateOffsets(identifier);
+    }
+
+    /**
+     * Adds a new row with the specified value
+     * @private
+     */
+    async add(value: T): Promise<void> {
+        const keys = Object.keys(value) as ValidKeys<T>[];
+        const indices = keys.filter(key => this.info.indices.includes(key));
+
+        const dataIndex = (await stat(this.dataPath)).size;
+        const dataValue = JSON.stringify(value);
+
+        const offsetsDataBuffer = Buffer.allocUnsafe(8);
+        offsetsDataBuffer.writeUInt32LE(dataIndex, 0);
+        offsetsDataBuffer.writeUInt32LE(dataValue.length, 4);
+
+        // append to every file
+        await appendFile(this.dataPath, dataValue + "\n");
+        await appendFile(this.offsetsPath, offsetsDataBuffer);
+
+        for (const index of indices) {
+            const path = this.getIndexPath(index);
+            const indexValue = value[index] as T[ValidKeys<T>] & {
+                toString(): string;
+            };
+            await appendFile(path, indexValue + "\n");
+        }
+    }
+
+    /**
+     * Adds multiple rows at one time
+     * @param values
+     */
+    async addMany(values: T[]): Promise<void> {
+        if (values.length === 0) return;
+
+        const keys = Object.keys(values[0]) as ValidKeys<T>[];
+        const indices = keys.filter(key => this.info.indices.includes(key));
+
+        let dataIndex = (await stat(this.dataPath)).size;
+
+        const dataValues = values.map(v => JSON.stringify(v));
+        const dataValue = dataValues.join("\n");
+
+        const offsetsDataBuffer = Buffer.allocUnsafe(dataValues.length * 8);
+
+        for (let i = 0; i < dataValues.length; i++) {
+            const value = dataValues[i];
+            offsetsDataBuffer.writeUInt32LE(dataIndex, i * 8);
+            offsetsDataBuffer.writeUInt32LE(value.length, i * 8 + 4);
+            dataIndex += value.length + 1;
+        }
+
+        await appendFile(this.dataPath, dataValue + "\n");
+        await appendFile(this.offsetsPath, offsetsDataBuffer);
+
+        for (const index of indices) {
+            const path = this.getIndexPath(index);
+
+            const indexValues = values
+                .map(v =>
+                    (v[index] as T[ValidKeys<T>] & {
+                        toString(): string;
+                    }).toString()
+                )
+                .join("\n");
+
+            await appendFile(path, indexValues + "\n");
+        }
+    }
+
+    /**
+     * Deletes the specified row
+     * @param id - Row number
+     * @private
+     */
+    private async deleteRow(id: number): Promise<void> {
+        const {
+            offset: originalOffset,
+            length: originalLength
+        } = await this.getOffsetFromId(id);
+
+        await this.deleteFileSegment(this.offsetsPath, id * 8, 8);
+
+        await this.deleteFileSegment(
+            this.dataPath,
+            originalOffset,
+            originalLength + 1
+        );
+
+        for (const index of this.info.indices) {
+            const path = await this.getIndexPath(index);
+            await this.deleteLine(path, id);
+        }
+    }
+
+    /**
+     * Recalculates all the offsets after start
+     * @param start - ID of the row to start with
+     * @private
+     */
+    private async recalculateOffsets(start: number) {
+        const offsetFd = await openFile(this.offsetsPath, "r+");
+
+        const dataStream = createReadStream(this.dataPath);
+        const rl = createRl(dataStream);
+
+        const writeBuffer = Buffer.allocUnsafe(8);
+
+        let currentLine = 0,
+            dataPosition = 0,
+            offsetPosition = 0;
+        for await (const line of rl) {
+            if (currentLine >= start) {
+                writeBuffer.writeUInt32LE(dataPosition, 0);
+                writeBuffer.writeUInt32LE(line.length, 4);
+                await offsetFd.write(writeBuffer, 0, 8, offsetPosition);
+            }
+
+            currentLine++;
+            dataPosition += line.length + 1;
+            offsetPosition += 8;
+        }
+
+        rl.close();
+        await offsetFd.close();
+    }
+
+    /**
+     * Deletes a portion of a file
+     * @remarks Very slow
+     * @param path - Path to the file
+     * @param offset - Offset from the start of the file
+     * @param length - Number of bytes to delete
+     * @private
+     */
+    private async deleteFileSegment(
+        path: string,
+        offset: number,
+        length: number
+    ): Promise<void> {
+        const oldPath = `${path}.tmp`;
+        const oldSize = (await stat(path)).size;
+
+        // move old version to a temporary file so we can stream from it
+        await rename(path, oldPath);
+
+        const oldFd = await openFile(oldPath, "r");
+        const newFd = await openFile(path, "wx");
+
+        const buffer = Buffer.allocUnsafe(16384);
+
+        // write the bytes that are the same
+        let currentPosition = 0;
+        while (currentPosition < offset) {
+            const readCount = Math.min(buffer.length, offset - currentPosition);
+            const {bytesRead} = await oldFd.read(
+                buffer,
+                0,
+                readCount,
+                currentPosition
+            );
+            await newFd.write(buffer, 0, bytesRead);
+            currentPosition += bytesRead;
+        }
+
+        // skip length then write the new bytes
+        currentPosition += length;
+
+        while (currentPosition < oldSize) {
+            const readCount = Math.min(
+                buffer.length,
+                oldSize - currentPosition
+            );
+            const {bytesRead} = await oldFd.read(
+                buffer,
+                0,
+                readCount,
+                currentPosition
+            );
+            await newFd.write(buffer, 0, bytesRead);
+            currentPosition += bytesRead;
+        }
+
+        await oldFd.close();
+        await newFd.close();
+
+        await unlink(oldPath);
+    }
+
+    /**
+     * Deletes a single line of a file
+     * @remarks Use {@see deleteFileSegment} if possible, it is faster
+     * @param path - Path to the file
+     * @param line - The line number to delete
+     * @private
+     */
+    private async deleteLine(path: string, line: number): Promise<void> {
+        const oldPath = `${path}.tmp`;
+
+        // move old version to a temporary file so we can stream from it
+        await rename(path, oldPath);
+
+        const oldStream = await createReadStream(oldPath);
+        const newFd = await openFile(path, "wx");
+
+        const rl = createRl(oldStream);
+
+        let currentLine = 0;
+        for await (const lineValue of rl) {
+            if (line !== currentLine) {
+                await newFd.write(lineValue + "\n");
+            }
+
+            currentLine++;
+        }
+
+        rl.close();
+        await newFd.close();
+
+        await unlink(oldPath);
+    }
+
+    private getComparisonValues(
+        predicates: Predicates<T>,
+        preferredIndices: ValidKeys<T>[] = []
+    ) {
         if (preferredIndices.some(it => !this.info.indices.includes(it))) {
             throw new Error(
                 "A preferred index does not map to an actual index"
@@ -95,21 +427,93 @@ export default class JsonTable<T> {
             throw new Error("At least one predicate must be specified");
         }
 
-        const indexedKeys = keys.filter(key => this.info.indices.includes(key));
+        // use the set to deduplicate the values
+        const indexedKeysSet = new Set([
+            ...preferredIndices,
+            ...keys.filter(key => this.info.indices.includes(key))
+        ]);
+        const indexedKeys = Array.from(Object.values(indexedKeysSet));
 
-        // casting to FullPredicates is not strictly correct, but it makes typing simpler below,
-        // as in this case we know better than TypeScript.
-
-        // if there are no indexed keys we just get from the data
-        if (indexedKeys.length === 0)
-            return this.findFromData(keys, predicates as FullPredicates<T>);
-
-        // otherwise begin a search for the value
-        return this.findFromIndex(
+        return {
             keys,
-            indexedKeys,
-            predicates as FullPredicates<T>
-        );
+            indexedKeys
+        };
+    }
+
+    private async maybeCreateOffsets() {
+        if (!existsSync(this.offsetsPath)) {
+            await writeFile(this.offsetsPath, "");
+        }
+    }
+
+    private async maybeCreateDataFile() {
+        if (!existsSync(this.dataPath)) {
+            await writeFile(this.dataPath, "");
+        }
+    }
+
+    /**
+     * Returns the first matching id
+     * @param keys - List of keys in predicates object
+     * @param indexedKeys - List of index keys, in search order
+     * @param predicates - Predicates object
+     * @private
+     */
+    private async getIndex(
+        keys: ValidKeys<T>[],
+        indexedKeys: ValidKeys<T>[],
+        predicates: FullPredicates<T>
+    ) {
+        for (const indexKey of indexedKeys) {
+            log.trace("Searching with key %s", indexKey);
+
+            const id = await this.findIdFromIndex(
+                indexKey,
+                predicates[indexKey]
+            );
+            if (id == -1) continue;
+            return id;
+        }
+
+        const nonIndexKeys = keys.filter(key => !indexedKeys.includes(key));
+        if (nonIndexKeys.length > 0) {
+            log.trace("Searching with non-indexed keys");
+            return await this.findFromData(keys, predicates).then(v => v.id);
+        }
+
+        return -1;
+    }
+
+    /**
+     * Searches through data to see if there is an ID that matches
+     * @param keys - List of keys in predicates object
+     * @param indexedKeys - List of index keys, in search order
+     * @param predicates - Predicates object
+     * @private
+     */
+    private async existsFromIndex(
+        keys: ValidKeys<T>[],
+        indexedKeys: ValidKeys<T>[],
+        predicates: FullPredicates<T>
+    ): Promise<boolean> {
+        for (const indexKey of indexedKeys) {
+            log.trace("Searching with key %s", indexKey);
+
+            const id = await this.findIdFromIndex(
+                indexKey,
+                predicates[indexKey]
+            );
+            if (id == -1) continue;
+            return true;
+        }
+
+        const nonIndexKeys = keys.filter(key => !indexedKeys.includes(key));
+        if (nonIndexKeys.length > 0) {
+            log.trace("Searching with non-indexed keys");
+            return (await this.findFromData(keys, predicates)) !== null;
+        }
+
+        return false;
     }
 
     /**
@@ -135,7 +539,7 @@ export default class JsonTable<T> {
 
             const {offset, length} = await this.getOffsetFromId(id);
             log.trace(
-                "Found index match at %i (%i+%i), comparing with other predicates",
+                "Found index match at %s (%s+%s), comparing with other predicates",
                 id,
                 offset,
                 length
@@ -155,6 +559,12 @@ export default class JsonTable<T> {
             }
         }
 
+        const nonIndexKeys = keys.filter(key => !indexedKeys.includes(key));
+        if (nonIndexKeys.length !== 0) {
+            log.trace("Searching with non-indexed keys");
+            return this.findFromData(keys, predicates).then(v => v.value);
+        }
+
         return null;
     }
 
@@ -165,7 +575,7 @@ export default class JsonTable<T> {
     private async readData(offset: number, length: number): Promise<string> {
         const fd = await openFile(this.dataPath, "r");
 
-        const buffer = new Buffer(length);
+        const buffer = Buffer.allocUnsafe(length);
         await fd.read(buffer, 0, length, offset);
         await fd.close();
 
@@ -182,19 +592,19 @@ export default class JsonTable<T> {
     ): Promise<{offset: number; length: number}> {
         const fd = await openFile(this.offsetsPath, "r");
 
-        const buffer = new Buffer(4);
+        const buffer = Buffer.allocUnsafe(8);
         await fd.read(buffer, 0, 8, id * 8);
         await fd.close();
 
         return {
-            offset: buffer.readUInt32BE(0),
-            length: buffer.readUInt32BE(4)
+            offset: buffer.readUInt32LE(0),
+            length: buffer.readUInt32LE(4)
         };
     }
 
     /**
      * Searches through data to find the ID.
-     * @remark If possible, use {@see findIdFromIndex}, as it is much faster.
+     * @remarks If possible, use {@see findIdFromIndex}, as it is much faster.
      * @param keys - List of rows to search
      * @param predicates - Getter object
      * @private
@@ -202,11 +612,12 @@ export default class JsonTable<T> {
     private async findFromData(
         keys: ValidKeys<T>[],
         predicates: FullPredicates<T>
-    ): Promise<T | null> {
+    ): Promise<{value: T | null; id: number}> {
         const stream = createReadStream(this.dataPath);
         const rl = createRl({input: stream});
 
-        let foundItem: T | null = null;
+        let foundItem: T | null = null,
+            foundIndex = 0;
         for await (const line of rl) {
             const value = JSON.parse(line);
 
@@ -225,16 +636,18 @@ export default class JsonTable<T> {
                 foundItem = value;
                 break;
             }
+
+            foundIndex++;
         }
 
         rl.close();
 
-        return foundItem;
+        return {value: foundItem, id: foundItem === null ? -1 : foundIndex};
     }
 
     /**
      * Finds the first matching line. Requires key to have an index.
-     * @remark This is the preferred method to call if possible, as it is fast.
+     * @remarks This is the preferred method to call if possible, as it is fast.
      * @param key - Row name
      * @param predicate - Function to check for the correct value
      * @private
