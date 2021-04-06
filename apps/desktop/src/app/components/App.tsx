@@ -13,6 +13,7 @@ import {RootState} from "../reducers/root";
 import {GlobalRoute} from "../reducers/routing";
 import {MusicStorePicker} from "./MusicStorePicker";
 import {NotFound} from "./NotFound";
+import useThemeColours from "../hooks/useThemeColours";
 
 const LoadedApp: FC = () => {
     const route = useSelector<RootState, GlobalRoute>(
@@ -51,9 +52,10 @@ const LoadingApp: FC = () => {
 
 export const App: FC = () => {
     const isLoaded = useSelector<RootState>(state => state.loadState.value);
+    const {backgroundL0} = useThemeColours();
 
     return (
-        <Flex minHeight="100vh" direction="column">
+        <Flex minHeight="100vh" direction="column" background={backgroundL0}>
             {isLoaded ? <LoadedApp /> : <LoadingApp />}
         </Flex>
     );
