@@ -7,5 +7,7 @@ export default function useThemeColours() {
     const backgroundL1 = useColorModeValue("white", "gray.900");
     const backgroundL2 = useColorModeValue("gray.100", "gray.800");
 
-    return {text, backgroundL0, backgroundL1, backgroundL2};
+    const border = useColorModeValue("gray.200", "gray.700");
+
+    return {border, text, backgroundL0, backgroundL1, backgroundL2};
 }

@@ -21,6 +21,8 @@ importers:
       '@chakra-ui/react': 1.4.2_91d4b9ed41b15fbe03118aac6e7e01cf
       '@emotion/react': 11.1.5_@types+react@17.0.3+react@17.0.2
       '@emotion/styled': 11.1.5_a74314bbc21a27607eb4b82774331d24
+      '@fontsource/lato': 4.2.2
+      '@fontsource/montserrat': 4.2.2
       '@redux-devtools/core': 3.9.0_react-redux@7.2.3+react@17.0.2
       '@redux-devtools/dock-monitor': 1.4.0_51cc6f7564500523103b5583642dd182
       '@redux-devtools/log-monitor': 2.3.0_51cc6f7564500523103b5583642dd182
@@ -31,6 +33,7 @@ importers:
       i18next-browser-languagedetector: 6.1.0
       node-abort-controller: 1.2.0
       react: 17.0.2
+      react-async-hook: 3.6.2_react@17.0.2
       react-dom: 17.0.2_react@17.0.2
       react-i18next: 11.8.12_i18next@20.1.0+react@17.0.2
       react-redux: 7.2.3_react-dom@17.0.2+react@17.0.2
@@ -55,6 +58,7 @@ importers:
       '@vercel/webpack-asset-relocator-loader': 1.3.0
       css-loader: 4.3.0
       electron: 12.0.2
+      file-loader: 6.2.0
       fork-ts-checker-webpack-plugin: 5.2.1
       node-loader: 1.0.3
       style-loader: 1.3.0
@@ -70,6 +74,8 @@ importers:
       '@electron-forge/plugin-webpack': ^6.0.0-beta.54
       '@emotion/react': ^11
       '@emotion/styled': ^11
+      '@fontsource/lato': ^4.2.2
+      '@fontsource/montserrat': ^4.2.2
       '@muzik/database': workspace:*
       '@muzik/logger': workspace:*
       '@muzik/song-scanner': workspace:*
@@ -87,6 +93,7 @@ importers:
       css-loader: ^4.3.0
       electron: 12.0.2
       electron-store: ^7.0.2
+      file-loader: ^6.2.0
       fork-ts-checker-webpack-plugin: ^5.2.1
       framer-motion: ^4
       i18next: ^20.1.0
@@ -94,6 +101,7 @@ importers:
       node-abort-controller: ^1.2.0
       node-loader: ^1.0.3
       react: ^17.0.2
+      react-async-hook: ^3.6.2
       react-dom: ^17.0.2
       react-i18next: ^11.8.12
       react-redux: ^7.2.3
@@ -1511,6 +1519,14 @@ packages:
       node: ^10.12.0 || >=12.0.0
     resolution:
       integrity: sha512-2ZPCc+uNbjV5ERJr+aKSPRwZgKd2z11x0EgLvb1PURmUrn9QNRXFqje0Ldq454PfAVyaJYyrDvvIKSFP4NnBog==
+  /@fontsource/lato/4.2.2:
+    dev: false
+    resolution:
+      integrity: sha512-ZE5WvqZQZinXpH8MaEiM9klDsUOfCHVQJ/tZKpNVQhi8mHt9WqPCROu500oI5jC3s6jaJuWsM7LfJ1zyEeW+XA==
+  /@fontsource/montserrat/4.2.2:
+    dev: false
+    resolution:
+      integrity: sha512-HnlV9Xim2mYa56Bz/UIO5r26Rq/DJWlYdMWTql+TE6n3yYMe8YV6dTwPzTbkr35IsyDq6cWy0rPert9MWyA2yA==
   /@malept/cross-spawn-promise/1.1.1:
     dependencies:
       cross-spawn: 7.0.3
@@ -4601,6 +4617,17 @@ packages:
       node: ^10.12.0 || >=12.0.0
     resolution:
       integrity: sha512-7Gps/XWymbLk2QLYK4NzpMOrYjMhdIxXuIvy2QBsLE6ljuodKvdkWs/cpyJJ3CVIVpH0Oi1Hvg1ovbMzLdFBBg==
+  /file-loader/6.2.0:
+    dependencies:
+      loader-utils: 2.0.0
+      schema-utils: 3.0.0
+    dev: true
+    engines:
+      node: '>= 10.13.0'
+    peerDependencies:
+      webpack: ^4.0.0 || ^5.0.0
+    resolution:
+      integrity: sha512-qo3glqyTa61Ytg4u73GultjHGjdRyig3tG6lPtyX/jOEJvHif9uB0/OCI2Kif6ctF3caQTW2G5gym21oAsI4pw==
   /file-type/16.3.0:
     dependencies:
       readable-web-to-node-stream: 3.0.1
@@ -7832,6 +7859,17 @@ packages:
       node: '>= 8.0.0'
     resolution:
       integrity: sha512-h1gNEl9Oai1oijwyJ1WYqYSXTStHnOcv1KYljg/8WM4NAg3H1KBK3azIaKkQ1WQl+d7PoJpcBMscPfLXVKgCLQ==
+  /react-async-hook/3.6.2_react@17.0.2:
+    dependencies:
+      react: 17.0.2
+    dev: false
+    engines:
+      node: '>=8'
+      npm: '>=5'
+    peerDependencies:
+      react: '>=16.8'
+    resolution:
+      integrity: sha512-RkwHCJ8V7I6umKZLHneapuTRWf+eO4LOj0qUwUDsSn27jrAOcW6ClbV3x22Z4hVxH9bA0zb7y+ozDJDJ8PnZoA==
   /react-base16-styling/0.8.0:
     dependencies:
       '@types/base16': 1.0.2

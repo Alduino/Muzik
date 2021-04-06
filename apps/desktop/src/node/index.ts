@@ -1,10 +1,10 @@
+import {dialog} from "electron";
 import {handle} from "../lib/ipc/main";
 import {
     EVENT_DATABASE_INIT,
     EVENT_MUSIC_IMPORT,
-    EVENT_SET_MUSIC_PATH,
-    MusicImportRequest,
-    SetMusicPathRequest
+    EVENT_SELECT_MUSIC_IMPORT_PATH,
+    MusicImportRequest
 } from "../lib/ipc-constants";
 import {log} from "./logger";
 import {importMusic, initialise as initialiseDatabase} from "./database";
@@ -13,10 +13,6 @@ import {store} from "./configuration";
 handle(EVENT_DATABASE_INIT, async () => {
     log.info("Initialising database");
     await initialiseDatabase();
-});
-
-handle<void, SetMusicPathRequest>(EVENT_SET_MUSIC_PATH, opts => {
-    store.set("musicStore", opts.path);
 });
 
 handle<void, MusicImportRequest, number>(
@@ -39,3 +35,13 @@ handle<void, MusicImportRequest, number>(
         await importMusic(importProgress);
     }
 );
+
+handle(EVENT_SELECT_MUSIC_IMPORT_PATH, async () => {
+    const result = await dialog.showOpenDialog({
+        properties: ["openDirectory"]
+    });
+
+    if (result.canceled || result.filePaths.length !== 1) return false;
+    store.set("musicStore", result.filePaths[0]);
+    return true;
+});

@@ -4,10 +4,11 @@ import {ChakraProvider, ColorModeProvider} from "@chakra-ui/react";
 import {App} from "./components/App";
 import store from "./store";
 import {DevTools} from "./DevTools";
+import theme from "./theme";
 
 export const Root: FC = () => (
     <ReduxProvider store={store}>
-        <ChakraProvider>
+        <ChakraProvider theme={theme}>
             <ColorModeProvider
                 options={{
                     initialColorMode: "light",
