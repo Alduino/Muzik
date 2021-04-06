@@ -67,3 +67,6 @@ common/autoinstallers/*/.npmrc
 **/dist
 **/cache
 **/build
+**/.parcel-cache
+**/.cache
+**/.webpack

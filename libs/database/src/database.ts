@@ -1,6 +1,5 @@
 import {dirname, join} from "path";
 import {mkdir} from "fs/promises";
-import {configLocator} from "./config-locator";
 import {log} from "./logger";
 import AlbumTable, {Album as DbAlbum} from "./table/albumTable";
 import SongTable, {Song as DbSong} from "./table/songTable";
@@ -15,7 +14,6 @@ export interface Song extends DbSong {
 }
 
 export class Database {
-    public static defaultLocation = configLocator.dir;
     private initialised = false;
     private artists = new ArtistTable(join(this.root, "artists"));
     private albums = new AlbumTable(join(this.root, "albums"));

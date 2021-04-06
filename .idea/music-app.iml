@@ -5,7 +5,6 @@
       <excludeFolder url="file://$MODULE_DIR$/temp" />
       <excludeFolder url="file://$MODULE_DIR$/.tmp" />
       <excludeFolder url="file://$MODULE_DIR$/tmp" />
-      <excludeFolder url="file://$MODULE_DIR$/apps/desktop/.rush" />
       <excludeFolder url="file://$MODULE_DIR$/common/temp" />
       <excludeFolder url="file://$MODULE_DIR$/common/autoinstallers/prettier/.rush" />
       <excludeFolder url="file://$MODULE_DIR$/libs/config-loader/cache" />
@@ -15,10 +14,15 @@
       <excludeFolder url="file://$MODULE_DIR$/libs/logger/dist" />
       <excludeFolder url="file://$MODULE_DIR$/libs/song-scanner/dist" />
       <excludeFolder url="file://$MODULE_DIR$/.parcel-cache" />
-      <excludeFolder url="file://$MODULE_DIR$/apps/desktop/build" />
       <excludeFolder url="file://$MODULE_DIR$/tooling/rollup-plugin-autoreload/dist" />
       <excludeFolder url="file://$MODULE_DIR$/tooling/rollup-plugin-disallow-module/dist" />
       <excludeFolder url="file://$MODULE_DIR$/tooling/rollup-plugin-disallow-module/node_modules" />
+      <excludeFolder url="file://$MODULE_DIR$/apps/song-importer/dist" />
+      <excludeFolder url="file://$MODULE_DIR$/apps/desktop-old/.rush" />
+      <excludeFolder url="file://$MODULE_DIR$/apps/desktop-old/build" />
+      <excludeFolder url="file://$MODULE_DIR$/apps/desktop-old/.cache" />
+      <excludeFolder url="file://$MODULE_DIR$/apps/node_modules" />
+      <excludeFolder url="file://$MODULE_DIR$/apps/desktop/.webpack" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

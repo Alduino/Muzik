@@ -10,9 +10,9 @@
         "start:dev": "ROARR_LOG=true node . \"$SEARCH_DIR\" | roarr --fe '{\"context.logLevel\":{gt:10}}'"
     },
     "dependencies": {
-        "@muzik/database": "workspace:^1.0.0",
-        "@muzik/logger": "workspace:^1.0.0",
-        "@muzik/song-scanner": "workspace:^1.0.0",
+        "@muzik/database": "^1.0.0",
+        "@muzik/logger": "^1.0.0",
+        "@muzik/song-scanner": "^1.0.0",
         "roarr": "^4.2.5"
     },
     "devDependencies": {

@@ -16,7 +16,6 @@
         "roarr": "^4.2.5"
     },
     "devDependencies": {
-        "@muzik/config-bundler": "workspace:^1.0.0",
         "roarr": "^4.2.5"
     }
 }

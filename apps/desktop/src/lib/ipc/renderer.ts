@@ -1,6 +1,5 @@
 import type {IpcRenderer} from "electron";
 import {
-    EventMessage,
     eventName,
     MESSAGE_EVENT,
     TYPE_ABORT,
@@ -39,7 +38,6 @@ export async function invoke<TResponse, TRequest = never, TProgress = never>(
 ): Promise<TResponse> {
     console.debug("Invoking", name);
     const id = `message_${name}.${randomString(16)}`;
-    console.debug("Invoke ID:", id);
 
     let triggerComplete: (v: TResponse) => void;
     let triggerError: (error: unknown) => void;
@@ -81,6 +79,7 @@ export async function invoke<TResponse, TRequest = never, TProgress = never>(
         return await promise;
     } catch (err) {
         abort?.removeEventListener("abort", handleAbort);
+        err.message = "Invoke error: " + err.message;
         throw err;
     } finally {
         ipcOff(eventName(id, TYPE_PROGRESS), handleProgress);
