@@ -88,6 +88,66 @@ export class Database {
         return this.wrapSong(song);
     }
 
+    getAllArtists(): Promise<Artist[]> {
+        this.checkInitialised();
+
+        return this.artists.getAll();
+    }
+
+    async getAllAlbums(): Promise<Album[]> {
+        this.checkInitialised();
+
+        const artistCache = new Map<number, Artist>();
+        const albums = await this.albums.getAll();
+
+        const result: Album[] = [];
+
+        for (const album of albums) {
+            if (!artistCache.has(album.artistId)) {
+                const artist = await this.getArtist(album.artistId);
+                if (artist === null)
+                    throw new Error(`Artist ${album.artistId} does not exist`);
+                artistCache.set(album.artistId, artist);
+            }
+
+            const artist = artistCache.get(album.artistId) as Artist;
+
+            result.push({
+                ...album,
+                artist
+            });
+        }
+
+        return result;
+    }
+
+    async getAllSongs(): Promise<Song[]> {
+        this.checkInitialised();
+
+        const albumCache = new Map<number, Album>();
+        const songs = await this.songs.getAll();
+
+        const result: Song[] = [];
+
+        for (const song of songs) {
+            if (!albumCache.has(song.albumId)) {
+                const album = await this.getAlbum(song.albumId);
+                if (album === null)
+                    throw new Error(`Album ${song.albumId} does not exist`);
+                albumCache.set(song.albumId, album);
+            }
+
+            const album = albumCache.get(song.albumId) as Album;
+
+            result.push({
+                ...song,
+                album
+            });
+        }
+
+        return result;
+    }
+
     addArtist(name: string): Promise<Artist> {
         return this.artists.add(name);
     }

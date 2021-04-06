@@ -5,15 +5,10 @@ import {i18nConfig, i18n} from "./translations";
 import {Root} from "./Root";
 import initialiseMuzik from "./muzikInit";
 
-if (module.hot) {
-    module.hot.decline();
-}
-
 initialiseMuzik();
 
 (async () => {
     if (i18n.isInitialized) return;
-
     await i18n.init(i18nConfig);
 
     const rootElement = document.getElementById("main");

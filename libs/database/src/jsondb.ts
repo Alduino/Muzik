@@ -178,6 +178,19 @@ export default class JsonTable<T> {
         );
     }
 
+    async getAll(): Promise<T[]> {
+        const stream = createReadStream(this.dataPath);
+        const rl = createRl(stream);
+
+        const result: T[] = [];
+
+        for await (const line of rl) {
+            result.push(JSON.parse(line));
+        }
+
+        return result;
+    }
+
     /**
      * Returns the first id that matches. Note, `id` is a transparent value that you shouldn't rely on.
      * @param predicates - Key is row name, value is predicate function. Note all values are in their toString() form.

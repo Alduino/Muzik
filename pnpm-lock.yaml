@@ -18,6 +18,7 @@ importers:
       typescript: ^4.2.3
   apps/desktop:
     dependencies:
+      '@alduino/humanizer': 1.1.0
       '@chakra-ui/react': 1.4.2_91d4b9ed41b15fbe03118aac6e7e01cf
       '@emotion/react': 11.1.5_@types+react@17.0.3+react@17.0.2
       '@emotion/styled': 11.1.5_a74314bbc21a27607eb4b82774331d24
@@ -27,6 +28,7 @@ importers:
       '@redux-devtools/dock-monitor': 1.4.0_51cc6f7564500523103b5583642dd182
       '@redux-devtools/log-monitor': 2.3.0_51cc6f7564500523103b5583642dd182
       '@reduxjs/toolkit': 1.5.1
+      decode-uri-component: 0.2.0
       electron-store: 7.0.2
       framer-motion: 4.1.2_react-dom@17.0.2+react@17.0.2
       i18next: 20.1.0
@@ -50,6 +52,7 @@ importers:
       '@muzik/logger': link:../../libs/logger
       '@muzik/song-scanner': link:../../libs/song-scanner
       '@roarr/cli': 3.2.3
+      '@types/decode-uri-component': 0.2.0
       '@types/react': 17.0.3
       '@types/react-dom': 17.0.3
       '@types/webpack-env': 1.16.0
@@ -63,8 +66,10 @@ importers:
       node-loader: 1.0.3
       style-loader: 1.3.0
       ts-loader: 8.1.0_typescript@4.2.3
+      type-fest: 1.0.1
       typescript: 4.2.3
     specifiers:
+      '@alduino/humanizer': ^1.1.0
       '@chakra-ui/react': ^1.4.2
       '@electron-forge/cli': ^6.0.0-beta.54
       '@electron-forge/maker-deb': ^6.0.0-beta.54
@@ -84,6 +89,7 @@ importers:
       '@redux-devtools/log-monitor': ^2.3.0
       '@reduxjs/toolkit': ^1.5.1
       '@roarr/cli': ^3.2.3
+      '@types/decode-uri-component': ^0.2.0
       '@types/react': ^17.0.3
       '@types/react-dom': ^17.0.3
       '@types/webpack-env': ^1.16.0
@@ -91,6 +97,7 @@ importers:
       '@typescript-eslint/parser': ^4.20.0
       '@vercel/webpack-asset-relocator-loader': ^1.3.0
       css-loader: ^4.3.0
+      decode-uri-component: ^0.2.0
       electron: 12.0.2
       electron-store: ^7.0.2
       file-loader: ^6.2.0
@@ -108,6 +115,7 @@ importers:
       react-spinners: ^0.10.6
       style-loader: ^1.3.0
       ts-loader: ^8.1.0
+      type-fest: ^1.0.1
       typescript: ^4.2.3
       unzip-crx-3: ^0.2.0
   apps/song-importer:
@@ -191,6 +199,10 @@ importers:
       tslib: ^2.1.0
 lockfileVersion: 5.2
 packages:
+  /@alduino/humanizer/1.1.0:
+    dev: false
+    resolution:
+      integrity: sha512-giCotZG35zJctq4hQFYrTTNCLOO0U1nldwZmLR7tbzF2EzTLiIGw2orNkY5WrQD6UPyPjN4GQsKEuy+O0EzjFQ==
   /@babel/code-frame/7.12.11:
     dependencies:
       '@babel/highlight': 7.13.10
@@ -1821,6 +1833,10 @@ packages:
     dev: false
     resolution:
       integrity: sha512-Q1y515GcOdTHgagaVFhHnIFQ38ygs/kmxdNpvpou+raI9UO3YZcHDngBSYKQklcKlvA7iuQlmIKbzvmxcOE9CQ==
+  /@types/decode-uri-component/0.2.0:
+    dev: true
+    resolution:
+      integrity: sha512-Sa61t51csZD7DzzzoYLXVmR/lJE6IXjTlflRQFOOCDw5nmmBQb2FZ5DCxl8sEYtAPPBHj//1jCbxFTu9wc8EZQ==
   /@types/estree/0.0.39:
     dev: false
     resolution:
@@ -3660,7 +3676,6 @@ packages:
     resolution:
       integrity: sha1-9lNNFRSCabIDUue+4m9QH5oZEpA=
   /decode-uri-component/0.2.0:
-    dev: true
     engines:
       node: '>=0.10'
     resolution:
@@ -9554,6 +9569,12 @@ packages:
       node: '>=8'
     resolution:
       integrity: sha512-4dbzIzqvjtgiM5rw1k5rEHtBANKmdudhGyBEajN01fEyhaAIhsoKNy6y7+IN93IfpFtwY9iqi7kD+xwKhQsNJA==
+  /type-fest/1.0.1:
+    dev: true
+    engines:
+      node: '>=10'
+    resolution:
+      integrity: sha512-+UTPE7JT3O+sUpRroRgQAbbSfIRBwOHh+o/oruB1JJE6g6uBm3Y0D82fO3xu8VHfxJLQjeRp0PEY6mRmh/lElA==
   /type-is/1.6.18:
     dependencies:
       media-typer: 0.3.0

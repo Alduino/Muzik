@@ -12,8 +12,9 @@ import {PuffLoader} from "react-spinners";
 import {RootState} from "../reducers/root";
 import {GlobalRoute} from "../reducers/routing";
 import {MusicStorePicker} from "./MusicStorePicker";
-import {NotFound} from "./NotFound";
 import useThemeColours from "../hooks/useThemeColours";
+import {AlbumListing} from "./AlbumListing";
+import {ErrorLabel} from "./lib/ErrorLabel";
 
 const LoadedApp: FC = () => {
     const route = useSelector<RootState, GlobalRoute>(
@@ -23,8 +24,10 @@ const LoadedApp: FC = () => {
     switch (route) {
         case GlobalRoute.musicStorePicker:
             return <MusicStorePicker />;
+        case GlobalRoute.albumListing:
+            return <AlbumListing />;
         default:
-            return <NotFound route={GlobalRoute[route]} />;
+            return <ErrorLabel message={"NOT_FOUND:" + GlobalRoute[route]} />;
     }
 };
 

@@ -11,6 +11,10 @@ export default abstract class Table<T> {
         return stringHash(nameForHash) ^ parentId;
     }
 
+    getAll(): Promise<T[]> {
+        return this.table.getAll();
+    }
+
     initialise(): Promise<void> {
         return this.table.initialise();
     }

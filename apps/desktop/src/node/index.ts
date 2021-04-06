@@ -1,14 +1,32 @@
-import {dialog} from "electron";
+import {app, dialog, protocol} from "electron";
+import {normalize, join} from "path";
+import decodeUriComponent from "decode-uri-component";
 import {handle} from "../lib/ipc/main";
 import {
+    AlbumListResponse,
+    EVENT_ALBUM_LIST,
     EVENT_DATABASE_INIT,
     EVENT_MUSIC_IMPORT,
     EVENT_SELECT_MUSIC_IMPORT_PATH,
     MusicImportRequest
 } from "../lib/ipc-constants";
 import {log} from "./logger";
-import {importMusic, initialise as initialiseDatabase} from "./database";
+import {
+    getAlbums,
+    importMusic,
+    initialise as initialiseDatabase
+} from "./database";
 import {store} from "./configuration";
+
+app.on("ready", () => {
+    protocol.interceptFileProtocol("music-store", (request, callback) => {
+        const url = decodeUriComponent(
+            request.url.substring("music-store://".length)
+        );
+        const path = join(store.get("musicStore"), normalize(url));
+        callback({path});
+    });
+});
 
 handle(EVENT_DATABASE_INIT, async () => {
     log.info("Initialising database");
@@ -44,4 +62,12 @@ handle(EVENT_SELECT_MUSIC_IMPORT_PATH, async () => {
     if (result.canceled || result.filePaths.length !== 1) return false;
     store.set("musicStore", result.filePaths[0]);
     return true;
+});
+
+handle<AlbumListResponse>(EVENT_ALBUM_LIST, async () => {
+    const albums = await getAlbums();
+
+    return {
+        albums
+    };
 });
