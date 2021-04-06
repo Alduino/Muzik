@@ -83,6 +83,8 @@ async function downloadDevtool(id: string) {
 }
 
 export async function installDevtool(id: string): Promise<void> {
+    if (process.env.NODE_ENV !== "development") return;
+
     // wait for a bit
     await new Promise(yay => setTimeout(yay, 1000));
 

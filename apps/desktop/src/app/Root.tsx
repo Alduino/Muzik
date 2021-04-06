@@ -18,6 +18,6 @@ export const Root: FC = () => (
                 <App />
             </ColorModeProvider>
         </ChakraProvider>
-        <DevTools />
+        {process.env.NODE_ENV === "development" && <DevTools />}
     </ReduxProvider>
 );
