@@ -1,11 +1,13 @@
 import React, {FC} from "react";
-import {Center, Heading, Text} from "@chakra-ui/react";
+import {Center, Text} from "@chakra-ui/react";
+import {HeadedFloat} from "./lib/HeadedFloat";
 
 export const NotFound: FC<{route: string}> = props => (
     <Center flex={1}>
-        <Heading>Something went wrong</Heading>
-        <Text px={8} py={4} fontSize="sm" color="gray.500">
-            Error: NOT_FOUND/{props.route}
-        </Text>
+        <HeadedFloat header="Something went wrong">
+            <Text opacity={0.5} fontSize="sm">
+                Error: NOT_FOUND/{props.route}
+            </Text>
+        </HeadedFloat>
     </Center>
 );
