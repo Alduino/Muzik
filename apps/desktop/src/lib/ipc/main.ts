@@ -1,5 +1,5 @@
 import AbortController, {AbortSignal} from "node-abort-controller";
-import {ipcMain} from "electron";
+import {ipcMain, IpcMainEvent} from "electron";
 import {
     EventMessage,
     eventName,
@@ -16,19 +16,33 @@ export type Responder<TRequest, TResponse, TProgress> = (
     abort: AbortSignal
 ) => Promise<TResponse> | TResponse;
 
-const currentListeners = new Set<string>();
+type HandlerFn = (
+    event: IpcMainEvent,
+    arg: EventMessage<unknown>
+) => Promise<void>;
+const listeners = new Map<string, HandlerFn>();
+
+ipcMain.on(MESSAGE_EVENT, (event, arg: EventMessage<unknown>) => {
+    const {name, id} = arg;
+    if (listeners.has(name)) {
+        listeners.get(name)(event, arg);
+    } else {
+        console.warn("Received unknown event", name);
+        event.reply(
+            eventName(id, TYPE_ERROR),
+            new Error(`Invalid event ${name}`)
+        );
+    }
+});
 
 export function handle<TResponse, TRequest = never, TProgress = never>(
     name: string,
     respond: Responder<TRequest, TResponse, TProgress>
 ): void {
-    if (currentListeners.has(name))
+    if (listeners.has(name))
         throw new Error("More than one listener registered");
-    currentListeners.add(name);
 
-    ipcMain.on(MESSAGE_EVENT, async (event, arg: EventMessage<TRequest>) => {
-        if (arg.name !== name) return;
-
+    listeners.set(name, async (event, arg: EventMessage<TRequest>) => {
         const messageId = arg.id;
 
         const progressSender = (progress: TProgress) => {

@@ -51,10 +51,12 @@ export async function invoke<TResponse, TRequest = never, TProgress = never>(
     }
 
     function handleError(_: unknown, arg: unknown) {
+        console.debug("Response: error:", arg);
         triggerError(arg);
     }
 
     function handleComplete(_: unknown, arg: TResponse) {
+        console.debug("Response: complete:", arg);
         triggerComplete(arg);
     }
 
