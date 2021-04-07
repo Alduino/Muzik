@@ -5,7 +5,7 @@
   "description": "My Electron application description",
   "main": ".webpack/main",
   "scripts": {
-    "start": "ROARR_LOG=true electron-forge start | roarr",
+    "start": "ROARR_LOG=true electron-forge start | roarr --fe '{\"context.logLevel\":{gt:10}}'",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish"
