@@ -1,6 +1,6 @@
 import {app, dialog, protocol} from "electron";
 import {normalize, join} from "path";
-import decodeUriComponent from "decode-uri-component";
+import {unescape} from "querystring";
 import {handle} from "../lib/ipc/main";
 import {
     AlbumListResponse,
@@ -20,9 +20,7 @@ import {store} from "./configuration";
 
 app.on("ready", () => {
     protocol.interceptFileProtocol("music-store", (request, callback) => {
-        const url = decodeUriComponent(
-            request.url.substring("music-store://".length)
-        );
+        const url = unescape(request.url.substring("music-store://".length));
         const path = join(store.get("musicStore"), normalize(url));
         callback({path});
     });
