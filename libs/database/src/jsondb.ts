@@ -99,6 +99,68 @@ export default class JsonTable<T> {
         await unlink(oldPath);
     }
 
+    /**
+     * Deletes a portion of a file
+     * @remarks Very slow
+     * @param path - Path to the file
+     * @param offset - Offset from the start of the file
+     * @param length - Number of bytes to delete
+     * @private
+     */
+    private static async deleteFileSegment(
+        path: string,
+        offset: number,
+        length: number
+    ): Promise<void> {
+        const oldPath = `${path}.tmp`;
+        const oldSize = (await stat(path)).size;
+
+        // move old version to a temporary file so we can stream from it
+        await rename(path, oldPath);
+
+        const oldFd = await openFile(oldPath, "r");
+        const newFd = await openFile(path, "wx");
+
+        const buffer = Buffer.allocUnsafe(16384);
+
+        // write the bytes that are the same
+        let currentPosition = 0;
+        while (currentPosition < offset) {
+            const readCount = Math.min(buffer.length, offset - currentPosition);
+            const {bytesRead} = await oldFd.read(
+                buffer,
+                0,
+                readCount,
+                currentPosition
+            );
+            await newFd.write(buffer, 0, bytesRead);
+            currentPosition += bytesRead;
+        }
+
+        // skip length then write the new bytes
+        currentPosition += length;
+
+        while (currentPosition < oldSize) {
+            const readCount = Math.min(
+                buffer.length,
+                oldSize - currentPosition
+            );
+            const {bytesRead} = await oldFd.read(
+                buffer,
+                0,
+                readCount,
+                currentPosition
+            );
+            await newFd.write(buffer, 0, bytesRead);
+            currentPosition += bytesRead;
+        }
+
+        await oldFd.close();
+        await newFd.close();
+
+        await unlink(oldPath);
+    }
+
     async initialise(): Promise<void> {
         await mkdir(this.dir, {recursive: true});
         await this.loadOrSaveInfo();
@@ -381,9 +443,9 @@ export default class JsonTable<T> {
             length: originalLength
         } = await this.getOffsetFromId(id);
 
-        await this.deleteFileSegment(this.offsetsPath, id * 8, 8);
+        await JsonTable.deleteFileSegment(this.offsetsPath, id * 8, 8);
 
-        await this.deleteFileSegment(
+        await JsonTable.deleteFileSegment(
             this.dataPath,
             originalOffset,
             originalLength + 1
@@ -425,68 +487,6 @@ export default class JsonTable<T> {
 
         rl.close();
         await offsetFd.close();
-    }
-
-    /**
-     * Deletes a portion of a file
-     * @remarks Very slow
-     * @param path - Path to the file
-     * @param offset - Offset from the start of the file
-     * @param length - Number of bytes to delete
-     * @private
-     */
-    private async deleteFileSegment(
-        path: string,
-        offset: number,
-        length: number
-    ): Promise<void> {
-        const oldPath = `${path}.tmp`;
-        const oldSize = (await stat(path)).size;
-
-        // move old version to a temporary file so we can stream from it
-        await rename(path, oldPath);
-
-        const oldFd = await openFile(oldPath, "r");
-        const newFd = await openFile(path, "wx");
-
-        const buffer = Buffer.allocUnsafe(16384);
-
-        // write the bytes that are the same
-        let currentPosition = 0;
-        while (currentPosition < offset) {
-            const readCount = Math.min(buffer.length, offset - currentPosition);
-            const {bytesRead} = await oldFd.read(
-                buffer,
-                0,
-                readCount,
-                currentPosition
-            );
-            await newFd.write(buffer, 0, bytesRead);
-            currentPosition += bytesRead;
-        }
-
-        // skip length then write the new bytes
-        currentPosition += length;
-
-        while (currentPosition < oldSize) {
-            const readCount = Math.min(
-                buffer.length,
-                oldSize - currentPosition
-            );
-            const {bytesRead} = await oldFd.read(
-                buffer,
-                0,
-                readCount,
-                currentPosition
-            );
-            await newFd.write(buffer, 0, bytesRead);
-            currentPosition += bytesRead;
-        }
-
-        await oldFd.close();
-        await newFd.close();
-
-        await unlink(oldPath);
     }
 
     private getComparisonValues(
