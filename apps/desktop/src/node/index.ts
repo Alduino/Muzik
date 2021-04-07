@@ -1,10 +1,13 @@
 import {app, dialog, protocol} from "electron";
-import {normalize, join} from "path";
+import {join, normalize} from "path";
 import {unescape} from "querystring";
 import {handle} from "../lib/ipc/main";
 import {
     AlbumListResponse,
+    AlbumSongsRequest,
+    AlbumSongsResponse,
     EVENT_ALBUM_LIST,
+    EVENT_ALBUM_SONGS,
     EVENT_DATABASE_INIT,
     EVENT_MUSIC_IMPORT,
     EVENT_SELECT_MUSIC_IMPORT_PATH,
@@ -12,7 +15,8 @@ import {
 } from "../lib/ipc-constants";
 import {log} from "./logger";
 import {
-    getAlbums,
+    getAllAlbums,
+    getSongsByAlbum,
     importMusic,
     initialise as initialiseDatabase
 } from "./database";
@@ -63,9 +67,17 @@ handle(EVENT_SELECT_MUSIC_IMPORT_PATH, async () => {
 });
 
 handle<AlbumListResponse>(EVENT_ALBUM_LIST, async () => {
-    const albums = await getAlbums();
+    const albums = await getAllAlbums();
 
     return {
         albums
+    };
+});
+
+handle<AlbumSongsResponse, AlbumSongsRequest>(EVENT_ALBUM_SONGS, async arg => {
+    const songs = await getSongsByAlbum(arg.albumId);
+
+    return {
+        songs
     };
 });
