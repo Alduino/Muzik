@@ -57,38 +57,37 @@ export const AlbumListing: FC = () => {
     const colours = useThemeColours();
 
     return (
-        <VStack>
-            <VStack
-                mt={24}
-                p={4}
-                borderRadius="md"
-                shadow="lg"
-                background={colours.backgroundL1}
-                color={colours.text}
-                width="container.sm"
-                divider={<StackDivider borderColor={colours.backgroundL3} />}
-            >
-                {albums.loading ? (
-                    Array.from({length: 4}, (_, i) => (
-                        <Skeleton key={i} width="full">
-                            <Album
-                                id={-1}
-                                artPath={null}
-                                name="Skeleton Dance"
-                                artistId={-1}
-                                artist={{name: "The Skeleton Man", id: -1}}
-                                songs={[]}
-                            />
-                        </Skeleton>
-                    ))
-                ) : albums.result ? (
-                    albums.result.albums.map(album => (
-                        <Album key={album.id} {...album} songs={[]} />
-                    ))
-                ) : (
-                    <ErrorLabel message={albums.error.message} />
-                )}
-            </VStack>
+        <VStack
+            mt={24}
+            ml={24}
+            p={4}
+            borderRadius="md"
+            shadow="lg"
+            background={colours.backgroundL1}
+            color={colours.text}
+            width="container.sm"
+            divider={<StackDivider borderColor={colours.backgroundL3} />}
+        >
+            {albums.loading ? (
+                Array.from({length: 4}, (_, i) => (
+                    <Skeleton key={i} width="full">
+                        <Album
+                            id={-1}
+                            artPath={null}
+                            name="Skeleton Dance"
+                            artistId={-1}
+                            artist={{name: "The Skeleton Man", id: -1}}
+                            songs={[]}
+                        />
+                    </Skeleton>
+                ))
+            ) : albums.result ? (
+                albums.result.albums.map(album => (
+                    <Album key={album.id} {...album} songs={[]} />
+                ))
+            ) : (
+                <ErrorLabel message={albums.error.message} />
+            )}
         </VStack>
     );
 };
