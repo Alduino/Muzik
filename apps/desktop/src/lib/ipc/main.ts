@@ -9,6 +9,7 @@ import {
     TYPE_ERROR,
     TYPE_PROGRESS
 } from "./common";
+import {log} from "../../node/logger";
 
 export type Responder<TRequest, TResponse, TProgress> = (
     arg: TRequest,
@@ -67,6 +68,7 @@ export function handle<TResponse, TRequest = never, TProgress = never>(
             event.reply(eventName(messageId, TYPE_COMPLETE), result);
         } catch (err) {
             event.reply(eventName(messageId, TYPE_ERROR), err);
+            log.warn(err, "An error occurred in an invocation");
         }
 
         ipcMain.off(eventName(messageId, TYPE_ABORT), handleAbort);
