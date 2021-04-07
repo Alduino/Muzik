@@ -11,8 +11,7 @@ import {
     VStack
 } from "@chakra-ui/react";
 import React, {FC} from "react";
-import {Album as AlbumType, Song as SongType} from "@muzik/database";
-import {pluralize} from "@alduino/humanizer/string";
+import {Album as AlbumType} from "@muzik/database";
 import {useAsync} from "react-async-hook";
 import {invoke} from "../../lib/ipc/renderer";
 import {AlbumListResponse, EVENT_ALBUM_LIST} from "../../lib/ipc-constants";
@@ -28,15 +27,12 @@ const fetchAlbums = () => invoke<AlbumListResponse>(EVENT_ALBUM_LIST);
 
 interface AlbumProps {
     album: AlbumType;
-    songs: SongType[];
     isSelected: boolean;
 }
 
-const Album: FC<AlbumProps> = ({album, songs, isSelected}) => {
+const Album: FC<AlbumProps> = ({album, isSelected}) => {
     const colours = useThemeColours();
     const dispatch = useAppDispatch();
-
-    const songsKeyword = songs.length === 1 ? "song" : pluralize("song");
 
     const artPath = album.artPath
         ? `music-store://${album.artPath}`
@@ -64,9 +60,6 @@ const Album: FC<AlbumProps> = ({album, songs, isSelected}) => {
                     </Heading>
                     <HStack divider={<Text mx={2}>·</Text>}>
                         <Text>by {album.artist.name}</Text>
-                        <Text>
-                            {songs.length} {songsKeyword}
-                        </Text>
                     </HStack>
                 </Stack>
             </HStack>
@@ -105,7 +98,6 @@ export const AlbumListing: FC = () => {
                                 artistId: -1,
                                 artPath: null
                             }}
-                            songs={[]}
                             isSelected={false}
                         />
                     </Skeleton>
@@ -115,7 +107,6 @@ export const AlbumListing: FC = () => {
                     <Album
                         key={album.id}
                         album={album}
-                        songs={[]}
                         isSelected={album.id === selectedAlbum}
                     />
                 ))
