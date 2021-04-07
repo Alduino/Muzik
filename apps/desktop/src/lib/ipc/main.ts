@@ -67,7 +67,10 @@ export function handle<TResponse, TRequest = never, TProgress = never>(
 
             event.reply(eventName(messageId, TYPE_COMPLETE), result);
         } catch (err) {
-            event.reply(eventName(messageId, TYPE_ERROR), err);
+            event.reply(eventName(messageId, TYPE_ERROR), {
+                message: err.message,
+                stack: err.stack
+            });
             log.warn(err, "An error occurred in an invocation");
         }
 

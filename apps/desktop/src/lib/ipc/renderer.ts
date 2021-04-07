@@ -50,8 +50,8 @@ export async function invoke<TResponse, TRequest = never, TProgress = never>(
         onProgress?.(arg);
     }
 
-    function handleError(_: unknown, arg: unknown) {
-        console.debug("Response: error:", arg);
+    function handleError(_: unknown, arg: Error) {
+        console.error(arg.stack);
         triggerError(arg);
     }
 
