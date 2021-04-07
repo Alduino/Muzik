@@ -4,6 +4,7 @@ import {log} from "./logger";
 import AlbumTable, {Album as DbAlbum} from "./table/albumTable";
 import SongTable, {Song as DbSong} from "./table/songTable";
 import ArtistTable, {Artist} from "./table/artistTable";
+import {Predicates} from "./jsondb";
 
 export interface Album extends DbAlbum {
     artist: Artist;
@@ -42,28 +43,6 @@ export class Database {
         this.initialised = true;
     }
 
-    async wrapAlbum(album: DbAlbum): Promise<Album> {
-        const artist = await this.getArtist(album.artistId);
-        if (artist == null)
-            throw new Error(`Artist of album ${album.id} does not exist`);
-
-        return {
-            ...album,
-            artist
-        };
-    }
-
-    async wrapSong(song: DbSong): Promise<Song> {
-        const album = await this.getAlbum(song.albumId);
-        if (album === null)
-            throw new Error(`Album of song ${song.id} does not exist`);
-
-        return {
-            ...song,
-            album
-        };
-    }
-
     getArtist(id: number): Promise<Artist | null> {
         this.checkInitialised();
 
@@ -97,55 +76,35 @@ export class Database {
     async getAllAlbums(): Promise<Album[]> {
         this.checkInitialised();
 
-        const artistCache = new Map<number, Artist>();
         const albums = await this.albums.getAll();
-
-        const result: Album[] = [];
-
-        for (const album of albums) {
-            if (!artistCache.has(album.artistId)) {
-                const artist = await this.getArtist(album.artistId);
-                if (artist === null)
-                    throw new Error(`Artist ${album.artistId} does not exist`);
-                artistCache.set(album.artistId, artist);
-            }
-
-            const artist = artistCache.get(album.artistId) as Artist;
-
-            result.push({
-                ...album,
-                artist
-            });
-        }
-
-        return result;
+        return this.wrapAlbums(albums);
     }
 
     async getAllSongs(): Promise<Song[]> {
         this.checkInitialised();
 
-        const albumCache = new Map<number, Album>();
         const songs = await this.songs.getAll();
+        return this.wrapSongs(songs);
+    }
 
-        const result: Song[] = [];
+    getMatchingArtists(predicates: Predicates<Artist>): Promise<Artist[]> {
+        this.checkInitialised();
 
-        for (const song of songs) {
-            if (!albumCache.has(song.albumId)) {
-                const album = await this.getAlbum(song.albumId);
-                if (album === null)
-                    throw new Error(`Album ${song.albumId} does not exist`);
-                albumCache.set(song.albumId, album);
-            }
+        return this.artists.getMatching(predicates);
+    }
 
-            const album = albumCache.get(song.albumId) as Album;
+    async getMatchingAlbums(predicates: Predicates<DbAlbum>): Promise<Album[]> {
+        this.checkInitialised();
 
-            result.push({
-                ...song,
-                album
-            });
-        }
+        const albums = await this.albums.getMatching(predicates);
+        return this.wrapAlbums(albums);
+    }
 
-        return result;
+    async getMatchingSongs(predicates: Predicates<DbSong>): Promise<Song[]> {
+        this.checkInitialised();
+
+        const songs = await this.songs.getMatching(predicates);
+        return this.wrapSongs(songs);
     }
 
     addArtist(name: string): Promise<Artist> {
@@ -191,6 +150,76 @@ export class Database {
 
     getSongId(name: string, albumId: number): number {
         return this.songs.getId(name, albumId);
+    }
+
+    private async wrapAlbums(albums: DbAlbum[]): Promise<Album[]> {
+        const artistCache = new Map<number, Artist>();
+        const result = new Array(albums.length);
+
+        for (let i = 0; i < albums.length; i++) {
+            const album = albums[i];
+
+            if (!artistCache.has(album.artistId)) {
+                const artist = await this.getArtist(album.artistId);
+                if (artist === null)
+                    throw new Error(
+                        `Album ${album.id}'s artist ${album.artistId} does not exist`
+                    );
+                artistCache.set(album.artistId, artist);
+            }
+
+            const artist = artistCache.get(album.artistId) as Artist;
+
+            result[i] = {...album, artist};
+        }
+
+        return result;
+    }
+
+    private async wrapSongs(songs: DbSong[]): Promise<Song[]> {
+        const albumCache = new Map<number, Album>();
+        const result = new Array(songs.length);
+
+        for (let i = 0; i < songs.length; i++) {
+            const song = songs[i];
+
+            if (!albumCache.has(song.albumId)) {
+                const album = await this.getAlbum(song.albumId);
+                if (album === null)
+                    throw new Error(
+                        `Song ${song.id}'s album ${song.albumId} does not exist`
+                    );
+                albumCache.set(song.albumId, album);
+            }
+
+            const album = albumCache.get(song.albumId) as Artist;
+
+            result[i] = {...song, album};
+        }
+
+        return result;
+    }
+
+    private async wrapAlbum(album: DbAlbum): Promise<Album> {
+        const artist = await this.getArtist(album.artistId);
+        if (artist == null)
+            throw new Error(`Artist of album ${album.id} does not exist`);
+
+        return {
+            ...album,
+            artist
+        };
+    }
+
+    private async wrapSong(song: DbSong): Promise<Song> {
+        const album = await this.getAlbum(song.albumId);
+        if (album === null)
+            throw new Error(`Album of song ${song.id} does not exist`);
+
+        return {
+            ...song,
+            album
+        };
     }
 
     private checkInitialised(): void {

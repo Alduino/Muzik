@@ -7,6 +7,8 @@ export interface Song {
 }
 
 export default class SongTable extends Table<Song> {
+    protected readonly preferredIndices = ["id", "albumId"] as const;
+
     async initialise(): Promise<void> {
         await super.initialise();
         await this.table.createIndex("id");

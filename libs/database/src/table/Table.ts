@@ -1,10 +1,14 @@
 import stringHash from "string-hash";
-import JsonTable from "../jsondb";
+import JsonTable, {Predicates, ValidKeysArray} from "../jsondb";
 
 export default abstract class Table<T> {
+    protected abstract readonly preferredIndices: ValidKeysArray<T>;
+    protected readonly table: JsonTable<T>;
     private readonly className = this.constructor.name;
 
-    protected readonly table: JsonTable<T>;
+    constructor(dir: string) {
+        this.table = new JsonTable<T>(dir);
+    }
 
     getId(name: string, parentId = 0) {
         const nameForHash = `${this.className}:${name}`;
@@ -15,11 +19,11 @@ export default abstract class Table<T> {
         return this.table.getAll();
     }
 
-    initialise(): Promise<void> {
-        return this.table.initialise();
+    getMatching(predicates: Predicates<T>) {
+        return this.table.filter(predicates, this.preferredIndices);
     }
 
-    constructor(dir: string) {
-        this.table = new JsonTable<T>(dir);
+    initialise(): Promise<void> {
+        return this.table.initialise();
     }
 }

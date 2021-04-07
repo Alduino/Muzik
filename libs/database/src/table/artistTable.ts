@@ -6,6 +6,8 @@ export interface Artist {
 }
 
 export default class ArtistTable extends Table<Artist> {
+    protected readonly preferredIndices = ["id"] as const;
+
     async initialise(): Promise<void> {
         await super.initialise();
         await this.table.createIndex("id");

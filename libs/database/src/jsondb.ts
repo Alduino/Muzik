@@ -41,7 +41,7 @@ type KeyedPredicate<T extends string> = {
 };
 
 type FullPredicates<T> = KeyedPredicate<ValidKeys<T>>;
-type Predicates<T> = Partial<FullPredicates<T>>;
+export type Predicates<T> = Partial<FullPredicates<T>>;
 
 type ValueIndexResult<T> = {value: T; id: number};
 
