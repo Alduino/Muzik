@@ -2,6 +2,7 @@ import {join} from "path";
 import {createReadStream, existsSync} from "fs";
 import {
     appendFile,
+    FileHandle,
     mkdir,
     open as openFile,
     readFile,
@@ -40,6 +41,8 @@ type KeyedPredicate<T extends string> = {
 
 type FullPredicates<T> = KeyedPredicate<ValidKeys<T>>;
 type Predicates<T> = Partial<FullPredicates<T>>;
+
+type ValueIndexResult<T> = {value: T; id: number};
 
 interface Info<T> {
     indices: ValidKeys<T>[];
@@ -172,6 +175,37 @@ export default class JsonTable<T> {
 
         // otherwise begin a search for the value
         return this.findFromIndex(
+            keys,
+            indexedKeys,
+            predicates as FullPredicates<T>
+        );
+    }
+
+    /**
+     * Returns all values that matches all the predicates
+     * @param predicates - Key is row name, value is predicate function. Note all values are in their toString() form.
+     * @param preferredIndices - Preferred indices to check, in order
+     */
+    filter(
+        predicates: Predicates<T>,
+        preferredIndices: ValidKeys<T>[] = []
+    ): Promise<T[]> {
+        const {keys, indexedKeys} = this.getComparisonValues(
+            predicates,
+            preferredIndices
+        );
+
+        // casting to FullPredicates is not strictly correct, but it makes typing simpler below,
+        // as in this case we know better than TypeScript.
+
+        if (indexedKeys.length === 0)
+            return this.filterFromData(
+                keys,
+                predicates as FullPredicates<T>
+            ).then(res => res.map(item => item.value));
+
+        // otherwise begin a search for values
+        return this.filterFromIndex(
             keys,
             indexedKeys,
             predicates as FullPredicates<T>
@@ -560,6 +594,51 @@ export default class JsonTable<T> {
     }
 
     /**
+     * Searches through data to find all ids that match
+     * @param keys - List of keys in predicates object
+     * @param indexedKeys - List of index keys, in search order
+     * @param predicates - Predicates object
+     * @private
+     */
+    private async filterFromIndex(
+        keys: ValidKeys<T>[],
+        indexedKeys: ValidKeys<T>[],
+        predicates: FullPredicates<T>
+    ): Promise<T[]> {
+        const result: T[] = [];
+
+        for (const indexKey of indexedKeys) {
+            log.trace("Searching with key %s", indexKey);
+
+            const ids = await this.filterIdFromIndex(
+                indexKey,
+                predicates[indexKey]
+            );
+            const fd = await openFile(this.offsetsPath, "r");
+
+            for (const id of ids) {
+                const {offset, length} = await this.getOffsetFromId(id, fd);
+
+                const dataString = await this.readData(offset, length);
+                const data = JSON.parse(dataString);
+
+                const allMatch = keys.every(key => {
+                    const stringValue: string = data[key]?.toString() || "null";
+                    return predicates[key](stringValue);
+                });
+
+                if (allMatch) {
+                    result.push(data);
+                }
+            }
+
+            await fd.close();
+        }
+
+        return result;
+    }
+
+    /**
      * Searches through data to find an ID that matches
      * @param keys - List of keys in predicates object
      * @param indexedKeys - List of index keys, in search order
@@ -639,21 +718,69 @@ export default class JsonTable<T> {
     /**
      * Returns the byte offset data of the specified line
      * @param id - The line index
+     * @param handle - A file handle to use
      * @private
      */
     private async getOffsetFromId(
-        id: number
+        id: number,
+        handle: FileHandle | null = null
     ): Promise<{offset: number; length: number}> {
-        const fd = await openFile(this.offsetsPath, "r");
+        const fd = handle ?? (await openFile(this.offsetsPath, "r"));
 
         const buffer = Buffer.allocUnsafe(8);
         await fd.read(buffer, 0, 8, id * 8);
-        await fd.close();
+
+        if (handle === null) await fd.close();
 
         return {
             offset: buffer.readUInt32LE(0),
             length: buffer.readUInt32LE(4)
         };
+    }
+
+    /**
+     * Finds all values that match the predicates
+     * @param keys - List of rows to search
+     * @param predicates - Getter object
+     * @private
+     */
+    private async filterFromData(
+        keys: ValidKeys<T>[],
+        predicates: FullPredicates<T>
+    ): Promise<ValueIndexResult<T>[]> {
+        const stream = createReadStream(this.dataPath);
+        const rl = createRl(stream);
+
+        const result: ValueIndexResult<T>[] = [];
+
+        let index = 0;
+        for await (const line of rl) {
+            const value = JSON.parse(line);
+
+            let noMatch = false;
+            for (const key of keys) {
+                const keyValue = value[key];
+                const stringValue: string = keyValue?.toString() || "null";
+
+                if (!predicates[key](stringValue)) {
+                    noMatch = true;
+                    break;
+                }
+            }
+
+            if (!noMatch) {
+                result.push({
+                    value,
+                    id: index
+                });
+            }
+
+            index++;
+        }
+
+        rl.close();
+
+        return result;
     }
 
     /**
@@ -697,6 +824,40 @@ export default class JsonTable<T> {
         rl.close();
 
         return {value: foundItem, id: foundItem === null ? -1 : foundIndex};
+    }
+
+    /**
+     * Finds all matching lines. Requires key to have an index.
+     * @remarks This is the preferred method to call if possible, as it is fast.
+     * @param key - Row name
+     * @param predicate - Function to check for the correct value
+     * @private
+     */
+    private async filterIdFromIndex(
+        key: ValidKeys<T>,
+        predicate: Predicate
+    ): Promise<number[]> {
+        if (!this.info.indices.includes(key))
+            throw new Error(`${key} does not have an index`);
+
+        const result: number[] = [];
+
+        const path = this.getIndexPath(key);
+        const stream = createReadStream(path);
+        const rl = createRl(stream);
+
+        let id = 0;
+        for await (const line of rl) {
+            if (predicate(line)) {
+                result.push(id);
+            }
+
+            id++;
+        }
+
+        rl.close();
+
+        return result;
     }
 
     /**
