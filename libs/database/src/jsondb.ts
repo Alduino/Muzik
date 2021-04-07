@@ -31,7 +31,8 @@ import {log} from "./logger";
  * file contains a key, "indices", which is an array of the indexes used.
  */
 
-type ValidKeys<T> = Extract<keyof T, string>;
+export type ValidKeys<T> = Extract<keyof T, string>;
+export type ValidKeysArray<T> = readonly ValidKeys<T>[];
 
 type Predicate = (value: string) => boolean;
 
@@ -123,7 +124,7 @@ export default class JsonTable<T> {
      */
     includes(
         predicates: Predicates<T>,
-        preferredIndices: ValidKeys<T>[] = []
+        preferredIndices: ValidKeysArray<T> = []
     ): Promise<boolean> {
         const {keys, indexedKeys} = this.getComparisonValues(
             predicates,
@@ -156,7 +157,7 @@ export default class JsonTable<T> {
      */
     find(
         predicates: Predicates<T>,
-        preferredIndices: ValidKeys<T>[] = []
+        preferredIndices: ValidKeysArray<T> = []
     ): Promise<T | null> {
         const {keys, indexedKeys} = this.getComparisonValues(
             predicates,
@@ -188,7 +189,7 @@ export default class JsonTable<T> {
      */
     filter(
         predicates: Predicates<T>,
-        preferredIndices: ValidKeys<T>[] = []
+        preferredIndices: ValidKeysArray<T> = []
     ): Promise<T[]> {
         const {keys, indexedKeys} = this.getComparisonValues(
             predicates,
@@ -233,7 +234,7 @@ export default class JsonTable<T> {
      */
     getIdentifier(
         predicates: Predicates<T>,
-        preferredIndices: ValidKeys<T>[] = []
+        preferredIndices: ValidKeysArray<T> = []
     ): Promise<number> {
         const {keys, indexedKeys} = this.getComparisonValues(
             predicates,
@@ -490,7 +491,7 @@ export default class JsonTable<T> {
 
     private getComparisonValues(
         predicates: Predicates<T>,
-        preferredIndices: ValidKeys<T>[] = []
+        preferredIndices: ValidKeysArray<T> = []
     ) {
         if (preferredIndices.some(it => !this.info.indices.includes(it))) {
             throw new Error(
@@ -537,8 +538,8 @@ export default class JsonTable<T> {
      * @private
      */
     private async getIndex(
-        keys: ValidKeys<T>[],
-        indexedKeys: ValidKeys<T>[],
+        keys: ValidKeysArray<T>,
+        indexedKeys: ValidKeysArray<T>,
         predicates: FullPredicates<T>
     ) {
         for (const indexKey of indexedKeys) {
@@ -569,8 +570,8 @@ export default class JsonTable<T> {
      * @private
      */
     private async existsFromIndex(
-        keys: ValidKeys<T>[],
-        indexedKeys: ValidKeys<T>[],
+        keys: ValidKeysArray<T>,
+        indexedKeys: ValidKeysArray<T>,
         predicates: FullPredicates<T>
     ): Promise<boolean> {
         for (const indexKey of indexedKeys) {
@@ -601,8 +602,8 @@ export default class JsonTable<T> {
      * @private
      */
     private async filterFromIndex(
-        keys: ValidKeys<T>[],
-        indexedKeys: ValidKeys<T>[],
+        keys: ValidKeysArray<T>,
+        indexedKeys: ValidKeysArray<T>,
         predicates: FullPredicates<T>
     ): Promise<T[]> {
         const result: T[] = [];
@@ -646,8 +647,8 @@ export default class JsonTable<T> {
      * @private
      */
     private async findFromIndex(
-        keys: ValidKeys<T>[],
-        indexedKeys: ValidKeys<T>[],
+        keys: ValidKeysArray<T>,
+        indexedKeys: ValidKeysArray<T>,
         predicates: FullPredicates<T>
     ): Promise<T | null> {
         for (const indexKey of indexedKeys) {
@@ -745,7 +746,7 @@ export default class JsonTable<T> {
      * @private
      */
     private async filterFromData(
-        keys: ValidKeys<T>[],
+        keys: ValidKeysArray<T>,
         predicates: FullPredicates<T>
     ): Promise<ValueIndexResult<T>[]> {
         const stream = createReadStream(this.dataPath);
@@ -791,7 +792,7 @@ export default class JsonTable<T> {
      * @private
      */
     private async findFromData(
-        keys: ValidKeys<T>[],
+        keys: ValidKeysArray<T>,
         predicates: FullPredicates<T>
     ): Promise<{value: T | null; id: number}> {
         const stream = createReadStream(this.dataPath);
