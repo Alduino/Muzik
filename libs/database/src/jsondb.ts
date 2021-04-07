@@ -507,7 +507,7 @@ export default class JsonTable<T> {
 
         // use the set to deduplicate the values
         const indexedKeysSet = new Set([
-            ...preferredIndices,
+            ...preferredIndices.filter(v => keys.includes(v)),
             ...keys.filter(key => this.info.indices.includes(key))
         ]);
         const indexedKeys = Array.from(indexedKeysSet.values());
