@@ -10,8 +10,7 @@ export enum GlobalRoute {
 export const slice = createSlice({
     name: "routing",
     initialState: {
-        globalRoute: GlobalRoute.albumListing,
-        error: null
+        globalRoute: GlobalRoute.albumListing
     },
     reducers: {
         setGlobalRoute(state, action: PayloadAction<GlobalRoute>) {
