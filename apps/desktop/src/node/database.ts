@@ -33,7 +33,9 @@ export async function getAllAlbums(): Promise<Album[]> {
 }
 
 export async function getSongsByAlbum(albumId: number): Promise<Song[]> {
-    const songs = await db.getMatchingSongs(v => v.albumId === albumId);
+    const songs = await db.getMatchingSongs({
+        albumId: v => albumId === parseInt(v)
+    });
     const substringAmnt = store.get("musicStore").length;
     return songs.map(song => ({
         ...song,
