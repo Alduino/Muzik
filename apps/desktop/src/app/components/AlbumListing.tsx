@@ -2,6 +2,8 @@ import {
     Heading,
     HStack,
     Image,
+    LinkBox,
+    LinkOverlay,
     Skeleton,
     Stack,
     StackDivider,
@@ -17,42 +19,66 @@ import {AlbumListResponse, EVENT_ALBUM_LIST} from "../../lib/ipc-constants";
 import useThemeColours from "../hooks/useThemeColours";
 import defaultAlbumArt from "../assets/default-album-art.svg";
 import {ErrorLabel} from "./lib/ErrorLabel";
+import {useSelector} from "react-redux";
+import {RootState} from "../reducers/root";
+import {useAppDispatch} from "../store";
+import {selectAlbum} from "../reducers/albumListingRoute";
 
 const fetchAlbums = () => invoke<AlbumListResponse>(EVENT_ALBUM_LIST);
 
-const Album: FC<AlbumType & {songs: SongType[]}> = props => {
+interface AlbumProps {
+    album: AlbumType;
+    songs: SongType[];
+    isSelected: boolean;
+}
+
+const Album: FC<AlbumProps> = ({album, songs, isSelected}) => {
     const colours = useThemeColours();
+    const dispatch = useAppDispatch();
 
-    const songsKeyword = props.songs.length === 1 ? "song" : pluralize("song");
+    const songsKeyword = songs.length === 1 ? "song" : pluralize("song");
 
-    const artPath = props.artPath
-        ? `music-store://${props.artPath}`
+    const artPath = album.artPath
+        ? `music-store://${album.artPath}`
         : defaultAlbumArt;
 
+    const handleAlbumClick = () => {
+        dispatch(selectAlbum(album.id));
+    };
+
     return (
-        <HStack
-            width="full"
-            background={colours.backgroundL2}
-            p={4}
-            borderRadius="sm"
-            shadow="md"
-        >
-            <Image src={artPath} width={24} mr={4} borderRadius="sm" />
-            <Stack direction="column">
-                <Heading size="md">{props.name}</Heading>
-                <HStack divider={<Text mx={2}>·</Text>}>
-                    <Text>by {props.artist.name}</Text>
-                    <Text>
-                        {props.songs.length} {songsKeyword}
-                    </Text>
-                </HStack>
-            </Stack>
-        </HStack>
+        <LinkBox width="full">
+            <HStack
+                width="full"
+                background={colours.backgroundL2}
+                p={4}
+                borderRadius="sm"
+                shadow={isSelected ? "outline" : "md"}
+            >
+                <Image src={artPath} width={24} mr={4} borderRadius="sm" />
+                <Stack direction="column">
+                    <Heading size="md">
+                        <LinkOverlay href="#" onClick={handleAlbumClick}>
+                            {album.name}
+                        </LinkOverlay>
+                    </Heading>
+                    <HStack divider={<Text mx={2}>·</Text>}>
+                        <Text>by {album.artist.name}</Text>
+                        <Text>
+                            {songs.length} {songsKeyword}
+                        </Text>
+                    </HStack>
+                </Stack>
+            </HStack>
+        </LinkBox>
     );
 };
 
 export const AlbumListing: FC = () => {
     const albums = useAsync(fetchAlbums, []);
+    const selectedAlbum = useSelector<RootState, number>(
+        v => v.albumListingRoute.selectedAlbum
+    );
 
     const colours = useThemeColours();
 
@@ -72,18 +98,26 @@ export const AlbumListing: FC = () => {
                 Array.from({length: 4}, (_, i) => (
                     <Skeleton key={i} width="full">
                         <Album
-                            id={-1}
-                            artPath={null}
-                            name="Skeleton Dance"
-                            artistId={-1}
-                            artist={{name: "The Skeleton Man", id: -1}}
+                            album={{
+                                id: -1,
+                                name: "Spooky Scary Skeletons",
+                                artist: {id: -1, name: "The Skeleton Man"},
+                                artistId: -1,
+                                artPath: null
+                            }}
                             songs={[]}
+                            isSelected={false}
                         />
                     </Skeleton>
                 ))
             ) : albums.result ? (
                 albums.result.albums.map(album => (
-                    <Album key={album.id} {...album} songs={[]} />
+                    <Album
+                        key={album.id}
+                        album={album}
+                        songs={[]}
+                        isSelected={album.id === selectedAlbum}
+                    />
                 ))
             ) : (
                 <ErrorLabel message={albums.error.message} />
