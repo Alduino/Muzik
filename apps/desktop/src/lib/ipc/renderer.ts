@@ -36,7 +36,6 @@ export async function invoke<TResponse, TRequest = never, TProgress = never>(
     onProgress?: (progress: TProgress) => void,
     abort?: AbortSignal
 ): Promise<TResponse> {
-    console.debug("Invoking", name);
     const id = `message_${name}.${randomString(16)}`;
 
     let triggerComplete: (v: TResponse) => void;
@@ -51,12 +50,10 @@ export async function invoke<TResponse, TRequest = never, TProgress = never>(
     }
 
     function handleError(_: unknown, arg: Error) {
-        console.error(arg.stack);
         triggerError(arg);
     }
 
     function handleComplete(_: unknown, arg: TResponse) {
-        console.debug("Response: complete:", arg);
         triggerComplete(arg);
     }
 
