@@ -3,6 +3,7 @@ import {
     Center,
     Heading,
     HStack,
+    IconButton,
     Image,
     LinkBox,
     LinkOverlay,
@@ -13,6 +14,7 @@ import {
 import React, {CSSProperties, FC, useEffect, useState} from "react";
 import {useAsync} from "react-async-hook";
 import {FixedSizeList} from "react-window";
+import {FaPlay} from "react-icons/all";
 import {invoke} from "../../lib/ipc/renderer";
 import {
     AlbumListResponse,
@@ -66,7 +68,7 @@ const Album: FC<AlbumProps> = ({album, isSelected, ...props}) => {
                 mx={4}
             >
                 <Image src={artPath} width={24} mr={4} borderRadius="sm" />
-                <Stack direction="column">
+                <Stack direction="column" flex={1}>
                     <Heading size="md">
                         <LinkOverlay href="#" onClick={handleAlbumClick}>
                             {album.name}
@@ -76,6 +78,12 @@ const Album: FC<AlbumProps> = ({album, isSelected, ...props}) => {
                         <Text>by {album.artist.name}</Text>
                     </HStack>
                 </Stack>
+                <IconButton
+                    size="lg"
+                    isRound
+                    aria-label="Play"
+                    icon={<FaPlay />}
+                />
             </HStack>
         </LinkBox>
     );
