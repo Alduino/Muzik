@@ -59,7 +59,7 @@ const Album: FC<AlbumProps> = ({album, isSelected, ...props}) => {
                 background={colours.backgroundL2}
                 p={4}
                 borderRadius="sm"
-                shadow={isSelected ? "outline" : "md"}
+                shadow={isSelected ? "outline" : "sm"}
                 height={128}
                 mt={4}
                 mx={4}

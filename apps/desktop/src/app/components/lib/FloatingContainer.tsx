@@ -11,12 +11,12 @@ const FloatingContainerInner: FC<{className?: string}> = ({
     return (
         <Box
             borderRadius="md"
-            shadow="lg"
             background={colours.backgroundL1}
             color={colours.text}
             width="container.sm"
             overflow="hidden"
             className={className}
+            shadow="md"
         >
             {children}
         </Box>
