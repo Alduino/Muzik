@@ -5,7 +5,6 @@ import React, {
     useContext,
     useEffect,
     useMemo,
-    useRef,
     useState
 } from "react";
 import {useSelector} from "react-redux";
@@ -158,13 +157,33 @@ export const VisualiserIcon: FC<VisualiserIconProps> = props => {
 
             analyser.getByteFrequencyData(dataBuff);
 
-            setHeights(
-                Array.from({length: props.bands}, (_, i) => {
-                    const idx = Math.floor((i / props.bands) * dataBuff.length);
-                    const v = dataBuff[idx];
-                    return v / 255;
-                })
+            const outputValues = Array.from({length: props.bands}, () => 0);
+            const outputCounts = Array.from({length: props.bands}, () => 0);
+
+            for (let i = 0; i < dataBuff.length; i++) {
+                const el = dataBuff[i];
+
+                const frequency =
+                    ((i / dataBuff.length) * audioCtx.sampleRate) / 2;
+
+                // maps 0 -> 0, 350 -> 1/3, 3000 -> 2/3, 22000 -> 1
+                const outIndexPercentage =
+                    Math.log(frequency / 55 + 1) / Math.log(401);
+
+                // make sure it doesn't go above max
+                const outIndex = Math.floor(
+                    Math.min(0.999, outIndexPercentage) * props.bands
+                );
+
+                outputValues[outIndex] += el / 255;
+                outputCounts[outIndex]++;
+            }
+
+            const output = outputValues.map(
+                (el, i) => el / (outputCounts[i] || 1)
             );
+
+            setHeights(output);
         }
 
         requestAnimationFrame(draw);
@@ -172,9 +191,9 @@ export const VisualiserIcon: FC<VisualiserIconProps> = props => {
         return () => {
             drawing = false;
         };
-    }, [audioCtx, analyser]);
+    }, [audioCtx, analyser, props.bands]);
 
-    const gap = props.gap || 0.2;
+    const gap = (props.gap || 0.1) * 2;
 
     return (
         <svg viewBox="0 0 1 1">
@@ -182,7 +201,7 @@ export const VisualiserIcon: FC<VisualiserIconProps> = props => {
                 <rect
                     key={i}
                     fill="currentColor"
-                    x={i / props.bands + (gap * i) / 4}
+                    x={i / props.bands + gap / 4}
                     y={1 - height}
                     width={1 / props.bands - gap / 2}
                     height={height}
