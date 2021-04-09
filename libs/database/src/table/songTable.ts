@@ -4,6 +4,7 @@ export interface Song {
     id: number;
     albumId: number;
     name: string;
+    path: string;
 }
 
 export default class SongTable extends Table<Song> {

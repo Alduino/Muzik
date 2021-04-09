@@ -3,7 +3,6 @@ import {
     Center,
     Heading,
     HStack,
-    IconButton,
     Image,
     LinkBox,
     LinkOverlay,
@@ -14,14 +13,16 @@ import {
 import React, {CSSProperties, FC, useEffect, useState} from "react";
 import {useAsync} from "react-async-hook";
 import {FixedSizeList} from "react-window";
-import {FaPlay} from "react-icons/all";
 import {invoke} from "../../lib/ipc/renderer";
 import {
     AlbumListResponse,
     AlbumSongsRequest,
     AlbumSongsResponse,
     EVENT_ALBUM_LIST,
-    EVENT_ALBUM_SONGS
+    EVENT_ALBUM_SONGS,
+    EVENT_GET_SONG,
+    GetSongRequest,
+    GetSongResponse
 } from "../../lib/ipc-constants";
 import useThemeColours from "../hooks/useThemeColours";
 import defaultAlbumArt from "../assets/default-album-art.svg";
@@ -32,11 +33,26 @@ import {selectAlbum} from "../reducers/albumListingRoute";
 import {ErrorLabel} from "./lib/ErrorLabel";
 import {SongList} from "./lib/SongList";
 import {FloatingContainer} from "./lib/FloatingContainer";
-import {clearQueue, queueAlbum} from "../reducers/queue";
+import {
+    cancelPlaying,
+    clearQueue,
+    queueAlbum,
+    beginQueue
+} from "../reducers/queue";
+import {PlayButton} from "./lib/PlayButton";
 
 const fetchAlbums = () => invoke<AlbumListResponse>(EVENT_ALBUM_LIST);
 const fetchAlbumSongs = (albumId: number) =>
     invoke<AlbumSongsResponse, AlbumSongsRequest>(EVENT_ALBUM_SONGS, {albumId});
+
+const checkAlbumPlaying = async (songId: number | null, albumId: number) => {
+    if (songId === null) return false;
+    const {song} = await invoke<GetSongResponse, GetSongRequest>(
+        EVENT_GET_SONG,
+        {songId}
+    );
+    return song.albumId === albumId;
+};
 
 interface AlbumProps {
     album: AlbumType;
@@ -48,6 +64,17 @@ const Album: FC<AlbumProps> = ({album, isSelected, ...props}) => {
     const colours = useThemeColours();
     const dispatch = useAppDispatch();
 
+    const [isHovered, setHovered] = useState(false);
+
+    const currentSongId = useSelector<RootState, number | null>(
+        v => v.queue.nowPlaying
+    );
+
+    const isAlbumPlaying = useAsync(checkAlbumPlaying, [
+        currentSongId,
+        album.id
+    ]);
+
     const artPath = album.artPath
         ? `music-store://${album.artPath}`
         : defaultAlbumArt;
@@ -57,12 +84,18 @@ const Album: FC<AlbumProps> = ({album, isSelected, ...props}) => {
     };
 
     const handleAlbumPlay = () => {
+        dispatch(cancelPlaying());
         dispatch(clearQueue());
-        dispatch(queueAlbum(album.id));
+        dispatch(queueAlbum(album.id)).then(() => dispatch(beginQueue()));
     };
 
     return (
-        <LinkBox width="full" style={props.style}>
+        <LinkBox
+            width="full"
+            style={props.style}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+        >
             <HStack
                 width="calc(100% - 2em)"
                 background={colours.backgroundL2}
@@ -84,12 +117,11 @@ const Album: FC<AlbumProps> = ({album, isSelected, ...props}) => {
                         <Text>by {album.artist.name}</Text>
                     </HStack>
                 </Stack>
-                <IconButton
+                <PlayButton
                     size="lg"
-                    isRound
-                    aria-label="Play"
-                    icon={<FaPlay />}
-                    onClick={handleAlbumPlay}
+                    isCurrent={isAlbumPlaying.result || false}
+                    isHovered={isHovered}
+                    onPlay={handleAlbumPlay}
                 />
             </HStack>
         </LinkBox>

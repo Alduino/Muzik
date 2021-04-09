@@ -5,6 +5,10 @@ import {App} from "./components/App";
 import store from "./store";
 import {DevTools} from "./DevTools";
 import theme from "./theme";
+import {
+    AudioController,
+    AudioControllerProvider
+} from "./components/lib/AudioController";
 
 export const Root: FC = () => (
     <ReduxProvider store={store}>
@@ -15,7 +19,10 @@ export const Root: FC = () => (
                     useSystemColorMode: true
                 }}
             >
-                <App />
+                <AudioControllerProvider>
+                    <AudioController />
+                    <App />
+                </AudioControllerProvider>
             </ColorModeProvider>
         </ChakraProvider>
         {process.env.NODE_ENV === "development" && <DevTools />}

@@ -9,13 +9,17 @@ import {
     EVENT_ALBUM_LIST,
     EVENT_ALBUM_SONGS,
     EVENT_DATABASE_INIT,
+    EVENT_GET_SONG,
     EVENT_MUSIC_IMPORT,
     EVENT_SELECT_MUSIC_IMPORT_PATH,
+    GetSongRequest,
+    GetSongResponse,
     MusicImportRequest
 } from "../lib/ipc-constants";
 import {log} from "./logger";
 import {
     getAllAlbums,
+    getSongById,
     getSongsByAlbum,
     importMusic,
     initialise as initialiseDatabase
@@ -27,6 +31,13 @@ app.on("ready", () => {
         const url = unescape(request.url.substring("music-store://".length));
         const path = join(store.get("musicStore"), normalize(url));
         callback({path});
+    });
+
+    protocol.registerFileProtocol("audio", async (request, callback) => {
+        const id = parseInt(request.url.substring("audio://".length));
+        const song = await getSongById(id);
+        if (!song) return callback({error: 404});
+        callback(song.path);
     });
 });
 
@@ -79,5 +90,13 @@ handle<AlbumSongsResponse, AlbumSongsRequest>(EVENT_ALBUM_SONGS, async arg => {
 
     return {
         songs
+    };
+});
+
+handle<GetSongResponse, GetSongRequest>(EVENT_GET_SONG, async arg => {
+    const song = await getSongById(arg.songId);
+
+    return {
+        song
     };
 });

@@ -45,3 +45,7 @@ export async function getSongsByAlbum(albumId: number): Promise<Song[]> {
         }
     }));
 }
+
+export async function getSongById(songId: number): Promise<Song> {
+    return db.getSong(songId);
+}

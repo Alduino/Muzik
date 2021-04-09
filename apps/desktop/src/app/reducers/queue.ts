@@ -23,7 +23,11 @@ export const queueAlbum = createAsyncThunk(
 export const slice = createSlice({
     name: "queue",
     initialState: {
-        songs: [] as number[]
+        songs: [] as number[],
+        nowPlaying: null as number | null,
+        isPlaying: false,
+        currentTime: 0,
+        _currentTimeWasFromAudio: false
     },
     reducers: {
         clearQueue(state) {
@@ -37,6 +41,29 @@ export const slice = createSlice({
         },
         playNext(state, id: PayloadAction<number>) {
             state.songs.unshift(id.payload);
+        },
+        begin(state) {
+            state.nowPlaying = state.songs.shift() || null;
+            state.isPlaying = state.nowPlaying !== null;
+        },
+        resume(state) {
+            state.isPlaying = true;
+        },
+        pause(state) {
+            state.isPlaying = false;
+        },
+        stop(state) {
+            state.nowPlaying = null;
+            state.isPlaying = false;
+            state.currentTime = 0;
+        },
+        setCurrentTime(state, {payload}: PayloadAction<number>) {
+            state.currentTime = payload;
+            state._currentTimeWasFromAudio = false;
+        },
+        setCurrentTimeFromAudio(state, {payload}: PayloadAction<number>) {
+            state.currentTime = payload;
+            state._currentTimeWasFromAudio = true;
         }
     },
     extraReducers: builder => {
@@ -46,4 +73,15 @@ export const slice = createSlice({
     }
 });
 
-export const {clearQueue, queueSong, queueSongs, playNext} = slice.actions;
+export const {
+    clearQueue,
+    queueSong,
+    queueSongs,
+    playNext,
+    begin: beginQueue,
+    resume: setResumed,
+    pause: setPaused,
+    stop: cancelPlaying,
+    setCurrentTime,
+    setCurrentTimeFromAudio
+} = slice.actions;
