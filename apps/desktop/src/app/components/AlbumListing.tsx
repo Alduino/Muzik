@@ -32,6 +32,7 @@ import {selectAlbum} from "../reducers/albumListingRoute";
 import {ErrorLabel} from "./lib/ErrorLabel";
 import {SongList} from "./lib/SongList";
 import {FloatingContainer} from "./lib/FloatingContainer";
+import {clearQueue, queueAlbum} from "../reducers/queue";
 
 const fetchAlbums = () => invoke<AlbumListResponse>(EVENT_ALBUM_LIST);
 const fetchAlbumSongs = (albumId: number) =>
@@ -51,8 +52,13 @@ const Album: FC<AlbumProps> = ({album, isSelected, ...props}) => {
         ? `music-store://${album.artPath}`
         : defaultAlbumArt;
 
-    const handleAlbumClick = () => {
+    const handleAlbumSelect = () => {
         dispatch(selectAlbum(album.id));
+    };
+
+    const handleAlbumPlay = () => {
+        dispatch(clearQueue());
+        dispatch(queueAlbum(album.id));
     };
 
     return (
@@ -70,7 +76,7 @@ const Album: FC<AlbumProps> = ({album, isSelected, ...props}) => {
                 <Image src={artPath} width={24} mr={4} borderRadius="sm" />
                 <Stack direction="column" flex={1}>
                     <Heading size="md">
-                        <LinkOverlay href="#" onClick={handleAlbumClick}>
+                        <LinkOverlay href="#" onClick={handleAlbumSelect}>
                             {album.name}
                         </LinkOverlay>
                     </Heading>
@@ -83,6 +89,7 @@ const Album: FC<AlbumProps> = ({album, isSelected, ...props}) => {
                     isRound
                     aria-label="Play"
                     icon={<FaPlay />}
+                    onClick={handleAlbumPlay}
                 />
             </HStack>
         </LinkBox>
