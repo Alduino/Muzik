@@ -5,7 +5,14 @@ import {fromFile as mimeFromFile} from "file-type";
 import {log} from "./logger";
 
 // TODO move to module
-const SUPPORTED_MIME_TYPES = ["audio/x-flac"];
+const SUPPORTED_MIME_TYPES = [
+    "audio/x-flac",
+    "audio/mp4",
+    "audio/mpeg",
+    "audio/ogg",
+    "audio/aac",
+    "audio/x-m4a"
+];
 
 export async function getSongFiles(dir: string): Promise<string[]> {
     const files = await readdir(dir);
