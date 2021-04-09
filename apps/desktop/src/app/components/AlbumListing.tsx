@@ -1,5 +1,6 @@
 import type {Album as AlbumType} from "@muzik/database";
 import {
+    Center,
     Heading,
     HStack,
     Image,
@@ -114,6 +115,7 @@ export const AlbumListing: FC = () => {
     );
     const albums = useAsync(fetchAlbums, []);
     const albumSongs = useAsync(fetchAlbumSongs, [selectedAlbum]);
+    const colours = useThemeColours();
 
     useEffect(() => {
         function handler() {
@@ -130,6 +132,13 @@ export const AlbumListing: FC = () => {
         return (
             <HStack m={24} spacing={24}>
                 <FloatingContainer>
+                    <Center
+                        height={12}
+                        background={colours.backgroundL3}
+                        shadow="sm"
+                    >
+                        <Heading size="md">Albums</Heading>
+                    </Center>
                     {albums.loading ? (
                         Array.from({length: 4}, (_, i) => (
                             <Skeleton key={i} width="full" mx={4} mt={4} />
@@ -138,16 +147,23 @@ export const AlbumListing: FC = () => {
                         <AlbumList
                             albums={albums.result.albums}
                             selectedAlbum={selectedAlbum}
-                            height={windowHeight - 96 * 2}
+                            height={windowHeight - 96 * 2 - 48}
                         />
                     )}
                 </FloatingContainer>
 
                 {albumSongs.result?.songs.length > 0 && (
                     <FloatingContainer>
+                        <Center
+                            height={12}
+                            background={colours.backgroundL3}
+                            shadow="sm"
+                        >
+                            <Heading size="md">Songs</Heading>
+                        </Center>
                         <SongList
                             songs={albumSongs.result.songs}
-                            height={windowHeight - 96 * 2}
+                            height={windowHeight - 96 * 2 - 48}
                         />
                     </FloatingContainer>
                 )}
