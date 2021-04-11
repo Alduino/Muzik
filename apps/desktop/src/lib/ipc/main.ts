@@ -75,7 +75,7 @@ export function handle<TResponse, TRequest = never, TProgress = never>(
                 message: err.message,
                 stack: err.stack
             });
-            log.warn(err, "An error occurred in an invocation");
+            log.warn({stack: err.stack}, "An error occurred in an invocation");
         }
 
         ipcMain.off(eventName(messageId, TYPE_ABORT), handleAbort);

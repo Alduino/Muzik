@@ -54,7 +54,16 @@ export async function invoke<TResponse, TRequest = never, TProgress = never>(
     }
 
     function handleError(_: unknown, arg: Error) {
-        triggerError(arg);
+        const errorWrapper = new Error();
+
+        if (typeof arg === "string") errorWrapper.message = arg;
+        else {
+            errorWrapper.name = arg.name || "IpcError";
+            errorWrapper.message = arg.message;
+            errorWrapper.stack = arg.stack;
+        }
+
+        triggerError(errorWrapper);
     }
 
     function handleComplete(_: unknown, arg: TResponse) {

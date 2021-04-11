@@ -11,6 +11,6 @@ export function throwError(code: ErrorCode): never {
 
 export function isCode(error: Error, code: ErrorCode): boolean {
     const {message} = error;
-    const [, codeString] = message.match(/\[id=(\d+)]/);
+    const [, codeString] = message.match(/\[id=(\d+)]/) || [];
     return code === parseInt(codeString);
 }
