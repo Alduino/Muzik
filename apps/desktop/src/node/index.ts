@@ -124,5 +124,7 @@ handle(EVENT_GET_ALL_SONG_IDS, async () => {
 });
 
 handle(EVENT_REDUX_DEV_TOOLS_ENABLED, () => {
-    return !process.env.DISABLE_REDUX_DEVTOOLS;
+    const envVar = process.env.DISABLE_REDUX_DEVTOOLS;
+    if (!envVar) return true;
+    return envVar === "0" || envVar === "false" || envVar === "no";
 });
