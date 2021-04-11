@@ -11,6 +11,4 @@ const rootReducer = combineReducers({
     queue: queue.reducer
 });
 
-export type RootState = ReturnType<typeof rootReducer>;
-
 export default rootReducer;

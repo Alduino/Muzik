@@ -26,9 +26,6 @@ import {
 } from "../../lib/ipc-constants";
 import useThemeColours from "../hooks/useThemeColours";
 import defaultAlbumArt from "../assets/default-album-art.svg";
-import {useSelector} from "react-redux";
-import {RootState} from "../reducers/root";
-import {useAppDispatch} from "../store";
 import {selectAlbum} from "../reducers/albumListingRoute";
 import {ErrorLabel} from "./lib/ErrorLabel";
 import {SongList} from "./lib/SongList";
@@ -40,6 +37,7 @@ import {
     beginQueue
 } from "../reducers/queue";
 import {PlayButton} from "./lib/PlayButton";
+import {useAppDispatch, useAppSelector} from "../store-hooks";
 
 const fetchAlbums = () => invoke<AlbumListResponse>(EVENT_ALBUM_LIST);
 const fetchAlbumSongs = (albumId: number) =>
@@ -66,9 +64,7 @@ const Album: FC<AlbumProps> = ({album, isSelected, ...props}) => {
 
     const [isHovered, setHovered] = useState(false);
 
-    const currentSongId = useSelector<RootState, number | null>(
-        v => v.queue.nowPlaying
-    );
+    const currentSongId = useAppSelector(v => v.queue.nowPlaying);
 
     const isAlbumPlaying = useAsync(checkAlbumPlaying, [
         currentSongId,
@@ -157,7 +153,7 @@ const AlbumList: FC<AlbumListProps> = ({albums, selectedAlbum, height}) => (
 
 export const AlbumListing: FC = () => {
     const [windowHeight, setWindowHeight] = useState(window.innerHeight);
-    const selectedAlbum = useSelector<RootState, number>(
+    const selectedAlbum = useAppSelector(
         v => v.albumListingRoute.selectedAlbum
     );
     const albums = useAsync(fetchAlbums, []);

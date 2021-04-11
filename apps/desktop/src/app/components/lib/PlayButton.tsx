@@ -1,11 +1,10 @@
 import {Box, IconButton} from "@chakra-ui/react";
 import React, {FC, ReactElement} from "react";
-import {useSelector} from "react-redux";
 import {GrPause, GrPlay, GrResume} from "react-icons/gr";
-import {RootState} from "../../reducers/root";
-import {useAppDispatch} from "../../store";
 import {setPaused, setResumed} from "../../reducers/queue";
 import {VisualiserIcon} from "./AudioController";
+import {RootState} from "../../store";
+import {useAppDispatch, useAppSelector} from "../../store-hooks";
 
 interface UsePlayButtonIconResult {
     isVisible: boolean;
@@ -16,7 +15,7 @@ function usePlayButtonIcon(
     isCurrent: boolean,
     isHovered: boolean
 ): UsePlayButtonIconResult {
-    const isPlaying = useSelector<RootState, boolean>(v => v.queue.isPlaying);
+    const isPlaying = useAppSelector(v => v.queue.isPlaying);
 
     const baseResult = {
         isVisible: isHovered
@@ -76,10 +75,8 @@ export interface PlayButtonProps {
 }
 
 export const PlayButton: FC<PlayButtonProps> = props => {
-    const isPlaying = useSelector<RootState, boolean>(v => v.queue.isPlaying);
-    const isStopped = useSelector<RootState, boolean>(
-        v => v.queue.nowPlaying === null
-    );
+    const isPlaying = useAppSelector(v => v.queue.isPlaying);
+    const isStopped = useAppSelector(v => v.queue.nowPlaying === null);
     const dispatch = useAppDispatch();
 
     const {icon, isVisible} = usePlayButtonIcon(

@@ -1,5 +1,4 @@
 import React, {FC} from "react";
-import {useSelector} from "react-redux";
 import {
     Center,
     Circle,
@@ -9,17 +8,15 @@ import {
     VStack
 } from "@chakra-ui/react";
 import {PuffLoader} from "react-spinners";
-import {RootState} from "../reducers/root";
 import {GlobalRoute} from "../reducers/routing";
 import {MusicStorePicker} from "./MusicStorePicker";
 import useThemeColours from "../hooks/useThemeColours";
 import {AlbumListing} from "./AlbumListing";
 import {ErrorLabel} from "./lib/ErrorLabel";
+import {useAppSelector} from "../store-hooks";
 
 const LoadedApp: FC = () => {
-    const route = useSelector<RootState, GlobalRoute>(
-        state => state.routing.globalRoute
-    );
+    const route = useAppSelector(state => state.routing.globalRoute);
 
     switch (route) {
         case GlobalRoute.musicStorePicker:
@@ -32,7 +29,7 @@ const LoadedApp: FC = () => {
 };
 
 const LoadingApp: FC = () => {
-    const description = useSelector<RootState, string>(
+    const description = useAppSelector(
         state => state.loadState.currentDescription
     );
 
@@ -54,7 +51,7 @@ const LoadingApp: FC = () => {
 };
 
 export const App: FC = () => {
-    const isLoaded = useSelector<RootState>(state => state.loadState.value);
+    const isLoaded = useAppSelector(state => state.loadState.value);
     const {backgroundL0} = useThemeColours();
 
     return (
