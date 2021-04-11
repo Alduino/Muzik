@@ -16,7 +16,7 @@ import React, {CSSProperties, FC, useEffect, useState} from "react";
 import {useAsync} from "react-async-hook";
 import {FixedSizeList} from "react-window";
 import {GrPlay} from "react-icons/gr";
-import {IoShuffle} from "react-icons/all";
+import {IoShuffle} from "react-icons/io5";
 import {invoke} from "../../lib/ipc/renderer";
 import {
     AlbumListResponse,
