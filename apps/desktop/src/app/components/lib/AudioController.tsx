@@ -81,14 +81,6 @@ export const AudioController: FC = () => {
 
     const isPlaying = useAppSelector(v => v.queue.isPlaying);
 
-    const handleExternalPlay = useCallback(() => {
-        dispatch(setResumed());
-    }, [dispatch]);
-
-    const handleExternalPause = useCallback(() => {
-        dispatch(setPaused());
-    }, [dispatch]);
-
     const handleComplete = useCallback(() => {
         // play the next song
         dispatch(beginQueue());
@@ -113,16 +105,6 @@ export const AudioController: FC = () => {
         if (isPlaying) audio.play();
         else audio.pause();
     }, [isPlaying, currentSongId]);
-
-    useEffect(() => {
-        audio.addEventListener("play", handleExternalPlay);
-        return () => audio.removeEventListener("play", handleExternalPlay);
-    }, [handleExternalPlay]);
-
-    useEffect(() => {
-        audio.addEventListener("pause", handleExternalPause);
-        return () => audio.removeEventListener("pause", handleExternalPause);
-    }, [handleExternalPause]);
 
     useEffect(() => {
         audio.addEventListener("ended", handleComplete);
