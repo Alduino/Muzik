@@ -8,7 +8,9 @@ function g<TResponse, TRequest = never, TProgress = never>(
 }
 
 export const EVENT_DATABASE_INIT = g<void>("database init");
-export const EVENT_MUSIC_IMPORT = g<void, MusicImportRequest>("music import");
+export const EVENT_MUSIC_IMPORT = g<void, MusicImportRequest, number>(
+    "music import"
+);
 export const EVENT_SELECT_MUSIC_IMPORT_PATH = g<boolean>(
     "select music import path"
 );

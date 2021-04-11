@@ -1,11 +1,11 @@
 import store from "./store";
-import {setCurrentDescription, setLoadComplete} from "./reducers/loadState";
-import {invoke} from "../lib/ipc/renderer";
 import {
-    EVENT_DATABASE_INIT,
-    EVENT_MUSIC_IMPORT,
-    MusicImportRequest
-} from "../lib/ipc-constants";
+    setCurrentDescription,
+    setCurrentProgress,
+    setLoadComplete
+} from "./reducers/loadState";
+import {invoke} from "../lib/ipc/renderer";
+import {EVENT_DATABASE_INIT, EVENT_MUSIC_IMPORT} from "../lib/ipc-constants";
 import {ErrorCode, isCode} from "../lib/error-constants";
 import {GlobalRoute, setGlobalRoute} from "./reducers/routing";
 
@@ -33,9 +33,15 @@ export default async function initialiseMuzik(): Promise<void> {
     store.dispatch(setCurrentDescription("Importing your songs"));
 
     try {
-        await invoke<void, MusicImportRequest>(EVENT_MUSIC_IMPORT, {
-            progressFrequency: 10
-        });
+        await invoke(
+            EVENT_MUSIC_IMPORT,
+            {
+                progressFrequency: 10
+            },
+            progress => {
+                store.dispatch(setCurrentProgress(progress));
+            }
+        );
     } catch (err) {
         if (isCode(err, ErrorCode.musicStoreNotPicked)) {
             console.debug(

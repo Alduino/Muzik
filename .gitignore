@@ -70,3 +70,5 @@ common/autoinstallers/*/.npmrc
 **/.parcel-cache
 **/.cache
 **/.webpack
+
+apps/desktop/.ffmpeg/

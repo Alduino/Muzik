@@ -32,6 +32,7 @@ const LoadingApp: FC = () => {
     const description = useAppSelector(
         state => state.loadState.currentDescription
     );
+    const progress = useAppSelector(state => state.loadState.currentProgress);
 
     const textColour = useColorModeValue("gray.900", "white");
     const bgColour = useColorModeValue("gray.50", "gray.800");
@@ -44,6 +45,7 @@ const LoadingApp: FC = () => {
                 </Circle>
                 <Text fontSize="sm" opacity={0.4}>
                     {description}
+                    {progress ? ` (${progress.toFixed(0)}%)` : null}
                 </Text>
             </VStack>
         </Center>

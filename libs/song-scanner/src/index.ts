@@ -18,11 +18,13 @@ export default async function scan(
     const ONE_THIRD = 100 / 3;
 
     log.debug("Searching for songs in %s", dir);
+    progress(0);
     const supportedSongs = await getSongFiles(dir);
 
     log.debug("Loading id3 data");
-    const songInfos = await getSongInfo(supportedSongs);
-    progress(ONE_THIRD);
+    const songInfos = await getSongInfo(supportedSongs, prog =>
+        progress(prog * ONE_THIRD)
+    );
 
     const songCount = songInfos.length;
 

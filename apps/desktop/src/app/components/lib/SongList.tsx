@@ -1,4 +1,4 @@
-import {Heading, HStack} from "@chakra-ui/react";
+import {Box, Heading, HStack, Text} from "@chakra-ui/react";
 import type {Song as SongType} from "@muzik/database";
 import React, {CSSProperties, FC, useState} from "react";
 import {FixedSizeList} from "react-window";
@@ -11,6 +11,16 @@ import {
     clearQueue,
     queueSong
 } from "../../reducers/queue";
+
+function formatDuration(totalSeconds: number) {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = Math.floor(totalSeconds % 60);
+
+    const minutesPadded = minutes.toString().padStart(2, "0");
+    const secondsPadded = seconds.toString().padStart(2, "0");
+
+    return `${minutesPadded}:${secondsPadded}`;
+}
 
 interface SongProps {
     song: SongType;
@@ -33,6 +43,8 @@ const Song: FC<SongProps> = props => {
         dispatch(beginQueue());
     };
 
+    const durationText = formatDuration(props.song.duration);
+
     return (
         <HStack
             width="calc(100% - 2rem)"
@@ -48,9 +60,13 @@ const Song: FC<SongProps> = props => {
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
         >
-            <Heading size="sm" flex={1}>
-                {props.song.name}
-            </Heading>
+            <Heading size="sm">{props.song.name}</Heading>
+
+            <Text fontSize="sm" opacity={0.5}>
+                {durationText}
+            </Text>
+
+            <Box flex={1} />
 
             <PlayButton
                 size="sm"
