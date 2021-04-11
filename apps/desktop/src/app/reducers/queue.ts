@@ -97,7 +97,7 @@ export const slice = createSlice({
 
             if (oldTime < RESTART_THRESHOLD) {
                 if (state.nowPlaying !== null)
-                    state.songs.unshift(state.nowPlaying);
+                    state.playNextSongs.unshift(state.nowPlaying);
                 state.nowPlaying = state.previousSongs.pop() || null;
             }
 
