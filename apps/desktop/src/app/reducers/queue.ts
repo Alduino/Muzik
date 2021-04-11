@@ -33,8 +33,8 @@ interface GetAndRemoveNextSongOpts {
 function getAndRemoveNextSong(opts: GetAndRemoveNextSongOpts): number | null {
     const {playNextSongs, songs, previousSongs, shuffled} = opts;
 
-    if (playNextSongs.length > 0) return playNextSongs.unshift() || null;
-    if (!shuffled) return songs.unshift() || null;
+    if (playNextSongs.length > 0) return playNextSongs.shift();
+    if (!shuffled) return songs.shift() || null;
 
     // try and pick a song that hasn't already been played
     const recentPreviousSongs = previousSongs.slice(-10);
