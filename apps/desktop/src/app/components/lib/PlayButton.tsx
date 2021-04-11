@@ -3,8 +3,8 @@ import React, {FC, ReactElement} from "react";
 import {GrPause, GrPlay, GrResume} from "react-icons/gr";
 import {setPaused, setResumed} from "../../reducers/queue";
 import {VisualiserIcon} from "./AudioController";
-import {RootState} from "../../store";
 import {useAppDispatch, useAppSelector} from "../../store-hooks";
+import useThemeColours from "../../hooks/useThemeColours";
 
 interface UsePlayButtonIconResult {
     isVisible: boolean;
@@ -15,6 +15,7 @@ function usePlayButtonIcon(
     isCurrent: boolean,
     isHovered: boolean
 ): UsePlayButtonIconResult {
+    const colours = useThemeColours();
     const isPlaying = useAppSelector(v => v.queue.isPlaying);
 
     const baseResult = {
@@ -22,9 +23,7 @@ function usePlayButtonIcon(
     };
 
     const iconProps = {
-        style: {
-            filter: "invert()"
-        }
+        color: colours.backgroundL0
     };
 
     if (isCurrent) {
