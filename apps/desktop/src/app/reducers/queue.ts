@@ -6,6 +6,9 @@ import {
     EVENT_ALBUM_SONGS
 } from "../../lib/ipc-constants";
 
+// will restart song instead of going to previous after this many seconds
+const RESTART_THRESHOLD = 2;
+
 export const queueAlbum = createAsyncThunk(
     "queue/queueAlbum",
     async (id: number) => {
@@ -24,6 +27,7 @@ export const slice = createSlice({
     name: "queue",
     initialState: {
         songs: [] as number[],
+        previousSongs: [] as number[],
         nowPlaying: null as number | null,
         isPlaying: false,
         currentTime: 0,
@@ -42,20 +46,43 @@ export const slice = createSlice({
         playNext(state, id: PayloadAction<number>) {
             state.songs.unshift(id.payload);
         },
+        skipToNext(state) {
+            state.currentTime = 0;
+            if (state.nowPlaying !== null)
+                state.previousSongs.push(state.nowPlaying);
+            state.nowPlaying = state.songs.shift() || null;
+            state.isPlaying = state.nowPlaying !== null;
+        },
+        skipToPrevious(state) {
+            const oldTime = state.currentTime;
+
+            state.currentTime = 0;
+            state._currentTimeWasFromAudio = false;
+
+            if (oldTime < RESTART_THRESHOLD) {
+                if (state.nowPlaying !== null)
+                    state.songs.unshift(state.nowPlaying);
+                state.nowPlaying = state.previousSongs.pop() || null;
+            }
+
+            state.isPlaying = state.nowPlaying !== null;
+        },
         begin(state) {
+            if (state.nowPlaying !== null)
+                state.previousSongs.push(state.nowPlaying);
             state.nowPlaying = state.songs.shift() || null;
             state.isPlaying = state.nowPlaying !== null;
         },
         resume(state) {
-            state.isPlaying = true;
+            state.isPlaying = state.nowPlaying !== null;
         },
         pause(state) {
             state.isPlaying = false;
         },
         stop(state) {
-            state.nowPlaying = null;
             state.isPlaying = false;
             state.currentTime = 0;
+            state._currentTimeWasFromAudio = false;
         },
         setCurrentTime(state, {payload}: PayloadAction<number>) {
             state.currentTime = payload;
@@ -78,6 +105,8 @@ export const {
     queueSong,
     queueSongs,
     playNext,
+    skipToNext,
+    skipToPrevious,
     begin: beginQueue,
     resume: setResumed,
     pause: setPaused,

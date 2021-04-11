@@ -1,9 +1,10 @@
 import {resolve, dirname} from "path";
 import {Database} from "@muzik/database";
 import scan from "@muzik/song-scanner";
+import {Album, Song} from "@muzik/database";
 import {store} from "./configuration";
 import {ErrorCode, throwError} from "../lib/error-constants";
-import {Album, Song} from "@muzik/database";
+import {hostname as albumArtHost} from "./album-art-server";
 
 let db: Database | null = null;
 
@@ -23,29 +24,47 @@ export function importMusic(
     return scan(db, path, progress);
 }
 
-export async function getAllAlbums(): Promise<Album[]> {
-    const albums = await db.getAllAlbums();
-    const substringAmnt = store.get("musicStore").length;
-    return albums.map(album => ({
+function exposeAlbum(album: Album, exposed: boolean) {
+    if (!exposed) return album;
+
+    return {
         ...album,
-        artPath: album.artPath?.substring(substringAmnt)
-    }));
+        art: album.art && {
+            ...album.art,
+            path: `${albumArtHost}/${album.id}`
+        }
+    };
 }
 
-export async function getSongsByAlbum(albumId: number): Promise<Song[]> {
+export async function getAllAlbums(exposed = true): Promise<Album[]> {
+    const albums = await db.getAllAlbums();
+    return albums.map(album => exposeAlbum(album, exposed));
+}
+
+export async function getSongsByAlbum(
+    albumId: number,
+    exposed = true
+): Promise<Song[]> {
     const songs = await db.getMatchingSongs({
         albumId: v => albumId === parseInt(v)
     });
-    const substringAmnt = store.get("musicStore").length;
     return songs.map(song => ({
         ...song,
-        album: {
-            ...song.album,
-            artPath: song.album.artPath?.substring(substringAmnt)
-        }
+        album: exposeAlbum(song.album, exposed)
     }));
 }
 
-export async function getSongById(songId: number): Promise<Song> {
-    return db.getSong(songId);
+export async function getSongById(
+    songId: number,
+    exposed = true
+): Promise<Song> {
+    const song = await db.getSong(songId);
+    return {
+        ...song,
+        album: exposeAlbum(song.album, exposed)
+    };
+}
+
+export function getAlbumById(albumId: number, exposed = true): Promise<Album> {
+    return db.getAlbum(albumId).then(res => exposeAlbum(res, exposed));
 }

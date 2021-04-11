@@ -7,7 +7,14 @@ import {log} from "./logger";
 // TODO
 const SUPPORTED_MIME_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
-export async function getAlbumArt(albumSongs: SongInfo[]) {
+export interface AlbumArt {
+    path: string;
+    mime: string;
+}
+
+export async function getAlbumArt(
+    albumSongs: SongInfo[]
+): Promise<AlbumArt | null> {
     const searchDirectories = new Set<string>();
 
     for (const song of albumSongs) {
@@ -29,7 +36,7 @@ export async function getAlbumArt(albumSongs: SongInfo[]) {
             if (!SUPPORTED_MIME_TYPES.includes(format.mime)) continue;
 
             log.trace("File is valid album art: %s", format.mime);
-            return path;
+            return {path, mime: format.mime};
         }
     }
 

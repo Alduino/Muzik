@@ -1,7 +1,7 @@
 import {dirname, join} from "path";
 import {mkdir} from "fs/promises";
 import {log} from "./logger";
-import AlbumTable, {Album as DbAlbum} from "./table/albumTable";
+import AlbumTable, {Album as DbAlbum, AlbumArt} from "./table/albumTable";
 import SongTable, {Song as DbSong} from "./table/songTable";
 import ArtistTable, {Artist} from "./table/artistTable";
 import {Predicates} from "./jsondb";
@@ -113,11 +113,11 @@ export class Database {
 
     addAlbum(
         name: string,
-        artPath: string | null,
+        art: AlbumArt | null,
         artistId: number
     ): Promise<Album> {
         return this.albums
-            .add(name, artPath, artistId)
+            .add(name, art, artistId)
             .then(album => this.wrapAlbum(album));
     }
 

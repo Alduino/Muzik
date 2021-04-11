@@ -7,15 +7,21 @@ import React, {
     useMemo,
     useState
 } from "react";
-import {useSelector} from "react-redux";
-import {RootState} from "../../reducers/root";
-import {useAppDispatch} from "../../store";
+import {useAsync} from "react-async-hook";
 import {
     beginQueue,
+    cancelPlaying,
     setCurrentTimeFromAudio,
     setPaused,
-    setResumed
+    setResumed,
+    skipToNext,
+    skipToPrevious
 } from "../../reducers/queue";
+import {useAppDispatch, useAppSelector} from "../../store-hooks";
+import {invoke} from "../../../lib/ipc/renderer";
+import {EVENT_GET_SONG, GetSongResponse} from "../../../lib/ipc-constants";
+import defaultAlbumArt from "../../assets/default-album-art.svg";
+import {mediaSessionHandler} from "../../utils/media-session";
 
 interface ControllerContextValue {
     audioCtx: AudioContext;
@@ -66,16 +72,14 @@ export const AudioController: FC = () => {
 
     const dispatch = useAppDispatch();
 
-    const currentSongId = useSelector<RootState, number>(
-        v => v.queue.nowPlaying
-    );
+    const currentSongId = useAppSelector(v => v.queue.nowPlaying);
 
-    const [currentTime, isCurrentTimeFromAudio] = useSelector<
-        RootState,
-        [number, boolean]
-    >(v => [v.queue.currentTime, v.queue._currentTimeWasFromAudio]);
+    const [currentTime, isCurrentTimeFromAudio] = useAppSelector(v => [
+        v.queue.currentTime,
+        v.queue._currentTimeWasFromAudio
+    ]);
 
-    const isPlaying = useSelector<RootState, boolean>(v => v.queue.isPlaying);
+    const isPlaying = useAppSelector(v => v.queue.isPlaying);
 
     const handleExternalPlay = useCallback(() => {
         dispatch(setResumed());
@@ -104,9 +108,11 @@ export const AudioController: FC = () => {
     }, [currentTime, isCurrentTimeFromAudio]);
 
     useEffect(() => {
+        // called whenever isPlaying changes or currentSongId changes
+        // currentSongId is needed because audio reloads when it changes
         if (isPlaying) audio.play();
         else audio.pause();
-    }, [isPlaying]);
+    }, [isPlaying, currentSongId]);
 
     useEffect(() => {
         audio.addEventListener("play", handleExternalPlay);
@@ -132,6 +138,113 @@ export const AudioController: FC = () => {
 
         return () => clearInterval(interval);
     }, [audio, dispatch, isPlaying]);
+
+    return null;
+};
+
+const getSongInfo = (songId: number): Promise<GetSongResponse | null> =>
+    songId === null ? Promise.resolve(null) : invoke(EVENT_GET_SONG, {songId});
+
+export const MediaSessionController: FC = () => {
+    const playingSongId = useAppSelector(state => state.queue.nowPlaying);
+    const isPlaying = useAppSelector(state => state.queue.isPlaying);
+
+    const dispatch = useAppDispatch();
+    const playingSongInfo = useAsync(getSongInfo, [playingSongId]);
+
+    useEffect(() => {
+        if (playingSongInfo.status !== "success") return;
+
+        const {result: playingSongResult} = playingSongInfo;
+
+        if (playingSongResult === null) {
+            navigator.mediaSession.metadata = null;
+            return;
+        }
+
+        const {song} = playingSongResult;
+
+        const artUri = song.album.art?.path || defaultAlbumArt;
+        const artMime = song.album.art?.mime || "image/svg";
+
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: song.name,
+            album: song.album.name,
+            artist: song.album.artist.name,
+            artwork: [
+                {
+                    src: artUri,
+                    type: artMime
+                }
+            ]
+        });
+    }, [playingSongInfo]);
+
+    useEffect(() => {
+        if (playingSongId === null) {
+            navigator.mediaSession.playbackState = "none";
+        } else if (isPlaying) {
+            navigator.mediaSession.playbackState = "playing";
+        } else {
+            navigator.mediaSession.playbackState = "paused";
+        }
+    }, [playingSongId, isPlaying]);
+
+    useEffect(() => {
+        function handler() {
+            if (playingSongId === null) dispatch(beginQueue());
+            else dispatch(setResumed());
+        }
+
+        mediaSessionHandler.on("play", handler);
+        return () => {
+            mediaSessionHandler.off("play", handler);
+        };
+    }, [playingSongId]);
+
+    useEffect(() => {
+        function handler() {
+            dispatch(setPaused());
+        }
+
+        mediaSessionHandler.on("pause", handler);
+        return () => {
+            mediaSessionHandler.off("pause", handler);
+        };
+    }, []);
+
+    useEffect(() => {
+        function handler() {
+            dispatch(cancelPlaying());
+        }
+
+        mediaSessionHandler.on("stop", handler);
+        return () => {
+            mediaSessionHandler.off("stop", handler);
+        };
+    }, []);
+
+    useEffect(() => {
+        function handler() {
+            dispatch(skipToNext());
+        }
+
+        mediaSessionHandler.on("nexttrack", handler);
+        return () => {
+            mediaSessionHandler.off("nexttrack", handler);
+        };
+    }, []);
+
+    useEffect(() => {
+        function handler() {
+            dispatch(skipToPrevious());
+        }
+
+        mediaSessionHandler.on("previoustrack", handler);
+        return () => {
+            mediaSessionHandler.off("previoustrack", handler);
+        };
+    }, []);
 
     return null;
 };

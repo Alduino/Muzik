@@ -1,10 +1,15 @@
 import Table from "./Table";
 
+export interface AlbumArt {
+    path: string;
+    mime: string;
+}
+
 export interface Album {
     id: number;
     artistId: number;
     name: string;
-    artPath: string | null;
+    art: AlbumArt | null;
 }
 
 export default class AlbumTable extends Table<Album> {
@@ -30,7 +35,7 @@ export default class AlbumTable extends Table<Album> {
 
     async add(
         name: string,
-        artPath: string | null,
+        art: AlbumArt | null,
         artistId: number
     ): Promise<Album> {
         const id = this.getId(name, artistId);
@@ -39,7 +44,7 @@ export default class AlbumTable extends Table<Album> {
             id,
             artistId,
             name,
-            artPath
+            art
         };
 
         await this.table.add(album);

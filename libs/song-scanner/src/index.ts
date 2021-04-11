@@ -2,7 +2,7 @@ import {Database} from "@muzik/database";
 import {log} from "./logger";
 import {getSongFiles} from "./getSongFiles";
 import {getSongInfo, SongInfo} from "./getSongInfo";
-import {getAlbumArt} from "./getAlbumArt";
+import {AlbumArt, getAlbumArt} from "./getAlbumArt";
 
 function getAlbumKey(albumName: string, artistName: string) {
     return artistName.replace(/:/g, "[:]") + ":" + albumName;
@@ -28,7 +28,7 @@ export default async function scan(
 
     log.debug("Searching for album art");
     const albumSongs = new Map<string, SongInfo[]>();
-    const albumArts = new Map<string, string | null>();
+    const albumArts = new Map<string, AlbumArt | null>();
 
     log.trace("Grouping songs into albums");
     for (const songInfo of songInfos) {

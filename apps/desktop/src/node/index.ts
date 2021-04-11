@@ -1,6 +1,4 @@
 import {app, dialog, protocol} from "electron";
-import {join, normalize} from "path";
-import {unescape} from "querystring";
 import {handle} from "../lib/ipc/main";
 import {
     AlbumListResponse,
@@ -18,6 +16,7 @@ import {
 } from "../lib/ipc-constants";
 import {log} from "./logger";
 import {
+    getAlbumById,
     getAllAlbums,
     getSongById,
     getSongsByAlbum,
@@ -25,17 +24,31 @@ import {
     initialise as initialiseDatabase
 } from "./database";
 import {store} from "./configuration";
+import {listen as beginAAServer} from "./album-art-server";
+
+beginAAServer();
+
+protocol.registerSchemesAsPrivileged([
+    {
+        scheme: "albumart",
+        privileges: {
+            supportFetchAPI: true,
+            corsEnabled: true
+        }
+    }
+]);
 
 app.on("ready", () => {
-    protocol.interceptFileProtocol("music-store", (request, callback) => {
-        const url = unescape(request.url.substring("music-store://".length));
-        const path = join(store.get("musicStore"), normalize(url));
-        callback({path});
+    protocol.interceptFileProtocol("albumart", async (request, callback) => {
+        const id = parseInt(request.url.substring("albumart://".length));
+        const album = await getAlbumById(id, false);
+        if (!album || !album.art) return callback({error: 404});
+        callback(album.art.path);
     });
 
     protocol.registerFileProtocol("audio", async (request, callback) => {
         const id = parseInt(request.url.substring("audio://".length));
-        const song = await getSongById(id);
+        const song = await getSongById(id, false);
         if (!song) return callback({error: 404});
         callback(song.path);
     });

@@ -7,7 +7,8 @@ import {DevTools} from "./DevTools";
 import theme from "./theme";
 import {
     AudioController,
-    AudioControllerProvider
+    AudioControllerProvider,
+    MediaSessionController
 } from "./components/lib/AudioController";
 
 export const Root: FC = () => (
@@ -21,6 +22,7 @@ export const Root: FC = () => (
             >
                 <AudioControllerProvider>
                     <AudioController />
+                    <MediaSessionController />
                     <App />
                 </AudioControllerProvider>
             </ColorModeProvider>

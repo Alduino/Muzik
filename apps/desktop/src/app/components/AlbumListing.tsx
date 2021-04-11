@@ -71,9 +71,7 @@ const Album: FC<AlbumProps> = ({album, isSelected, ...props}) => {
         album.id
     ]);
 
-    const artPath = album.artPath
-        ? `music-store://${album.artPath}`
-        : defaultAlbumArt;
+    const artPath = album.art?.path || defaultAlbumArt;
 
     const handleAlbumSelect = () => {
         dispatch(selectAlbum(album.id));
