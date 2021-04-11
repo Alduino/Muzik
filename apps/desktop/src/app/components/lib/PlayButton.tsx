@@ -23,7 +23,7 @@ function usePlayButtonIcon(
     };
 
     const iconProps = {
-        color: colours.backgroundL0
+        ...colours.invertThemeReverse
     };
 
     if (isCurrent) {

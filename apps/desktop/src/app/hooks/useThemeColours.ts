@@ -10,9 +10,14 @@ export default function useThemeColours() {
 
     const border = useColorModeValue("gray.200", "gray.700");
 
+    const invertTheme = useColorModeValue({}, {filter: "invert()"});
+    const invertThemeReverse = useColorModeValue({filter: "invert()"}, {});
+
     return {
         border,
         text,
+        invertTheme,
+        invertThemeReverse,
         backgroundL0,
         backgroundL1,
         backgroundL2,
