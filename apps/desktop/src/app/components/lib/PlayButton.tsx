@@ -44,25 +44,18 @@ function usePlayButtonIcon(
                     )
                 };
             }
-        } else if (isHovered) {
+        } else {
             return {
                 ...baseResult,
                 icon: <GrResume {...iconProps} />
             };
         }
     } else {
-        if (isHovered) {
-            return {
-                ...baseResult,
-                icon: <GrPlay {...iconProps} />
-            };
-        }
+        return {
+            ...baseResult,
+            icon: <GrPlay {...iconProps} />
+        };
     }
-
-    return {
-        ...baseResult,
-        icon: null
-    };
 }
 
 export interface PlayButtonProps {
