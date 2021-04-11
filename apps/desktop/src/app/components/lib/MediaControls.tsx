@@ -1,7 +1,18 @@
 import React, {FC} from "react";
-import {HStack, IconButton, Image} from "@chakra-ui/react";
+import {
+    Box,
+    Divider,
+    Heading,
+    HStack,
+    IconButton,
+    Image,
+    Link,
+    Text,
+    VStack
+} from "@chakra-ui/react";
 import {GrRewind} from "react-icons/gr";
 import {useAsync} from "react-async-hook";
+import {Song as SongType} from "@muzik/database";
 import {FloatingContainer} from "./FloatingContainer";
 import {useAppDispatch, useAppSelector} from "../../store-hooks";
 import {invoke} from "../../../lib/ipc/renderer";
@@ -16,6 +27,7 @@ import {
     skipToNext,
     skipToPrevious
 } from "../../reducers/queue";
+import {selectAlbum} from "../../reducers/albumListingRoute";
 
 interface AlbumArtProps {
     artPath: string;
@@ -30,6 +42,44 @@ const AlbumArt: FC<AlbumArtProps> = props => (
         objectFit="cover"
     />
 );
+
+interface SongInfoProps {
+    song: SongType;
+}
+
+const SongInfo: FC<SongInfoProps> = props => {
+    const dispatch = useAppDispatch();
+    const colours = useThemeColours();
+
+    const handleAlbumClick = () => {
+        dispatch(selectAlbum(props.song.album.id));
+    };
+
+    return (
+        <VStack align="start" overflow="hidden" position="relative" spacing={0}>
+            <Heading size="sm" whiteSpace="nowrap" mb={2}>
+                {props.song.name}
+            </Heading>
+            <Text whiteSpace="nowrap">
+                {props.song.album.artist.name}
+                {" - "}
+                <Link href="#" onClick={handleAlbumClick}>
+                    {props.song.album.name}
+                </Link>
+            </Text>
+            <Box
+                position="absolute"
+                mt={0}
+                top={0}
+                bottom={0}
+                width={12}
+                right={0}
+                bgGradient={`linear(to-r,transparent,${colours.backgroundL1})`}
+                pointerEvents="none"
+            />
+        </VStack>
+    );
+};
 
 interface MediaButtonProps {
     canSkipBackwards: boolean;
@@ -117,13 +167,25 @@ export const MediaControls: FC = () => {
 
     return (
         <FloatingContainer width="full" h={24}>
-            <HStack p={4} gap={8} height="full">
+            <HStack p={4} spacing={4} height="full">
                 <AlbumArt
                     artPath={
                         currentSong.result?.song.album.art?.path ||
                         defaultAlbumArt
                     }
                 />
+
+                <Box width="16rem">
+                    {currentSong.result && (
+                        <SongInfo song={currentSong.result.song} />
+                    )}
+                </Box>
+
+                <Divider orientation="vertical" />
+
+                <Box flex={1} />
+
+                <Divider orientation="vertical" />
 
                 <MediaButtons
                     canSkipBackwards={previousSongsCount > 0}
