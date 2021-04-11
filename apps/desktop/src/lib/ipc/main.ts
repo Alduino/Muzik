@@ -3,7 +3,9 @@ import {ipcMain, IpcMainEvent} from "electron";
 import {
     EventMessage,
     eventName,
+    IpcName,
     MESSAGE_EVENT,
+    readIpcName,
     TYPE_ABORT,
     TYPE_COMPLETE,
     TYPE_ERROR,
@@ -37,9 +39,11 @@ ipcMain.on(MESSAGE_EVENT, (event, arg: EventMessage<unknown>) => {
 });
 
 export function handle<TResponse, TRequest = never, TProgress = never>(
-    name: string,
+    event: IpcName<TResponse, TRequest, TProgress>,
     respond: Responder<TRequest, TResponse, TProgress>
 ): void {
+    const name = readIpcName(event);
+
     if (listeners.has(name))
         throw new Error("More than one listener registered");
 

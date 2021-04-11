@@ -1,11 +1,22 @@
 import {Album, Song} from "@muzik/database";
+import type {IpcName} from "./ipc/common";
 
-export const EVENT_DATABASE_INIT = "initialiseDatabase";
-export const EVENT_MUSIC_IMPORT = "importMusic";
-export const EVENT_SELECT_MUSIC_IMPORT_PATH = "selectMusicImportPath";
-export const EVENT_ALBUM_LIST = "listAlbums";
-export const EVENT_ALBUM_SONGS = "albumSongs";
-export const EVENT_GET_SONG = "getSong";
+function g<TResponse, TRequest = never, TProgress = never>(
+    name: string
+): IpcName<TResponse, TRequest, TProgress> {
+    return [name];
+}
+
+export const EVENT_DATABASE_INIT = g<void>("database init");
+export const EVENT_MUSIC_IMPORT = g<void, MusicImportRequest>("music import");
+export const EVENT_SELECT_MUSIC_IMPORT_PATH = g<boolean>(
+    "select music import path"
+);
+export const EVENT_ALBUM_LIST = g<AlbumListResponse>("album list");
+export const EVENT_ALBUM_SONGS = g<AlbumSongsResponse, AlbumSongsRequest>(
+    "album songs"
+);
+export const EVENT_GET_SONG = g<GetSongResponse, GetSongRequest>("get song");
 
 export interface MusicImportRequest {
     /**

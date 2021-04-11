@@ -1,3 +1,10 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export type IpcName<TResponse, TRequest = never, TProgress = never> = [string];
+
+export function readIpcName(name: IpcName<unknown>) {
+    return name[0];
+}
+
 export const MESSAGE_EVENT = "event";
 export const TYPE_PROGRESS = "progress";
 export const TYPE_COMPLETE = "complete";

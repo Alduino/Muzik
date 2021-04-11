@@ -1,7 +1,9 @@
 import type {IpcRenderer} from "electron";
 import {
     eventName,
+    IpcName,
     MESSAGE_EVENT,
+    readIpcName,
     TYPE_ABORT,
     TYPE_COMPLETE,
     TYPE_ERROR,
@@ -31,11 +33,13 @@ function randomString(length: number) {
 const {ipcSend, ipcOn, ipcOff} = window.electron;
 
 export async function invoke<TResponse, TRequest = never, TProgress = never>(
-    name: string,
+    event: IpcName<TResponse, TRequest, TProgress>,
     arg?: TRequest,
     onProgress?: (progress: TProgress) => void,
     abort?: AbortSignal
 ): Promise<TResponse> {
+    const name = readIpcName(event);
+
     const id = `message_${name}.${randomString(16)}`;
 
     let triggerComplete: (v: TResponse) => void;
