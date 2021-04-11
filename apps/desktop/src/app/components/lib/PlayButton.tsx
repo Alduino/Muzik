@@ -39,7 +39,7 @@ function usePlayButtonIcon(
                     ...baseResult,
                     isVisible: true,
                     icon: (
-                        <Box p={3} width="full" height="full" grow={1}>
+                        <Box p="25%" width="full" height="full" grow={1}>
                             <VisualiserIcon bands={3} />
                         </Box>
                     )

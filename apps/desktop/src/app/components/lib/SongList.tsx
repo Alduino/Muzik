@@ -1,8 +1,16 @@
 import {Heading, HStack} from "@chakra-ui/react";
 import type {Song as SongType} from "@muzik/database";
-import React, {CSSProperties, FC} from "react";
+import React, {CSSProperties, FC, useState} from "react";
 import {FixedSizeList} from "react-window";
 import useThemeColours from "../../hooks/useThemeColours";
+import {PlayButton} from "./PlayButton";
+import {useAppDispatch, useAppSelector} from "../../store-hooks";
+import {
+    beginQueue,
+    cancelPlaying,
+    clearQueue,
+    queueSong
+} from "../../reducers/queue";
 
 interface SongProps {
     song: SongType;
@@ -10,21 +18,46 @@ interface SongProps {
 }
 
 const Song: FC<SongProps> = props => {
+    const dispatch = useAppDispatch();
     const colours = useThemeColours();
+
+    const [isHovered, setHovered] = useState(false);
+
+    const currentSongId = useAppSelector(v => v.queue.nowPlaying);
+    const isCurrent = currentSongId === props.song.id;
+
+    const handleSongPlay = () => {
+        dispatch(cancelPlaying());
+        dispatch(clearQueue());
+        dispatch(queueSong(props.song.id));
+        dispatch(beginQueue());
+    };
 
     return (
         <HStack
             width="calc(100% - 2rem)"
             background={colours.backgroundL2}
-            p={2}
+            px={4}
+            py={3}
             borderRadius="sm"
             shadow="md"
-            height={8}
+            height={12}
             mt={4}
             mb={-2}
             mx={4}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
         >
-            <Heading size="sm">{props.song.name}</Heading>
+            <Heading size="sm" flex={1}>
+                {props.song.name}
+            </Heading>
+
+            <PlayButton
+                size="sm"
+                isCurrent={isCurrent}
+                isHovered={isHovered}
+                onPlay={handleSongPlay}
+            />
         </HStack>
     );
 };
@@ -36,7 +69,7 @@ export interface SongListProps {
 
 export const SongList: FC<SongListProps> = props => (
     <FixedSizeList
-        itemSize={32}
+        itemSize={48}
         height={props.height}
         itemCount={props.songs.length}
         width="100%"
