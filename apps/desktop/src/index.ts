@@ -24,14 +24,16 @@ const createWindow = async () => {
     // and load the index.html of the app.
     await mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
-    console.log("installing");
-    await installDevtool(DEVTOOL_REACT);
+    if (process.env.NODE_ENV !== "production") {
+        console.log("installing");
+        await installDevtool(DEVTOOL_REACT);
 
-    // wait for a bit
-    await new Promise(yay => setTimeout(yay, 1000));
+        // wait for a bit
+        await new Promise(yay => setTimeout(yay, 1000));
 
-    // Open the DevTools.
-    mainWindow.webContents.openDevTools();
+        // Open the DevTools.
+        mainWindow.webContents.openDevTools();
+    }
 };
 
 // This method will be called when Electron has finished
