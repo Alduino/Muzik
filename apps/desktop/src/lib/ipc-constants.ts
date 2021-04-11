@@ -19,6 +19,9 @@ export const EVENT_ALBUM_SONGS = g<AlbumSongsResponse, AlbumSongsRequest>(
     "album songs"
 );
 export const EVENT_GET_SONG = g<GetSongResponse, GetSongRequest>("get song");
+export const EVENT_REDUX_DEV_TOOLS_ENABLED = g<boolean>(
+    "redux dev tools enabled"
+);
 
 export interface MusicImportRequest {
     /**
