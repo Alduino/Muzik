@@ -36,7 +36,7 @@ export async function getAlbumArt(
             if (!SUPPORTED_MIME_TYPES.includes(format.mime)) continue;
 
             log.trace("File is valid album art: %s", format.mime);
-            return {path, mime: format.mime};
+            return {path: path.replace(/\\/g, "/"), mime: format.mime};
         }
     }
 

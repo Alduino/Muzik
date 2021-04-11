@@ -33,7 +33,7 @@ export async function getSongFiles(dir: string): Promise<string[]> {
                 const type = await mimeFromFile(path);
                 if (type && SUPPORTED_MIME_TYPES.includes(type.mime)) {
                     log.trace("Found a valid file, %s", path);
-                    return path;
+                    return path.replace(/\\/g, "/");
                 }
             } catch (err) {
                 log.warn(
