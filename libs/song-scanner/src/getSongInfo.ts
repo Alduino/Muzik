@@ -13,7 +13,7 @@ export interface SongInfo {
     duration: number;
 }
 
-// based on npm:get-audio-duration library, but it's ffprobe resolution doesn't
+// based on npm:get-audio-duration library, but its ffprobe resolution doesn't
 // work with pnpm workspaces and webpack :(
 async function getAudioDuration(filePath: string, ffprobePath: string) {
     const params = [
@@ -37,7 +37,7 @@ export async function getSongInfo(
     progress: (prog: number) => void
 ): Promise<SongInfo[]> {
     log.debug("Downloading ffprobe...");
-    await new Promise(yay => {
+    await new Promise<void>(yay => {
         downloadBinaries(
             "ffprobe",
             {

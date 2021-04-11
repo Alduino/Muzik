@@ -30,24 +30,31 @@ declare module "ffbinaries" {
     }
 
     function downloadBinaries(
-        components?: Component | Component[],
-        opts?: DownloadOptions,
+        components: Component | Component[],
+        opts: DownloadOptions,
         callback: () => void
-    );
+    ): void;
+
+    function downloadBinaries(
+        components: Component | Component[],
+        callback: () => void
+    ): void;
+
+    function downloadBinaries(callback: () => void): void;
 
     export interface LocateOptions {
         paths?: string;
         ensureExecutable?: string[];
     }
 
-    export interface LocateResult {
-        [component: Component]: {
+    export type LocateResult = {
+        [component in Component]: {
             found: boolean;
             isExecutable: boolean;
             path: string;
             version: string | "error" | null;
         };
-    }
+    };
 
     function locateBinariesSync(
         components: Component | Component[],
