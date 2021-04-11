@@ -10,7 +10,8 @@ import {
     LinkOverlay,
     Skeleton,
     Stack,
-    Text
+    Text,
+    VStack
 } from "@chakra-ui/react";
 import React, {CSSProperties, FC, useEffect, useState} from "react";
 import {useAsync} from "react-async-hook";
@@ -45,6 +46,7 @@ import {
 } from "../reducers/queue";
 import {PlayButton} from "./lib/PlayButton";
 import {useAppDispatch, useAppSelector} from "../store-hooks";
+import {MediaControls} from "./lib/MediaControls";
 
 const fetchAlbums = () => invoke<AlbumListResponse>(EVENT_ALBUM_LIST);
 const fetchAlbumSongs = (albumId: number) =>
@@ -199,67 +201,71 @@ export const AlbumListing: FC = () => {
         return <ErrorLabel message={albums.error.message} />;
     } else {
         return (
-            <HStack m={24} spacing={24}>
-                <FloatingContainer>
-                    <HStack
-                        height={12}
-                        background={colours.backgroundL3}
-                        shadow="sm"
-                        justify="center"
-                        px={4}
-                    >
-                        <Heading size="md">Albums</Heading>
-                        <Box flex={1} />
-                        <IconButton
-                            aria-label="Play all"
-                            icon={<GrPlay style={colours.invertTheme} />}
-                            variant="ghost"
-                            size="sm"
-                            isRound
-                            onClick={handlePlayAll}
-                        />
-                        <IconButton
-                            aria-label="Play all"
-                            icon={<IoShuffle color={colours.text} />}
-                            variant="ghost"
-                            size="sm"
-                            isRound
-                            onClick={handleShuffleAll}
-                        />
-                    </HStack>
-                    {albums.loading ? (
-                        Array.from({length: 4}, (_, i) => (
-                            <Skeleton key={i} width="full" mx={4} mt={4} />
-                        ))
-                    ) : (
-                        <AlbumList
-                            albums={albums.result.albums}
-                            selectedAlbum={selectedAlbum}
-                            height={windowHeight - 96 * 2 - 48}
-                        />
-                    )}
-                </FloatingContainer>
-
-                {albumSongs.result?.songs.length > 0 && (
+            <VStack m={24} spacing={24}>
+                <HStack spacing={24}>
                     <FloatingContainer>
-                        <Center
+                        <HStack
                             height={12}
                             background={colours.backgroundL3}
                             shadow="sm"
+                            justify="center"
+                            px={4}
                         >
-                            <Heading size="md">Songs</Heading>
-                        </Center>
-                        <SongList
-                            songs={albumSongs.result.songs}
-                            height={windowHeight - 96 * 2 - 48}
-                        />
+                            <Heading size="md">Albums</Heading>
+                            <Box flex={1} />
+                            <IconButton
+                                aria-label="Play all"
+                                icon={<GrPlay style={colours.invertTheme} />}
+                                variant="ghost"
+                                size="sm"
+                                isRound
+                                onClick={handlePlayAll}
+                            />
+                            <IconButton
+                                aria-label="Play all"
+                                icon={<IoShuffle color={colours.text} />}
+                                variant="ghost"
+                                size="sm"
+                                isRound
+                                onClick={handleShuffleAll}
+                            />
+                        </HStack>
+                        {albums.loading ? (
+                            Array.from({length: 4}, (_, i) => (
+                                <Skeleton key={i} width="full" mx={4} mt={4} />
+                            ))
+                        ) : (
+                            <AlbumList
+                                albums={albums.result.albums}
+                                selectedAlbum={selectedAlbum}
+                                height={windowHeight - 96 * 3 - 48 - 96}
+                            />
+                        )}
                     </FloatingContainer>
-                )}
 
-                {albumSongs.status === "error" && (
-                    <ErrorLabel message={albumSongs.error?.message} />
-                )}
-            </HStack>
+                    {albumSongs.result?.songs.length > 0 && (
+                        <FloatingContainer>
+                            <Center
+                                height={12}
+                                background={colours.backgroundL3}
+                                shadow="sm"
+                            >
+                                <Heading size="md">Songs</Heading>
+                            </Center>
+                            <SongList
+                                songs={albumSongs.result.songs}
+                                height={windowHeight - 96 * 3 - 48 - 96}
+                            />
+                        </FloatingContainer>
+                    )}
+
+                    {albumSongs.status === "error" && (
+                        <ErrorLabel message={albumSongs.error?.message} />
+                    )}
+                </HStack>
+
+                <MediaControls />
+            </VStack>
         );
     }
 };
