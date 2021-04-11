@@ -68,3 +68,7 @@ export async function getSongById(
 export function getAlbumById(albumId: number, exposed = true): Promise<Album> {
     return db.getAlbum(albumId).then(res => exposeAlbum(res, exposed));
 }
+
+export function getAllSongIds(): Promise<number[]> {
+    return db.getAllSongIds();
+}

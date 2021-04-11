@@ -23,11 +23,44 @@ export const queueAlbum = createAsyncThunk(
     }
 );
 
+interface GetAndRemoveNextSongOpts {
+    playNextSongs: number[];
+    songs: number[];
+    previousSongs: number[];
+    shuffled: boolean;
+}
+
+function getAndRemoveNextSong(opts: GetAndRemoveNextSongOpts): number | null {
+    const {playNextSongs, songs, previousSongs, shuffled} = opts;
+
+    if (playNextSongs.length > 0) return playNextSongs.unshift() || null;
+    if (!shuffled) return songs.unshift() || null;
+
+    // try and pick a song that hasn't already been played
+    const recentPreviousSongs = previousSongs.slice(-10);
+    const notPlayedSongs = songs.filter(
+        it => !recentPreviousSongs.includes(it)
+    );
+
+    // if there are no songs that haven't been played, just pick a random one
+    const songsToShuffle = notPlayedSongs.length > 0 ? notPlayedSongs : songs;
+
+    const nextSongIndex = Math.floor(Math.random() * songsToShuffle.length);
+    const nextSong = songsToShuffle[nextSongIndex];
+
+    // delete the song being played
+    opts.previousSongs.splice(nextSongIndex, 1);
+
+    return nextSong || null;
+}
+
 export const slice = createSlice({
     name: "queue",
     initialState: {
+        playNextSongs: [] as number[],
         songs: [] as number[],
         previousSongs: [] as number[],
+        shuffled: false,
         nowPlaying: null as number | null,
         isPlaying: false,
         currentTime: 0,
@@ -44,13 +77,16 @@ export const slice = createSlice({
             state.songs.push(...ids.payload);
         },
         playNext(state, id: PayloadAction<number>) {
-            state.songs.unshift(id.payload);
+            state.playNextSongs.unshift(id.payload);
+        },
+        shuffle(state) {
+            state.shuffled = true;
         },
         skipToNext(state) {
             state.currentTime = 0;
             if (state.nowPlaying !== null)
                 state.previousSongs.push(state.nowPlaying);
-            state.nowPlaying = state.songs.shift() || null;
+            state.nowPlaying = getAndRemoveNextSong(state);
             state.isPlaying = state.nowPlaying !== null;
         },
         skipToPrevious(state) {
@@ -70,7 +106,7 @@ export const slice = createSlice({
         begin(state) {
             if (state.nowPlaying !== null)
                 state.previousSongs.push(state.nowPlaying);
-            state.nowPlaying = state.songs.shift() || null;
+            state.nowPlaying = getAndRemoveNextSong(state);
             state.isPlaying = state.nowPlaying !== null;
         },
         resume(state) {
@@ -105,6 +141,7 @@ export const {
     queueSong,
     queueSongs,
     playNext,
+    shuffle: shuffleQueue,
     skipToNext,
     skipToPrevious,
     begin: beginQueue,

@@ -22,6 +22,9 @@ export const EVENT_GET_SONG = g<GetSongResponse, GetSongRequest>("get song");
 export const EVENT_REDUX_DEV_TOOLS_ENABLED = g<boolean>(
     "redux dev tools enabled"
 );
+export const EVENT_GET_ALL_SONG_IDS = g<GetAllSongIdsResponse>(
+    "get all song ids"
+);
 
 export interface MusicImportRequest {
     /**
@@ -48,4 +51,8 @@ export interface AlbumSongsResponse {
 
 export interface GetSongResponse {
     song: Song;
+}
+
+export interface GetAllSongIdsResponse {
+    songIds: number[];
 }

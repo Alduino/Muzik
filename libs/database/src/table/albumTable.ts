@@ -28,6 +28,12 @@ export default class AlbumTable extends Table<Album> {
         });
     }
 
+    getAllIds(): Promise<number[]> {
+        return this.table
+            .getAllOfIndex("id")
+            .then(res => res.map(item => parseInt(item)));
+    }
+
     hasNamed(name: string, artistId: number): Promise<boolean> {
         const id = this.getId(name, artistId);
         return this.table.includes({id: v => parseInt(v) === id});

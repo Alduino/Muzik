@@ -288,6 +288,22 @@ export default class JsonTable<T> {
         return result;
     }
 
+    async getAllOfIndex(index: ValidKeys<T>): Promise<string[]> {
+        if (!this.info.indices.includes(index))
+            throw new Error(`${index} does not have an index`);
+
+        const stream = createReadStream(this.getIndexPath(index));
+        const rl = createRl(stream);
+
+        const result: string[] = [];
+
+        for await (const line of rl) {
+            result.push(line);
+        }
+
+        return result;
+    }
+
     /**
      * Returns the first id that matches. Note, `id` is a transparent value that you shouldn't rely on.
      * @param predicates - Key is row name, value is predicate function. Note all values are in their toString() form.

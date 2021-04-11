@@ -7,9 +7,10 @@ import {
     EVENT_ALBUM_LIST,
     EVENT_ALBUM_SONGS,
     EVENT_DATABASE_INIT,
-    EVENT_REDUX_DEV_TOOLS_ENABLED,
+    EVENT_GET_ALL_SONG_IDS,
     EVENT_GET_SONG,
     EVENT_MUSIC_IMPORT,
+    EVENT_REDUX_DEV_TOOLS_ENABLED,
     EVENT_SELECT_MUSIC_IMPORT_PATH,
     GetSongRequest,
     GetSongResponse,
@@ -19,6 +20,7 @@ import {log} from "./logger";
 import {
     getAlbumById,
     getAllAlbums,
+    getAllSongIds,
     getSongById,
     getSongsByAlbum,
     importMusic,
@@ -113,6 +115,12 @@ handle<GetSongResponse, GetSongRequest>(EVENT_GET_SONG, async arg => {
     return {
         song
     };
+});
+
+handle(EVENT_GET_ALL_SONG_IDS, async () => {
+    const songIds = await getAllSongIds();
+
+    return {songIds};
 });
 
 handle(EVENT_REDUX_DEV_TOOLS_ENABLED, () => {

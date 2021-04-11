@@ -1,8 +1,10 @@
 import type {Album as AlbumType} from "@muzik/database";
 import {
+    Box,
     Center,
     Heading,
     HStack,
+    IconButton,
     Image,
     LinkBox,
     LinkOverlay,
@@ -13,6 +15,8 @@ import {
 import React, {CSSProperties, FC, useEffect, useState} from "react";
 import {useAsync} from "react-async-hook";
 import {FixedSizeList} from "react-window";
+import {GrPlay} from "react-icons/gr";
+import {IoShuffle} from "react-icons/all";
 import {invoke} from "../../lib/ipc/renderer";
 import {
     AlbumListResponse,
@@ -20,6 +24,7 @@ import {
     AlbumSongsResponse,
     EVENT_ALBUM_LIST,
     EVENT_ALBUM_SONGS,
+    EVENT_GET_ALL_SONG_IDS,
     EVENT_GET_SONG,
     GetSongRequest,
     GetSongResponse
@@ -34,7 +39,9 @@ import {
     cancelPlaying,
     clearQueue,
     queueAlbum,
-    beginQueue
+    beginQueue,
+    shuffleQueue,
+    queueSongs
 } from "../reducers/queue";
 import {PlayButton} from "./lib/PlayButton";
 import {useAppDispatch, useAppSelector} from "../store-hooks";
@@ -42,6 +49,7 @@ import {useAppDispatch, useAppSelector} from "../store-hooks";
 const fetchAlbums = () => invoke<AlbumListResponse>(EVENT_ALBUM_LIST);
 const fetchAlbumSongs = (albumId: number) =>
     invoke<AlbumSongsResponse, AlbumSongsRequest>(EVENT_ALBUM_SONGS, {albumId});
+const fetchAllSongIds = () => invoke(EVENT_GET_ALL_SONG_IDS);
 
 const checkAlbumPlaying = async (songId: number | null, albumId: number) => {
     if (songId === null) return false;
@@ -150,6 +158,7 @@ const AlbumList: FC<AlbumListProps> = ({albums, selectedAlbum, height}) => (
 );
 
 export const AlbumListing: FC = () => {
+    const dispatch = useAppDispatch();
     const [windowHeight, setWindowHeight] = useState(window.innerHeight);
     const selectedAlbum = useAppSelector(
         v => v.albumListingRoute.selectedAlbum
@@ -167,19 +176,57 @@ export const AlbumListing: FC = () => {
         return () => window.removeEventListener("resize", handler);
     });
 
+    const handlePlayAll = async () => {
+        dispatch(cancelPlaying());
+
+        const allSongIds = await fetchAllSongIds();
+        dispatch(queueSongs(allSongIds.songIds));
+
+        dispatch(beginQueue());
+    };
+
+    const handleShuffleAll = async () => {
+        dispatch(cancelPlaying());
+
+        const allSongIds = await fetchAllSongIds();
+        dispatch(queueSongs(allSongIds.songIds));
+
+        dispatch(shuffleQueue());
+        dispatch(beginQueue());
+    };
+
     if (albums.error) {
         return <ErrorLabel message={albums.error.message} />;
     } else {
         return (
             <HStack m={24} spacing={24}>
                 <FloatingContainer>
-                    <Center
+                    <HStack
                         height={12}
                         background={colours.backgroundL3}
                         shadow="sm"
+                        justify="center"
+                        px={4}
                     >
                         <Heading size="md">Albums</Heading>
-                    </Center>
+                        <Box flex={1} />
+                        <IconButton
+                            aria-label="Play all"
+                            icon={<GrPlay style={colours.invertTheme} />}
+                            variant="ghost"
+                            size="sm"
+                            isRound
+                            onClick={handlePlayAll}
+                        />
+                        <IconButton
+                            aria-label="Play all"
+                            icon={<IoShuffle color={colours.text} />}
+                            variant="ghost"
+                            size="sm"
+                            isRound
+                            onClick={handleShuffleAll}
+                        />
+                    </HStack>
                     {albums.loading ? (
                         Array.from({length: 4}, (_, i) => (
                             <Skeleton key={i} width="full" mx={4} mt={4} />

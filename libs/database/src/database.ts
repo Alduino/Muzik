@@ -87,6 +87,21 @@ export class Database {
         return this.wrapSongs(songs);
     }
 
+    getAllArtistIds(): Promise<number[]> {
+        this.checkInitialised();
+        return this.artists.getAllIds();
+    }
+
+    getAllAlbumIds(): Promise<number[]> {
+        this.checkInitialised();
+        return this.albums.getAllIds();
+    }
+
+    getAllSongIds(): Promise<number[]> {
+        this.checkInitialised();
+        return this.songs.getAllIds();
+    }
+
     getMatchingArtists(predicates: Predicates<Artist>): Promise<Artist[]> {
         this.checkInitialised();
 

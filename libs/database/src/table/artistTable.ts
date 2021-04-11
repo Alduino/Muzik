@@ -20,6 +20,12 @@ export default class ArtistTable extends Table<Artist> {
         });
     }
 
+    getAllIds(): Promise<number[]> {
+        return this.table
+            .getAllOfIndex("id")
+            .then(res => res.map(item => parseInt(item)));
+    }
+
     hasNamed(name: string): Promise<boolean> {
         const id = this.getId(name);
         return this.table.includes({id: v => parseInt(v) === id});

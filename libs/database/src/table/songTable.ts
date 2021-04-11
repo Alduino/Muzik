@@ -24,6 +24,12 @@ export default class SongTable extends Table<Song> {
         });
     }
 
+    getAllIds(): Promise<number[]> {
+        return this.table
+            .getAllOfIndex("id")
+            .then(res => res.map(item => parseInt(item)));
+    }
+
     hasNamed(name: string, albumId: number): Promise<boolean> {
         const id = this.getId(name, albumId);
         return this.table.includes({id: v => parseInt(v) === id});
