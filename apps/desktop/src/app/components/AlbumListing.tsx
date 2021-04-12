@@ -49,11 +49,14 @@ import {
     queueAlbum,
     beginQueue,
     shuffleQueue,
-    queueSongs
+    queueSongs,
+    playAlbumNext,
+    playAlbumAfterNext
 } from "../reducers/queue";
 import {PlayButton} from "./lib/PlayButton";
 import {useAppDispatch, useAppSelector} from "../store-hooks";
 import {MediaControls} from "./lib/MediaControls";
+import {ContextMenu, MenuItem, useContextMenu} from "./lib/ContextMenu";
 
 const fetchAlbums = () => invoke<AlbumListResponse>(EVENT_ALBUM_LIST);
 const fetchAlbumSongs = (albumId: number) =>
@@ -78,6 +81,7 @@ interface AlbumProps {
 const Album: FC<AlbumProps> = ({album, isSelected, ...props}) => {
     const colours = useThemeColours();
     const dispatch = useAppDispatch();
+    const {onContextMenu, props: contextMenuProps} = useContextMenu();
 
     const [isHovered, setHovered] = useState(false);
 
@@ -100,13 +104,31 @@ const Album: FC<AlbumProps> = ({album, isSelected, ...props}) => {
         dispatch(queueAlbum(album.id)).then(() => dispatch(beginQueue()));
     };
 
+    const handlePlayNext = () => {
+        dispatch(playAlbumNext(album.id));
+    };
+
+    const handleAddToQueue = () => {
+        dispatch(playAlbumAfterNext(album.id));
+    };
+
     return (
         <LinkBox
             width="full"
             style={props.style}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
+            onContextMenu={onContextMenu}
         >
+            <ContextMenu {...contextMenuProps}>
+                <MenuItem onClick={handleAddToQueue}>
+                    <Text>Add to queue</Text>
+                </MenuItem>
+                <MenuItem onClick={handlePlayNext}>
+                    <Text>Play next</Text>
+                </MenuItem>
+            </ContextMenu>
+
             <HStack
                 width="calc(100% - 2em)"
                 background={colours.backgroundL2}

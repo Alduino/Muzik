@@ -13,11 +13,16 @@ export default function useThemeColours() {
     const invertTheme = useColorModeValue({}, {filter: "invert()"});
     const invertThemeReverse = useColorModeValue({filter: "invert()"}, {});
 
+    const translucentHoverBg = useColorModeValue("#0001", "#fff1");
+    const translucentActiveBg = useColorModeValue("#0002", "#fff2");
+
     return {
         border,
         text,
         invertTheme,
         invertThemeReverse,
+        translucentHoverBg,
+        translucentActiveBg,
         backgroundL0,
         backgroundL1,
         backgroundL2,

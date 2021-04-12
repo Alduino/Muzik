@@ -76,7 +76,7 @@ export interface SongListProps {
 
 export const SongList: FC<SongListProps> = props => (
     <FixedSizeList
-        itemSize={48}
+        itemSize={56}
         height={props.height}
         itemCount={props.songs.length}
         width="100%"
