@@ -249,7 +249,11 @@ export const AlbumListing: FC = () => {
         return <ErrorLabel message={albums.error.message} />;
     } else {
         return (
-            <VStack m={24} spacing={24}>
+            <VStack spacing={24}>
+                <Box width="full" shadow="lg">
+                    <MediaControls />
+                </Box>
+
                 <HStack spacing={24}>
                     <FloatingContainer>
                         <HStack
@@ -312,8 +316,6 @@ export const AlbumListing: FC = () => {
                         <ErrorLabel message={albumSongs.error?.message} />
                     )}
                 </HStack>
-
-                <MediaControls />
             </VStack>
         );
     }

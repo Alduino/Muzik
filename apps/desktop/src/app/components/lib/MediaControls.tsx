@@ -238,33 +238,30 @@ export const MediaControls: FC = () => {
     const currentSong = useAsync(getSong, [currentSongId]);
 
     return (
-        <FloatingContainer width="full" h={24}>
-            <HStack p={4} spacing={4} height="full">
-                <AlbumArt
-                    artPath={
-                        currentSong.result?.song.album.art?.path ||
-                        defaultAlbumArt
-                    }
-                />
+        <HStack p={4} spacing={4} height="full">
+            <AlbumArt
+                artPath={
+                    currentSong.result?.song.album.art?.path || defaultAlbumArt
+                }
+            />
 
-                <Box width="16rem">
-                    {currentSong.result && (
-                        <SongInfo song={currentSong.result.song} />
-                    )}
-                </Box>
+            <Box width="16rem">
+                {currentSong.result && (
+                    <SongInfo song={currentSong.result.song} />
+                )}
+            </Box>
 
-                <Divider orientation="vertical" />
+            <Divider orientation="vertical" />
 
-                <SongTracker duration={currentSong.result?.song.duration} />
+            <SongTracker duration={currentSong.result?.song.duration} />
 
-                <Divider orientation="vertical" />
+            <Divider orientation="vertical" />
 
-                <MediaButtons
-                    canSkipBackwards={previousSongsCount > 0}
-                    canSkipForwards={nextSongsCount > 0}
-                    canPlayPause={currentSongId !== null || nextSongsCount > 0}
-                />
-            </HStack>
-        </FloatingContainer>
+            <MediaButtons
+                canSkipBackwards={previousSongsCount > 0}
+                canSkipForwards={nextSongsCount > 0}
+                canPlayPause={currentSongId !== null || nextSongsCount > 0}
+            />
+        </HStack>
     );
 };
