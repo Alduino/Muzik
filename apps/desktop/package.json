@@ -14,6 +14,10 @@
     "name": "Zach Barham",
     "email": "git@alduino.dev"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alduino/music-app.git"
+  },
   "license": "MIT",
   "config": {
     "forge": {
