@@ -238,7 +238,7 @@ export const MediaControls: FC = () => {
     const currentSong = useAsync(getSong, [currentSongId]);
 
     return (
-        <HStack p={4} spacing={4} height="full">
+        <HStack p={4} spacing={4} height={24}>
             <AlbumArt
                 artPath={
                     currentSong.result?.song.album.art?.path || defaultAlbumArt
