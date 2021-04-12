@@ -1,4 +1,4 @@
-import React, {FC} from "react";
+import React, {FC, useState} from "react";
 import {
     Box,
     Divider,
@@ -7,6 +7,10 @@ import {
     IconButton,
     Image,
     Link,
+    Slider,
+    SliderFilledTrack,
+    SliderThumb,
+    SliderTrack,
     Text,
     VStack
 } from "@chakra-ui/react";
@@ -22,12 +26,14 @@ import useThemeColours from "../../hooks/useThemeColours";
 import defaultAlbumArt from "../../assets/default-album-art.svg";
 import {
     beginQueue,
+    setCurrentTime,
     setPaused,
     setResumed,
     skipToNext,
     skipToPrevious
 } from "../../reducers/queue";
 import {selectAlbum} from "../../reducers/albumListingRoute";
+import {formatDuration} from "../../utils/formatDuration";
 
 interface AlbumArtProps {
     artPath: string;
@@ -78,6 +84,73 @@ const SongInfo: FC<SongInfoProps> = props => {
                 pointerEvents="none"
             />
         </VStack>
+    );
+};
+
+interface SongTrackerProps {
+    duration: number;
+}
+
+const SongTracker: FC<SongTrackerProps> = props => {
+    const dispatch = useAppDispatch();
+
+    const [isDisplayOverride, useDisplayOverride] = useState(false);
+
+    const [displayOverrideTime, setDisplayOverrideTime] = useState(0);
+
+    const currentTime = useAppSelector(state => state.queue.currentTime);
+
+    const currentDisplayTime = isDisplayOverride
+        ? displayOverrideTime
+        : currentTime;
+    const currentTimeString = formatDuration(currentDisplayTime);
+
+    const durationString = props.duration
+        ? formatDuration(props.duration)
+        : "--:--";
+
+    const handleChangeStart = () => {
+        useDisplayOverride(true);
+    };
+
+    const handleChangeEnd = () => {
+        if (!isDisplayOverride) return;
+        dispatch(setCurrentTime(displayOverrideTime));
+        useDisplayOverride(false);
+    };
+
+    const handleTimeChange = (percent: number) => {
+        if (!props.duration) return;
+        if (!isDisplayOverride) return;
+        setDisplayOverrideTime((percent / 100) * props.duration);
+    };
+
+    return (
+        <HStack flex={1} spacing={4}>
+            <Text size="sm" opacity={0.8}>
+                {currentTimeString}
+            </Text>
+
+            <Slider
+                aria-label="Song time"
+                value={(currentDisplayTime / (props.duration || 1)) * 100}
+                flex={1}
+                focusThumbOnChange={false}
+                onChangeStart={handleChangeStart}
+                onChangeEnd={handleChangeEnd}
+                onChange={handleTimeChange}
+                step={100 / props.duration}
+            >
+                <SliderTrack>
+                    <SliderFilledTrack />
+                </SliderTrack>
+                <SliderThumb />
+            </Slider>
+
+            <Text size="sm" opacity={0.8}>
+                {durationString}
+            </Text>
+        </HStack>
     );
 };
 
@@ -161,7 +234,6 @@ export const MediaControls: FC = () => {
     const nextSongsCount = useAppSelector(
         state => state.queue.playNextSongs.length + state.queue.songs.length
     );
-    const currentTime = useAppSelector(state => state.queue.currentTime);
 
     const currentSong = useAsync(getSong, [currentSongId]);
 
@@ -183,7 +255,7 @@ export const MediaControls: FC = () => {
 
                 <Divider orientation="vertical" />
 
-                <Box flex={1} />
+                <SongTracker duration={currentSong.result?.song.duration} />
 
                 <Divider orientation="vertical" />
 

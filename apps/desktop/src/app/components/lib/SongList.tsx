@@ -11,16 +11,7 @@ import {
     clearQueue,
     queueSong
 } from "../../reducers/queue";
-
-function formatDuration(totalSeconds: number) {
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = Math.floor(totalSeconds % 60);
-
-    const minutesPadded = minutes.toString().padStart(2, "0");
-    const secondsPadded = seconds.toString().padStart(2, "0");
-
-    return `${minutesPadded}:${secondsPadded}`;
-}
+import {formatDuration} from "../../utils/formatDuration";
 
 interface SongProps {
     song: SongType;
