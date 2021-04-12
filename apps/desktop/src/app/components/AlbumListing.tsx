@@ -13,7 +13,14 @@ import {
     Text,
     VStack
 } from "@chakra-ui/react";
-import React, {CSSProperties, FC, useEffect, useState} from "react";
+import React, {
+    CSSProperties,
+    FC,
+    MutableRefObject,
+    useEffect,
+    useRef,
+    useState
+} from "react";
 import {useAsync} from "react-async-hook";
 import {FixedSizeList} from "react-window";
 import {GrPlay} from "react-icons/gr";
@@ -136,9 +143,15 @@ interface AlbumListProps {
     albums: AlbumType[];
     selectedAlbum: number;
     height: number;
+    listRef?: MutableRefObject<FixedSizeList>;
 }
 
-const AlbumList: FC<AlbumListProps> = ({albums, selectedAlbum, height}) => (
+const AlbumList: FC<AlbumListProps> = ({
+    albums,
+    selectedAlbum,
+    height,
+    ...props
+}) => (
     <FixedSizeList
         itemSize={144}
         height={height}
@@ -148,6 +161,7 @@ const AlbumList: FC<AlbumListProps> = ({albums, selectedAlbum, height}) => (
             selected: item.id === selectedAlbum
         }))}
         width="100%"
+        ref={props.listRef}
     >
         {({data, index, style}) => (
             <Album
@@ -168,6 +182,7 @@ export const AlbumListing: FC = () => {
     const albums = useAsync(fetchAlbums, []);
     const albumSongs = useAsync(fetchAlbumSongs, [selectedAlbum]);
     const colours = useThemeColours();
+    const albumListRef = useRef<FixedSizeList>();
 
     useEffect(() => {
         function handler() {
@@ -177,6 +192,17 @@ export const AlbumListing: FC = () => {
         window.addEventListener("resize", handler);
         return () => window.removeEventListener("resize", handler);
     });
+
+    useEffect(() => {
+        const {current} = albumListRef;
+        if (!current) return;
+
+        const {albums: albumList} = albums.result || {};
+        if (!albumList) return;
+
+        const index = albumList.findIndex(v => v.id === selectedAlbum);
+        current.scrollToItem(index, "smart");
+    }, [albumListRef.current, albums.result, selectedAlbum]);
 
     const handlePlayAll = async () => {
         dispatch(cancelPlaying());
@@ -239,6 +265,7 @@ export const AlbumListing: FC = () => {
                                 albums={albums.result.albums}
                                 selectedAlbum={selectedAlbum}
                                 height={windowHeight - 96 * 3 - 48 - 96}
+                                listRef={albumListRef}
                             />
                         )}
                     </FloatingContainer>
