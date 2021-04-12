@@ -1,6 +1,5 @@
 {
-  "name": "@muzik/app-desktop",
-  "productName": "@muzik-app-desktop",
+  "name": "muzik-desktop",
   "version": "1.0.0",
   "description": "My Electron application description",
   "main": ".webpack/main",
