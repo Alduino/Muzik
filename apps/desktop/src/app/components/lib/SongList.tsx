@@ -9,9 +9,12 @@ import {
     beginQueue,
     cancelPlaying,
     clearQueue,
+    playAfterNext,
+    playNext,
     queueSong
 } from "../../reducers/queue";
 import {formatDuration} from "../../utils/formatDuration";
+import {ContextMenu, MenuItem, useContextMenu} from "./ContextMenu";
 
 interface SongProps {
     song: SongType;
@@ -21,6 +24,7 @@ interface SongProps {
 const Song: FC<SongProps> = props => {
     const dispatch = useAppDispatch();
     const colours = useThemeColours();
+    const {onContextMenu, props: contextMenuProps} = useContextMenu();
 
     const [isHovered, setHovered] = useState(false);
 
@@ -32,6 +36,14 @@ const Song: FC<SongProps> = props => {
         dispatch(clearQueue());
         dispatch(queueSong(props.song.id));
         dispatch(beginQueue());
+    };
+
+    const handlePlayNext = () => {
+        dispatch(playNext(props.song.id));
+    };
+
+    const handleAddToQueue = () => {
+        dispatch(playAfterNext(props.song.id));
     };
 
     const durationText = formatDuration(props.song.duration);
@@ -50,7 +62,17 @@ const Song: FC<SongProps> = props => {
             mx={4}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
+            onContextMenu={onContextMenu}
         >
+            <ContextMenu {...contextMenuProps}>
+                <MenuItem onClick={handleAddToQueue}>
+                    <Text>Add to queue</Text>
+                </MenuItem>
+                <MenuItem onClick={handlePlayNext}>
+                    <Text>Play next</Text>
+                </MenuItem>
+            </ContextMenu>
+
             <Heading size="sm">{props.song.name}</Heading>
 
             <Text fontSize="sm" opacity={0.5}>
