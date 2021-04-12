@@ -262,7 +262,7 @@ export const MediaControls: FC = () => {
                 <MediaButtons
                     canSkipBackwards={previousSongsCount > 0}
                     canSkipForwards={nextSongsCount > 0}
-                    canPlayPause={currentSongId !== null}
+                    canPlayPause={currentSongId !== null || nextSongsCount > 0}
                 />
             </HStack>
         </FloatingContainer>
