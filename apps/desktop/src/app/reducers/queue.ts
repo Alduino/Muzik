@@ -23,6 +23,28 @@ export const queueAlbum = createAsyncThunk(
     }
 );
 
+export const playAlbumAfterNext = createAsyncThunk(
+    "queue/playAlbumAfterNext",
+    async (id: number) => {
+        const album = await invoke(EVENT_ALBUM_SONGS, {
+            albumId: id
+        });
+
+        return album.songs.map(song => song.id);
+    }
+);
+
+export const playAlbumNext = createAsyncThunk(
+    "queue/playAlbumNext",
+    async (id: number) => {
+        const album = await invoke(EVENT_ALBUM_SONGS, {
+            albumId: id
+        });
+
+        return album.songs.map(song => song.id);
+    }
+);
+
 interface GetAndRemoveNextSongOpts {
     playNextSongs: number[];
     songs: number[];
@@ -79,6 +101,12 @@ export const slice = createSlice({
         playNext(state, id: PayloadAction<number>) {
             state.playNextSongs.unshift(id.payload);
         },
+        playAfterNext(state, {payload}: PayloadAction<number>) {
+            state.playNextSongs.push(payload);
+        },
+        playAllAfterNext(state, {payload}: PayloadAction<number[]>) {
+            state.playNextSongs.push(...payload);
+        },
         shuffle(state) {
             state.shuffled = true;
         },
@@ -133,6 +161,14 @@ export const slice = createSlice({
         builder.addCase(queueAlbum.fulfilled, (state, action) => {
             state.songs.push(...action.payload);
         });
+
+        builder.addCase(playAlbumAfterNext.fulfilled, (state, action) => {
+            state.playNextSongs.push(...action.payload);
+        });
+
+        builder.addCase(playAlbumNext.fulfilled, (state, action) => {
+            state.playNextSongs.unshift(...action.payload);
+        });
     }
 });
 
@@ -141,6 +177,8 @@ export const {
     queueSong,
     queueSongs,
     playNext,
+    playAfterNext,
+    playAllAfterNext,
     shuffle: shuffleQueue,
     skipToNext,
     skipToPrevious,
