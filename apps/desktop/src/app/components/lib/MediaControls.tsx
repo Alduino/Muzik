@@ -227,6 +227,8 @@ const getSong = (songId: number) =>
     songId === null ? null : invoke(EVENT_GET_SONG, {songId});
 
 export const MediaControls: FC = () => {
+    const colours = useThemeColours();
+
     const currentSongId = useAppSelector(state => state.queue.nowPlaying);
     const previousSongsCount = useAppSelector(
         state => state.queue.previousSongs.length
@@ -238,7 +240,13 @@ export const MediaControls: FC = () => {
     const currentSong = useAsync(getSong, [currentSongId]);
 
     return (
-        <HStack p={4} spacing={4} height={24}>
+        <HStack
+            p={4}
+            spacing={4}
+            height={24}
+            background={colours.backgroundL1}
+            color={colours.text}
+        >
             <AlbumArt
                 artPath={
                     currentSong.result?.song.album.art?.path || defaultAlbumArt
