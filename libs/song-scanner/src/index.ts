@@ -3,6 +3,7 @@ import {log} from "./logger";
 import {getSongFiles} from "./getSongFiles";
 import {getSongInfo, SongInfo} from "./getSongInfo";
 import {AlbumArt, getAlbumArt} from "./getAlbumArt";
+import {getExtraSongInfo, setupExtraSongInfo} from "./getExtraSongInfo";
 
 function getAlbumKey(albumName: string, artistName: string) {
     return artistName.replace(/:/g, "[:]") + ":" + albumName;
@@ -53,6 +54,9 @@ export default async function scan(
         progress(ONE_THIRD + (currentSongIndex / songCount) * ONE_THIRD);
     }
 
+    log.debug("Setting up extra info getter");
+    const extraInit = await setupExtraSongInfo();
+
     log.debug("Writing data");
     const artistIdMapping = new Map<string, number>();
     const albumIdMapping = new Map<string, number>();
@@ -92,7 +96,8 @@ export default async function scan(
         if (await db.hasSong(song.name, albumId)) {
             log.trace("Skipping song that already exists (%s)", song.name);
         } else {
-            await db.addSong(song, albumId);
+            const extraInfo = await getExtraSongInfo(extraInit, song.path);
+            await db.addSong({...song, ...extraInfo}, albumId);
         }
 
         currentSongIndex++;
