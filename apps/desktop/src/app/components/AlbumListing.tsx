@@ -5,7 +5,6 @@ import {
     Heading,
     HStack,
     IconButton,
-    Image,
     LinkBox,
     LinkOverlay,
     Skeleton,
