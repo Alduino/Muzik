@@ -1,8 +1,14 @@
-import {Box, Divider, Heading, HStack, Text} from "@chakra-ui/react";
+import {
+    Box,
+    Divider,
+    Heading,
+    HStack,
+    Text,
+    useBoolean
+} from "@chakra-ui/react";
 import type {Song as SongType} from "@muzik/database";
-import React, {CSSProperties, FC, useState} from "react";
+import React, {CSSProperties, FC, useEffect, useRef} from "react";
 import {FixedSizeList} from "react-window";
-import useThemeColours from "../../hooks/useThemeColours";
 import {PlayButton} from "./PlayButton";
 import {useAppDispatch, useAppSelector} from "../../store-hooks";
 import {
@@ -21,6 +27,10 @@ import {
     EVENT_FILEDIR_OPEN
 } from "../../../lib/ipc-constants";
 import {useTranslation} from "react-i18next";
+import {TransText} from "./TransText";
+import {FadeOverflow} from "./FadeOverflow";
+import {AlbumArt} from "./AlbumArt";
+import defaultAlbumArt from "../../assets/default-album-art.svg";
 
 interface SongProps {
     song: SongType;
@@ -29,14 +39,17 @@ interface SongProps {
 
 const Song: FC<SongProps> = props => {
     const dispatch = useAppDispatch();
-    const colours = useThemeColours();
     const {t} = useTranslation("app");
     const {onContextMenu, props: contextMenuProps} = useContextMenu();
 
-    const [isHovered, setHovered] = useState(false);
+    const titleRef = useRef<HTMLHeadingElement>();
+
+    const [isHovered, setHovered] = useBoolean();
 
     const currentSongId = useAppSelector(v => v.queue.nowPlaying);
     const isCurrent = currentSongId === props.song.id;
+
+    const artPath = props.song.album.art?.path || defaultAlbumArt;
 
     const handleSongPlay = () => {
         dispatch(cancelPlaying());
@@ -73,50 +86,43 @@ const Song: FC<SongProps> = props => {
 
     return (
         <HStack
-            width="calc(100% - 2rem)"
-            background={colours.backgroundL2}
-            px={4}
-            py={3}
-            borderRadius="sm"
-            shadow="md"
-            height={12}
-            mt={4}
-            mb={-2}
-            mx={4}
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
+            pr={4}
+            pl={2}
+            style={props.style}
+            onMouseEnter={() => setHovered.on}
+            onMouseLeave={() => setHovered.off}
             onContextMenu={onContextMenu}
         >
             <ContextMenu {...contextMenuProps}>
                 <MenuItem onClick={handleAddToQueue}>
-                    <Text>Add to queue</Text>
+                    <TransText k="queueControls.addToQueue" />
                 </MenuItem>
                 <MenuItem onClick={handlePlayNext}>
-                    <Text>Play next</Text>
+                    <TransText k="queueControls.addToQueue" />
                 </MenuItem>
                 <Divider direction="horizontal" />
                 <MenuItem onClick={handleCopyPath}>
-                    <Text>Copy file path</Text>
+                    <TransText k="utils.copyFilePath" />
                 </MenuItem>
                 <MenuItem onClick={handleOpenDirectory}>
-                    <Text>Open containing folder</Text>
+                    <TransText k="utils.openContainingFolder" />
                 </MenuItem>
             </ContextMenu>
 
-            <Heading size="sm">{props.song.name}</Heading>
+            <AlbumArt artPath={artPath} borderRadius={0} height={16} />
+
+            <FadeOverflow flexGrow={1}>
+                <Heading size="sm" whiteSpace="nowrap" ref={titleRef}>
+                    {props.song.name}
+                </Heading>
+                <Text fontSize="sm" opacity={0.5}>
+                    {props.song.album.artist.name}
+                </Text>
+            </FadeOverflow>
 
             <Text fontSize="sm" opacity={0.5}>
                 {durationText}
             </Text>
-
-            <Box flex={1} />
-
-            <PlayButton
-                size="sm"
-                isCurrent={isCurrent}
-                isHovered={isHovered}
-                onPlay={handleSongPlay}
-            />
         </HStack>
     );
 };
@@ -128,11 +134,12 @@ export interface SongListProps {
 
 export const SongList: FC<SongListProps> = props => (
     <FixedSizeList
-        itemSize={56}
+        itemSize={68}
         height={props.height}
         itemCount={props.songs.length}
         width="100%"
         itemData={props.songs}
+        className="custom-scroll"
     >
         {({data, index, style}) => <Song song={data[index]} style={style} />}
     </FixedSizeList>

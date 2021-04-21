@@ -6,9 +6,15 @@ export const en: Locale = {
             normal: "Muzik",
             playing: "Muzik ({{artist}} - {{track}})"
         },
-        mediaControls: {
+        queueControls: {
             toggleShuffle: "Toggle shuffle",
-            switchRepeatMode: "Switch repeat mode"
+            switchRepeatMode: "Switch repeat mode",
+            addToQueue: "Add to queue",
+            playNext: "Play next"
+        },
+        utils: {
+            copyFilePath: "Copy file path",
+            openContainingFolder: "Open containing folder"
         }
     }
 };

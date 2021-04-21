@@ -1,10 +1,14 @@
 import React, {FC} from "react";
 import {
+    Box,
     Center,
+    chakra,
     Circle,
     Flex,
+    Grid,
     Text,
     useColorModeValue,
+    useToken,
     VStack
 } from "@chakra-ui/react";
 import {PuffLoader} from "react-spinners";
@@ -14,6 +18,43 @@ import useThemeColours from "../hooks/useThemeColours";
 import {AlbumListing} from "./AlbumListing";
 import {ErrorLabel} from "./lib/ErrorLabel";
 import {useAppSelector} from "../store-hooks";
+import {MediaControls, SongDisplay} from "./lib/MediaControls";
+import {FilledSidebar} from "./lib/FilledSidebar";
+
+const CornerClip = chakra((props: {className?: string}) => {
+    const colours = useThemeColours();
+    const radius = useToken("radii", "md");
+    const bg = useToken("colors", colours.backgroundL1);
+
+    return (
+        <Box
+            className={props.className}
+            borderRadius={radius}
+            boxShadow={`-${radius} -${radius} 0 0 ${bg}`}
+            width={`calc(${radius} * 2)`}
+            height={`calc(${radius} * 2)`}
+            pointerEvents="none"
+        />
+    );
+});
+
+const PageContainer: FC = props => (
+    <Grid
+        templateAreas={`"nowpl mctrl" "nav route"`}
+        templateColumns="16rem 1fr"
+        templateRows="6rem 1fr"
+        width="100vw"
+        height="100vh"
+    >
+        <Box as="main" gridArea="route">
+            {props.children}
+        </Box>
+        <SongDisplay gridArea="nowpl" />
+        <MediaControls gridArea="mctrl" />
+        <FilledSidebar gridArea="nav" />
+        <CornerClip gridArea="route" zIndex={10} />
+    </Grid>
+);
 
 const LoadedApp: FC = () => {
     const route = useAppSelector(state => state.routing.globalRoute);
@@ -22,7 +63,11 @@ const LoadedApp: FC = () => {
         case GlobalRoute.musicStorePicker:
             return <MusicStorePicker />;
         case GlobalRoute.albumListing:
-            return <AlbumListing />;
+            return (
+                <PageContainer>
+                    <AlbumListing />
+                </PageContainer>
+            );
         default:
             return <ErrorLabel message={"NOT_FOUND:" + GlobalRoute[route]} />;
     }
@@ -54,10 +99,15 @@ const LoadingApp: FC = () => {
 
 export const App: FC = () => {
     const isLoaded = useAppSelector(state => state.loadState.value);
-    const {backgroundL0} = useThemeColours();
+    const {backgroundL0, text} = useThemeColours();
 
     return (
-        <Flex minHeight="100vh" direction="column" background={backgroundL0}>
+        <Flex
+            minHeight="100vh"
+            direction="column"
+            background={backgroundL0}
+            color={text}
+        >
             {isLoaded ? <LoadedApp /> : <LoadingApp />}
         </Flex>
     );

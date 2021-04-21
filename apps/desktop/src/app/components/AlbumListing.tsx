@@ -1,16 +1,16 @@
+// TODO tomorrow: show play buttons over top of album art
+
 import type {Album as AlbumType} from "@muzik/database";
 import {
     Box,
-    Center,
+    chakra,
+    Divider,
     Heading,
     HStack,
-    IconButton,
-    LinkBox,
-    LinkOverlay,
     Skeleton,
     Stack,
     Text,
-    VStack
+    useBoolean
 } from "@chakra-ui/react";
 import React, {
     CSSProperties,
@@ -23,8 +23,6 @@ import React, {
 } from "react";
 import {useAsync} from "react-async-hook";
 import {FixedSizeList} from "react-window";
-import {GrPlay} from "react-icons/gr";
-import {IoShuffle} from "react-icons/io5";
 import {invoke} from "../../lib/ipc/renderer";
 import {
     AlbumListResponse,
@@ -32,7 +30,6 @@ import {
     AlbumSongsResponse,
     EVENT_ALBUM_LIST,
     EVENT_ALBUM_SONGS,
-    EVENT_GET_ALL_SONG_IDS,
     EVENT_GET_SONG,
     GetSongRequest,
     GetSongResponse
@@ -42,27 +39,24 @@ import defaultAlbumArt from "../assets/default-album-art.svg";
 import {selectAlbum} from "../reducers/albumListingRoute";
 import {ErrorLabel} from "./lib/ErrorLabel";
 import {SongList} from "./lib/SongList";
-import {FloatingContainer} from "./lib/FloatingContainer";
 import {
     cancelPlaying,
     clearQueue,
     queueAlbum,
     beginQueue,
-    shuffleQueue,
-    queueSongs,
     playAlbumNext,
     playAlbumAfterNext
 } from "../reducers/queue";
 import {PlayButton} from "./lib/PlayButton";
 import {useAppDispatch, useAppSelector} from "../store-hooks";
-import {MediaControls} from "./lib/MediaControls";
 import {ContextMenu, MenuItem, useContextMenu} from "./lib/ContextMenu";
 import {AlbumArt} from "./lib/AlbumArt";
+import {TransText} from "./lib/TransText";
+import {FadeOverflow} from "./lib/FadeOverflow";
 
 const fetchAlbums = () => invoke<AlbumListResponse>(EVENT_ALBUM_LIST);
 const fetchAlbumSongs = (albumId: number) =>
     invoke<AlbumSongsResponse, AlbumSongsRequest>(EVENT_ALBUM_SONGS, {albumId});
-const fetchAllSongIds = () => invoke(EVENT_GET_ALL_SONG_IDS);
 
 const checkAlbumPlaying = async (songId: number | null, albumId: number) => {
     if (songId === null) return false;
@@ -79,12 +73,18 @@ interface AlbumProps {
     style?: CSSProperties;
 }
 
+const ContainerImpl: FC<{className?: string}> = props => (
+    <Box className={props.className}>{props.children}</Box>
+);
+ContainerImpl.displayName = "Container";
+
+const Container = chakra(ContainerImpl);
+
 const Album: FC<AlbumProps> = ({album, isSelected, ...props}) => {
-    const colours = useThemeColours();
     const dispatch = useAppDispatch();
     const {onContextMenu, props: contextMenuProps} = useContextMenu();
 
-    const [isHovered, setHovered] = useState(false);
+    const [isHovered, setHovered] = useBoolean();
 
     const currentSongId = useAppSelector(v => v.queue.nowPlaying);
 
@@ -114,51 +114,45 @@ const Album: FC<AlbumProps> = ({album, isSelected, ...props}) => {
     };
 
     return (
-        <LinkBox
-            width="full"
-            style={props.style}
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
+        <HStack
+            pr={4}
+            cursor="pointer"
+            {...props}
+            onClick={handleAlbumSelect}
+            onMouseEnter={setHovered.on}
+            onMouseLeave={setHovered.off}
             onContextMenu={onContextMenu}
         >
             <ContextMenu {...contextMenuProps}>
                 <MenuItem onClick={handleAddToQueue}>
-                    <Text>Add to queue</Text>
+                    <TransText k="queueControls.addToQueue" />
                 </MenuItem>
                 <MenuItem onClick={handlePlayNext}>
-                    <Text>Play next</Text>
+                    <TransText k="queueControls.playNext" />
                 </MenuItem>
             </ContextMenu>
 
-            <HStack
-                width="calc(100% - 2em)"
-                background={colours.backgroundL2}
-                p={4}
-                borderRadius="sm"
-                shadow={isSelected ? "outline" : "sm"}
-                height={128}
-                mt={4}
-                mx={4}
-            >
-                <AlbumArt artPath={artPath} width={24} mr={4} />
-                <Stack direction="column" flex={1}>
-                    <Heading size="md">
-                        <LinkOverlay href="#" onClick={handleAlbumSelect}>
-                            {album.name}
-                        </LinkOverlay>
-                    </Heading>
-                    <HStack divider={<Text mx={2}>·</Text>}>
-                        <Text>by {album.artist.name}</Text>
-                    </HStack>
-                </Stack>
-                <PlayButton
-                    size="lg"
-                    isCurrent={isAlbumPlaying.result || false}
-                    isHovered={isHovered}
-                    onPlay={handleAlbumPlay}
-                />
-            </HStack>
-        </LinkBox>
+            <AlbumArt artPath={artPath} width={24} mr={4} borderRadius={0} />
+            <FadeOverflow flex={1}>
+                <Heading
+                    size="md"
+                    textDecoration={isHovered && "underline"}
+                    whiteSpace="nowrap"
+                >
+                    {album.name}
+                </Heading>
+                <HStack divider={<Text mx={2}>·</Text>}>
+                    <Text whiteSpace="nowrap">by {album.artist.name}</Text>
+                </HStack>
+            </FadeOverflow>
+
+            <PlayButton
+                size="lg"
+                isCurrent={isAlbumPlaying.result || false}
+                isHovered={isHovered}
+                onPlay={handleAlbumPlay}
+            />
+        </HStack>
     );
 };
 
@@ -176,7 +170,7 @@ const AlbumList: FC<AlbumListProps> = ({
     ...props
 }) => (
     <FixedSizeList
-        itemSize={144}
+        itemSize={100}
         height={height}
         itemCount={albums.length}
         itemData={albums.map(item => ({
@@ -184,6 +178,7 @@ const AlbumList: FC<AlbumListProps> = ({
             selected: item.id === selectedAlbum
         }))}
         width="100%"
+        className="custom-scroll"
         ref={props.listRef}
     >
         {({data, index, style}) => (
@@ -197,14 +192,13 @@ const AlbumList: FC<AlbumListProps> = ({
 );
 
 export const AlbumListing: FC = () => {
-    const dispatch = useAppDispatch();
+    const colours = useThemeColours();
     const [windowHeight, setWindowHeight] = useState(window.innerHeight);
     const selectedAlbum = useAppSelector(
         v => v.albumListingRoute.selectedAlbum
     );
     const albums = useAsync(fetchAlbums, []);
     const albumSongs = useAsync(fetchAlbumSongs, [selectedAlbum]);
-    const colours = useThemeColours();
     const albumListRef = useRef<FixedSizeList>();
 
     useEffect(() => {
@@ -227,102 +221,46 @@ export const AlbumListing: FC = () => {
         current.scrollToItem(index, "smart");
     }, [albumListRef.current, albums.result, selectedAlbum]);
 
-    const handlePlayAll = async () => {
-        dispatch(cancelPlaying());
-
-        const allSongIds = await fetchAllSongIds();
-        dispatch(queueSongs(allSongIds.songIds));
-
-        dispatch(beginQueue());
-    };
-
-    const handleShuffleAll = async () => {
-        dispatch(cancelPlaying());
-
-        const allSongIds = await fetchAllSongIds();
-        dispatch(queueSongs(allSongIds.songIds));
-
-        dispatch(shuffleQueue());
-        dispatch(beginQueue());
-    };
-
     const sortedSongs = useMemo(() => {
         const songs = albumSongs.result?.songs.slice() ?? [];
         return songs.sort((a, b) => a.trackNo - b.trackNo);
     }, [albumSongs.result?.songs]);
 
+    // window height minus height of top bar (96px)
+    const height = windowHeight - 96;
+
     if (albums.error) {
         return <ErrorLabel message={albums.error.message} />;
     } else {
         return (
-            <VStack spacing={24}>
-                <Box width="full" shadow="lg">
-                    <MediaControls />
-                </Box>
-
-                <HStack spacing={24}>
-                    <FloatingContainer>
-                        <HStack
-                            height={12}
-                            background={colours.backgroundL3}
-                            shadow="sm"
-                            justify="center"
-                            px={4}
-                        >
-                            <Heading size="md">Albums</Heading>
-                            <Box flex={1} />
-                            <IconButton
-                                aria-label="Play all"
-                                icon={<GrPlay style={colours.invertTheme} />}
-                                variant="ghost"
-                                size="sm"
-                                isRound
-                                onClick={handlePlayAll}
-                            />
-                            <IconButton
-                                aria-label="Play all"
-                                icon={<IoShuffle color={colours.text} />}
-                                variant="ghost"
-                                size="sm"
-                                isRound
-                                onClick={handleShuffleAll}
-                            />
-                        </HStack>
-                        {albums.loading ? (
-                            Array.from({length: 4}, (_, i) => (
-                                <Skeleton key={i} width="full" mx={4} mt={4} />
-                            ))
-                        ) : (
-                            <AlbumList
-                                albums={albums.result.albums}
-                                selectedAlbum={selectedAlbum}
-                                height={windowHeight - 96 * 3 - 48 - 96}
-                                listRef={albumListRef}
-                            />
-                        )}
-                    </FloatingContainer>
-
-                    {sortedSongs.length > 0 && (
-                        <FloatingContainer>
-                            <Center
-                                height={12}
-                                background={colours.backgroundL3}
-                                shadow="sm"
-                            >
-                                <Heading size="md">Songs</Heading>
-                            </Center>
-                            <SongList
-                                songs={sortedSongs}
-                                height={windowHeight - 96 * 3 - 48 - 96}
-                            />
-                        </FloatingContainer>
+            <HStack
+                justify="start"
+                spacing={0}
+                background={colours.backgroundL2}
+            >
+                <Container flexGrow={1}>
+                    {albums.loading ? (
+                        Array.from({length: 4}, (_, i) => (
+                            <Skeleton key={i} width="full" mx={4} mt={4} />
+                        ))
+                    ) : (
+                        <AlbumList
+                            albums={albums.result.albums}
+                            selectedAlbum={selectedAlbum}
+                            height={height}
+                            listRef={albumListRef}
+                        />
                     )}
+                </Container>
 
-                    {albumSongs.status === "error" && (
-                        <ErrorLabel message={albumSongs.error?.message} />
-                    )}
-                </HStack>
-            </VStack>
+                {sortedSongs.length > 0 && <Divider orientation="vertical" />}
+
+                {sortedSongs.length > 0 && (
+                    <Container width="28rem">
+                        <SongList songs={sortedSongs} height={height} />
+                    </Container>
+                )}
+            </HStack>
         );
     }
 };

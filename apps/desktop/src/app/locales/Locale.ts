@@ -6,9 +6,15 @@ export default interface Locale extends ResourceLanguage {
             normal: string;
             playing: string;
         };
-        mediaControls: {
+        queueControls: {
             toggleShuffle: string;
             switchRepeatMode: string;
+            addToQueue: string;
+            playNext: string;
+        };
+        utils: {
+            copyFilePath: string;
+            openContainingFolder: string;
         };
     };
 }

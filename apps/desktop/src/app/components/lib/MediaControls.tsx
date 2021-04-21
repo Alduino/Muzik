@@ -1,6 +1,7 @@
 import React, {FC, useState} from "react";
 import {
     Box,
+    chakra,
     Divider,
     Heading,
     HStack,
@@ -10,8 +11,7 @@ import {
     SliderFilledTrack,
     SliderThumb,
     SliderTrack,
-    Text,
-    VStack
+    Text
 } from "@chakra-ui/react";
 import {GrRewind, GrFastForward, GrPause, GrPlay} from "react-icons/gr";
 import {RiShuffleLine, RiRepeat2Line, RiRepeatOneLine} from "react-icons/ri";
@@ -38,24 +38,26 @@ import {selectAlbum} from "../../reducers/albumListingRoute";
 import {formatDuration} from "../../utils/formatDuration";
 import {AlbumArt} from "./AlbumArt";
 import {ActiveDotContainer} from "./ActiveDot";
+import {FadeOverflow} from "./FadeOverflow";
 
 interface SongInfoProps {
     song: SongType;
+    className?: string;
 }
 
-const SongInfo: FC<SongInfoProps> = props => {
+const SongInfoImpl: FC<SongInfoProps> = props => {
     const dispatch = useAppDispatch();
-    const colours = useThemeColours();
 
     const handleAlbumClick = () => {
         dispatch(selectAlbum(props.song.album.id));
     };
 
     return (
-        <VStack align="start" overflow="hidden" position="relative" spacing={0}>
-            <Heading size="sm" whiteSpace="nowrap" mb={2}>
+        <FadeOverflow className={props.className}>
+            <Heading size="sm" whiteSpace="nowrap" mb={1}>
                 {props.song.name}
             </Heading>
+
             <Text whiteSpace="nowrap">
                 {props.song.album.artist.name}
                 {" - "}
@@ -63,19 +65,12 @@ const SongInfo: FC<SongInfoProps> = props => {
                     {props.song.album.name}
                 </Link>
             </Text>
-            <Box
-                position="absolute"
-                mt={0}
-                top={0}
-                bottom={0}
-                width={12}
-                right={0}
-                bgGradient={`linear(to-r,transparent,${colours.backgroundL1})`}
-                pointerEvents="none"
-            />
-        </VStack>
+        </FadeOverflow>
     );
 };
+SongInfoImpl.displayName = "SongInfo";
+
+const SongInfo = chakra(SongInfoImpl);
 
 interface SongTrackerProps {
     duration: number;
@@ -165,7 +160,7 @@ const QueueButtons: FC = () => {
             <ActiveDotContainer isActive={isShuffled} gap={-2}>
                 <IconButton
                     {...iconButtonProps}
-                    aria-label={t("mediaControls.toggleShuffle")}
+                    aria-label={t("queueControls.toggleShuffle")}
                     icon={<RiShuffleLine />}
                     onClick={handleToggleShuffle}
                 />
@@ -176,7 +171,7 @@ const QueueButtons: FC = () => {
             >
                 <IconButton
                     {...iconButtonProps}
-                    aria-label={t("mediaControls.switchRepeatMode")}
+                    aria-label={t("queueControls.switchRepeatMode")}
                     icon={
                         repeatMode === RepeatMode.repeatSong ? (
                             <RiRepeatOneLine />
@@ -263,7 +258,7 @@ const MediaButtons: FC<MediaButtonProps> = props => {
 const getSong = (songId: number) =>
     songId === null ? null : invoke(EVENT_GET_SONG, {songId});
 
-export const MediaControls: FC = () => {
+const MediaControlsImpl: FC = () => {
     const colours = useThemeColours();
 
     const currentSongId = useAppSelector(state => state.queue.nowPlaying);
@@ -282,31 +277,14 @@ export const MediaControls: FC = () => {
     return (
         <HStack
             p={4}
+            pl={0}
             spacing={4}
-            height={24}
             background={colours.backgroundL1}
             color={colours.text}
         >
-            <AlbumArt
-                width={16}
-                artPath={
-                    currentSong.result?.song.album.art?.path || defaultAlbumArt
-                }
-            />
-
-            <Box width="16rem">
-                {currentSong.result && (
-                    <SongInfo song={currentSong.result.song} />
-                )}
-            </Box>
-
             <Divider orientation="vertical" />
 
             <SongTracker duration={currentSong.result?.song.duration} />
-
-            <Divider orientation="vertical" />
-
-            <QueueButtons />
 
             <Divider orientation="vertical" />
 
@@ -315,6 +293,41 @@ export const MediaControls: FC = () => {
                 canSkipForwards={nextSongsCount > 0 || isRepeating}
                 canPlayPause={currentSongId !== null || nextSongsCount > 0}
             />
+
+            <Divider orientation="vertical" />
+
+            <QueueButtons />
         </HStack>
     );
 };
+MediaControlsImpl.displayName = "MediaControls";
+
+const SongDisplayImpl: FC = () => {
+    const colours = useThemeColours();
+    const currentSongId = useAppSelector(state => state.queue.nowPlaying);
+    const currentSong = useAsync(getSong, [currentSongId]);
+
+    return (
+        <HStack
+            color={colours.text}
+            p={4}
+            backgroundColor={colours.backgroundL1}
+        >
+            <AlbumArt
+                height="100%"
+                flexShrink={0}
+                artPath={
+                    currentSong.result?.song.album.art?.path || defaultAlbumArt
+                }
+            />
+
+            {currentSong.result && (
+                <SongInfo song={currentSong.result.song} maxWidth="100%" />
+            )}
+        </HStack>
+    );
+};
+SongDisplayImpl.displayName = "SongDisplay";
+
+export const MediaControls = chakra(MediaControlsImpl);
+export const SongDisplay = chakra(SongDisplayImpl);
