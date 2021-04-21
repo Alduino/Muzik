@@ -58,19 +58,47 @@ export const ContextMenuProvider: FC = ({children}) => {
         [activeMenu, setActiveMenu]
     );
 
+    const close = useCallback(() => {
+        activeMenu?.close();
+    }, [activeMenu]);
+
+    const handleMouseDown = useCallback(
+        (e: MouseEvent) => {
+            close();
+
+            const htmlEl = e.currentTarget as HTMLElement;
+            htmlEl.style.pointerEvents = "none";
+
+            setTimeout(() => (htmlEl.style.pointerEvents = ""), 0);
+        },
+        [close]
+    );
+
     useEffect(() => {
-        function callback(event: Event) {
-            if (activeMenu?.isChild(event.target as Element)) return;
-            activeMenu?.close();
+        function handleKeydown(e: KeyboardEvent) {
+            if (e.key === "Escape") close();
         }
 
-        document.body.addEventListener("click", callback);
-        return () => document.body.removeEventListener("click", callback);
-    }, [activeMenu]);
+        document.body.addEventListener("keydown", handleKeydown);
+        return () =>
+            document.body.removeEventListener("keydown", handleKeydown);
+    }, [close]);
 
     return (
         <GlobalContextMenuContext.Provider value={contextValue}>
             {children}
+            <Portal>
+                <Box
+                    position="fixed"
+                    top={0}
+                    bottom={0}
+                    left={0}
+                    right={0}
+                    zIndex={99}
+                    style={{display: activeMenu ? "" : "none"}}
+                    onMouseDown={handleMouseDown}
+                />
+            </Portal>
         </GlobalContextMenuContext.Provider>
     );
 };
@@ -146,10 +174,11 @@ export const ContextMenu: FC<ContextMenuProps> = props => {
         <Portal>
             <Box
                 ref={parentRef}
+                position="fixed"
+                zIndex={100}
                 style={{
                     top: props.targetPosition[1],
-                    left: props.targetPosition[0],
-                    position: "fixed"
+                    left: props.targetPosition[0]
                 }}
             >
                 <SlideFade in={props.open} offsetY="20px" unmountOnExit>
@@ -194,6 +223,7 @@ export const MenuItem: FC<MenuItemProps> = props => {
             py={2}
             _hover={{background: colours.translucentHoverBg}}
             _active={{background: colours.translucentActiveBg}}
+            color={colours.text}
             onClick={handleClick}
         >
             {props.children}
