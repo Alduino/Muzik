@@ -14,6 +14,7 @@ import {
 import {invoke} from "../lib/ipc/renderer";
 import {EVENT_REDUX_DEV_TOOLS_ENABLED} from "../lib/ipc-constants";
 import {ContextMenuProvider} from "./components/lib/ContextMenu";
+import {TitleController} from "./components/lib/TitleController";
 
 const getDevToolsEnabled = () => invoke(EVENT_REDUX_DEV_TOOLS_ENABLED);
 
@@ -29,6 +30,7 @@ export const Root: FC = () => {
                         useSystemColorMode: true
                     }}
                 >
+                    <TitleController />
                     <AudioControllerProvider>
                         <AudioController />
                         <MediaSessionController />
