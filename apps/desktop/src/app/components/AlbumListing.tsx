@@ -18,6 +18,7 @@ import React, {
     FC,
     MutableRefObject,
     useEffect,
+    useMemo,
     useRef,
     useState
 } from "react";
@@ -246,6 +247,11 @@ export const AlbumListing: FC = () => {
         dispatch(beginQueue());
     };
 
+    const sortedSongs = useMemo(() => {
+        const songs = albumSongs.result?.songs.slice() ?? [];
+        return songs.sort((a, b) => a.trackNo - b.trackNo);
+    }, [albumSongs.result?.songs]);
+
     if (albums.error) {
         return <ErrorLabel message={albums.error.message} />;
     } else {
@@ -297,7 +303,7 @@ export const AlbumListing: FC = () => {
                         )}
                     </FloatingContainer>
 
-                    {albumSongs.result?.songs.length > 0 && (
+                    {sortedSongs.length > 0 && (
                         <FloatingContainer>
                             <Center
                                 height={12}
@@ -307,7 +313,7 @@ export const AlbumListing: FC = () => {
                                 <Heading size="md">Songs</Heading>
                             </Center>
                             <SongList
-                                songs={albumSongs.result.songs}
+                                songs={sortedSongs}
                                 height={windowHeight - 96 * 3 - 48 - 96}
                             />
                         </FloatingContainer>
