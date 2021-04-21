@@ -1,4 +1,4 @@
-import {app, dialog, protocol} from "electron";
+import {app, clipboard, dialog, protocol, shell} from "electron";
 import {handle} from "../lib/ipc/main";
 import {
     AlbumListResponse,
@@ -6,7 +6,9 @@ import {
     AlbumSongsResponse,
     EVENT_ALBUM_LIST,
     EVENT_ALBUM_SONGS,
+    EVENT_CLIPBOARD_WRITE,
     EVENT_DATABASE_INIT,
+    EVENT_FILEDIR_OPEN,
     EVENT_GET_ALL_SONG_IDS,
     EVENT_GET_SONG,
     EVENT_MUSIC_IMPORT,
@@ -121,6 +123,14 @@ handle(EVENT_GET_ALL_SONG_IDS, async () => {
     const songIds = await getAllSongIds();
 
     return {songIds};
+});
+
+handle(EVENT_CLIPBOARD_WRITE, arg => {
+    clipboard.write(arg);
+});
+
+handle(EVENT_FILEDIR_OPEN, arg => {
+    shell.showItemInFolder(arg.path);
 });
 
 handle(EVENT_REDUX_DEV_TOOLS_ENABLED, () => {

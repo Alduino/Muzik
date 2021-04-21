@@ -1,4 +1,4 @@
-import {Box, Heading, HStack, Text} from "@chakra-ui/react";
+import {Box, Divider, Heading, HStack, Text} from "@chakra-ui/react";
 import type {Song as SongType} from "@muzik/database";
 import React, {CSSProperties, FC, useState} from "react";
 import {FixedSizeList} from "react-window";
@@ -15,6 +15,12 @@ import {
 } from "../../reducers/queue";
 import {formatDuration} from "../../utils/formatDuration";
 import {ContextMenu, MenuItem, useContextMenu} from "./ContextMenu";
+import {invoke} from "../../../lib/ipc/renderer";
+import {
+    EVENT_CLIPBOARD_WRITE,
+    EVENT_FILEDIR_OPEN
+} from "../../../lib/ipc-constants";
+import {useTranslation} from "react-i18next";
 
 interface SongProps {
     song: SongType;
@@ -24,6 +30,7 @@ interface SongProps {
 const Song: FC<SongProps> = props => {
     const dispatch = useAppDispatch();
     const colours = useThemeColours();
+    const {t} = useTranslation("app");
     const {onContextMenu, props: contextMenuProps} = useContextMenu();
 
     const [isHovered, setHovered] = useState(false);
@@ -44,6 +51,22 @@ const Song: FC<SongProps> = props => {
 
     const handleAddToQueue = () => {
         dispatch(playAfterNext(props.song.id));
+    };
+
+    const handleCopyPath = () => {
+        invoke(EVENT_CLIPBOARD_WRITE, {
+            text: props.song.path,
+            bookmark: t("title.playing", {
+                artist: props.song.album.artist.name,
+                track: props.song.name
+            })
+        });
+    };
+
+    const handleOpenDirectory = () => {
+        invoke(EVENT_FILEDIR_OPEN, {
+            path: props.song.path
+        });
     };
 
     const durationText = formatDuration(props.song.duration);
@@ -70,6 +93,13 @@ const Song: FC<SongProps> = props => {
                 </MenuItem>
                 <MenuItem onClick={handlePlayNext}>
                     <Text>Play next</Text>
+                </MenuItem>
+                <Divider direction="horizontal" />
+                <MenuItem onClick={handleCopyPath}>
+                    <Text>Copy file path</Text>
+                </MenuItem>
+                <MenuItem onClick={handleOpenDirectory}>
+                    <Text>Open containing folder</Text>
                 </MenuItem>
             </ContextMenu>
 

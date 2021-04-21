@@ -25,6 +25,10 @@ export const EVENT_REDUX_DEV_TOOLS_ENABLED = g<boolean>(
 export const EVENT_GET_ALL_SONG_IDS = g<GetAllSongIdsResponse>(
     "get all song ids"
 );
+export const EVENT_CLIPBOARD_WRITE = g<void, WriteClipboardRequest>(
+    "clipboard write"
+);
+export const EVENT_FILEDIR_OPEN = g<void, FiledirOpenRequest>("filedir open");
 
 export interface MusicImportRequest {
     /**
@@ -39,6 +43,17 @@ export interface AlbumSongsRequest {
 
 export interface GetSongRequest {
     songId: number;
+}
+
+export interface WriteClipboardRequest {
+    text?: string;
+    html?: string;
+    rtf?: string;
+    bookmark?: string;
+}
+
+export interface FiledirOpenRequest {
+    path: string;
 }
 
 export interface AlbumListResponse {
