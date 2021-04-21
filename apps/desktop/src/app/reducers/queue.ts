@@ -91,6 +91,8 @@ export const slice = createSlice({
     reducers: {
         clearQueue(state) {
             state.songs = [];
+            state.playNextSongs = [];
+            state.previousSongs = [];
         },
         queueSong(state, id: PayloadAction<number>) {
             state.songs.push(id.payload);
