@@ -21,6 +21,8 @@ const createWindow = async () => {
         }
     });
 
+    mainWindow.setMenuBarVisibility(false);
+
     // and load the index.html of the app.
     await mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
