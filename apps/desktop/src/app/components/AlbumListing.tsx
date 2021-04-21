@@ -57,6 +57,7 @@ import {PlayButton} from "./lib/PlayButton";
 import {useAppDispatch, useAppSelector} from "../store-hooks";
 import {MediaControls} from "./lib/MediaControls";
 import {ContextMenu, MenuItem, useContextMenu} from "./lib/ContextMenu";
+import {AlbumArt} from "./lib/AlbumArt";
 
 const fetchAlbums = () => invoke<AlbumListResponse>(EVENT_ALBUM_LIST);
 const fetchAlbumSongs = (albumId: number) =>
@@ -139,7 +140,7 @@ const Album: FC<AlbumProps> = ({album, isSelected, ...props}) => {
                 mt={4}
                 mx={4}
             >
-                <Image src={artPath} width={24} mr={4} borderRadius="sm" />
+                <AlbumArt artPath={artPath} width={24} mr={4} />
                 <Stack direction="column" flex={1}>
                     <Heading size="md">
                         <LinkOverlay href="#" onClick={handleAlbumSelect}>

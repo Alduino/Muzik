@@ -4,6 +4,7 @@ import {I18nextProvider} from "react-i18next";
 import {i18nConfig, i18n} from "./translations";
 import {Root} from "./Root";
 import initialiseMuzik from "./muzikInit";
+import "./base-style.css";
 
 initialiseMuzik();
 

@@ -5,7 +5,6 @@ import {
     Heading,
     HStack,
     IconButton,
-    Image,
     Link,
     Slider,
     SliderFilledTrack,
@@ -17,7 +16,6 @@ import {
 import {GrRewind} from "react-icons/gr";
 import {useAsync} from "react-async-hook";
 import {Song as SongType} from "@muzik/database";
-import {FloatingContainer} from "./FloatingContainer";
 import {useAppDispatch, useAppSelector} from "../../store-hooks";
 import {invoke} from "../../../lib/ipc/renderer";
 import {EVENT_GET_SONG} from "../../../lib/ipc-constants";
@@ -34,20 +32,7 @@ import {
 } from "../../reducers/queue";
 import {selectAlbum} from "../../reducers/albumListingRoute";
 import {formatDuration} from "../../utils/formatDuration";
-
-interface AlbumArtProps {
-    artPath: string;
-}
-
-const AlbumArt: FC<AlbumArtProps> = props => (
-    <Image
-        width={16}
-        height={16}
-        src={props.artPath}
-        borderRadius="md"
-        objectFit="cover"
-    />
-);
+import {AlbumArt} from "./AlbumArt";
 
 interface SongInfoProps {
     song: SongType;
@@ -248,6 +233,7 @@ export const MediaControls: FC = () => {
             color={colours.text}
         >
             <AlbumArt
+                width={16}
                 artPath={
                     currentSong.result?.song.album.art?.path || defaultAlbumArt
                 }
