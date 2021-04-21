@@ -164,6 +164,9 @@ export const slice = createSlice({
 
             state.isPlaying = state.nowPlaying !== null;
         },
+        setNowPlaying(state, {payload}: PayloadAction<number>) {
+            state.nowPlaying = payload;
+        },
         begin(state) {
             if (state.nowPlaying !== null)
                 state.previousSongs.push(state.nowPlaying);
@@ -217,6 +220,7 @@ export const {
     setRepeatMode,
     skipToNext,
     skipToPrevious,
+    setNowPlaying,
     begin: beginQueue,
     resume: setResumed,
     pause: setPaused,

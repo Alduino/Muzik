@@ -6,6 +6,8 @@ import {
     AlbumSongsResponse,
     EVENT_ALBUM_LIST,
     EVENT_ALBUM_SONGS,
+    EVENT_APP_STATE_GET,
+    EVENT_APP_STATE_SET,
     EVENT_CLIPBOARD_WRITE,
     EVENT_DATABASE_INIT,
     EVENT_FILEDIR_OPEN,
@@ -131,6 +133,14 @@ handle(EVENT_CLIPBOARD_WRITE, arg => {
 
 handle(EVENT_FILEDIR_OPEN, arg => {
     shell.showItemInFolder(arg.path);
+});
+
+handle(EVENT_APP_STATE_GET, () => {
+    return store.get("appState");
+});
+
+handle(EVENT_APP_STATE_SET, arg => {
+    store.set("appState", arg);
 });
 
 handle(EVENT_REDUX_DEV_TOOLS_ENABLED, () => {

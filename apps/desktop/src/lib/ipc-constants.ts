@@ -29,6 +29,15 @@ export const EVENT_CLIPBOARD_WRITE = g<void, WriteClipboardRequest>(
     "clipboard write"
 );
 export const EVENT_FILEDIR_OPEN = g<void, FiledirOpenRequest>("filedir open");
+export const EVENT_APP_STATE_GET = g<AppStateValue>("app state get");
+export const EVENT_APP_STATE_SET = g<void, AppStateValue>("app state set");
+
+export interface AppStateValue {
+    shuffled: boolean;
+    repeatMode: number;
+    nowPlaying: number;
+    songs: number[];
+}
 
 export interface MusicImportRequest {
     /**
