@@ -6,7 +6,9 @@ export const en: Locale = {
             normal: "Muzik",
             playing: "Muzik ({{artist}} - {{track}})"
         },
-        switchLightTheme: "Light theme",
-        switchDarkTheme: "Dark theme"
+        mediaControls: {
+            toggleShuffle: "Toggle shuffle",
+            switchRepeatMode: "Switch repeat mode"
+        }
     }
 };

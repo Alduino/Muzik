@@ -13,26 +13,31 @@ import {
     Text,
     VStack
 } from "@chakra-ui/react";
-import {GrRewind} from "react-icons/gr";
+import {GrRewind, GrFastForward, GrPause, GrPlay} from "react-icons/gr";
+import {RiShuffleLine, RiRepeat2Line, RiRepeatOneLine} from "react-icons/ri";
 import {useAsync} from "react-async-hook";
+import {useTranslation} from "react-i18next";
 import {Song as SongType} from "@muzik/database";
 import {useAppDispatch, useAppSelector} from "../../store-hooks";
 import {invoke} from "../../../lib/ipc/renderer";
 import {EVENT_GET_SONG} from "../../../lib/ipc-constants";
-import {GrFastForward, GrPause, GrPlay} from "react-icons/all";
 import useThemeColours from "../../hooks/useThemeColours";
 import defaultAlbumArt from "../../assets/default-album-art.svg";
 import {
     beginQueue,
+    RepeatMode,
     setCurrentTime,
     setPaused,
+    setRepeatMode,
     setResumed,
+    setShuffled,
     skipToNext,
     skipToPrevious
 } from "../../reducers/queue";
 import {selectAlbum} from "../../reducers/albumListingRoute";
 import {formatDuration} from "../../utils/formatDuration";
 import {AlbumArt} from "./AlbumArt";
+import {ActiveDotContainer} from "./ActiveDot";
 
 interface SongInfoProps {
     song: SongType;
@@ -139,6 +144,53 @@ const SongTracker: FC<SongTrackerProps> = props => {
     );
 };
 
+const QueueButtons: FC = () => {
+    const dispatch = useAppDispatch();
+    const isShuffled = useAppSelector(state => state.queue.shuffled);
+    const repeatMode = useAppSelector(state => state.queue.repeatMode);
+    const {t} = useTranslation("app");
+
+    const iconButtonProps = {
+        isRound: true,
+        variant: "ghost"
+    };
+
+    const handleToggleShuffle = () => dispatch(setShuffled(!isShuffled));
+
+    const handleRepeatSwitch = () =>
+        dispatch(setRepeatMode((repeatMode + 1) % 3));
+
+    return (
+        <HStack>
+            <ActiveDotContainer isActive={isShuffled} gap={-2}>
+                <IconButton
+                    {...iconButtonProps}
+                    aria-label={t("mediaControls.toggleShuffle")}
+                    icon={<RiShuffleLine />}
+                    onClick={handleToggleShuffle}
+                />
+            </ActiveDotContainer>
+            <ActiveDotContainer
+                isActive={repeatMode !== RepeatMode.noRepeat}
+                gap={-2}
+            >
+                <IconButton
+                    {...iconButtonProps}
+                    aria-label={t("mediaControls.switchRepeatMode")}
+                    icon={
+                        repeatMode === RepeatMode.repeatSong ? (
+                            <RiRepeatOneLine />
+                        ) : (
+                            <RiRepeat2Line />
+                        )
+                    }
+                    onClick={handleRepeatSwitch}
+                />
+            </ActiveDotContainer>
+        </HStack>
+    );
+};
+
 interface MediaButtonProps {
     canSkipBackwards: boolean;
     canSkipForwards: boolean;
@@ -221,6 +273,9 @@ export const MediaControls: FC = () => {
     const nextSongsCount = useAppSelector(
         state => state.queue.playNextSongs.length + state.queue.songs.length
     );
+    const isRepeating = useAppSelector(
+        state => state.queue.repeatMode !== RepeatMode.noRepeat
+    );
 
     const currentSong = useAsync(getSong, [currentSongId]);
 
@@ -251,9 +306,13 @@ export const MediaControls: FC = () => {
 
             <Divider orientation="vertical" />
 
+            <QueueButtons />
+
+            <Divider orientation="vertical" />
+
             <MediaButtons
                 canSkipBackwards={previousSongsCount > 0}
-                canSkipForwards={nextSongsCount > 0}
+                canSkipForwards={nextSongsCount > 0 || isRepeating}
                 canPlayPause={currentSongId !== null || nextSongsCount > 0}
             />
         </HStack>

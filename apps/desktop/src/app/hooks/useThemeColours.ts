@@ -16,6 +16,8 @@ export default function useThemeColours() {
     const translucentHoverBg = useColorModeValue("#0001", "#fff1");
     const translucentActiveBg = useColorModeValue("#0002", "#fff2");
 
+    const active = useColorModeValue("blue.700", "blue.200");
+
     return {
         border,
         text,
@@ -26,6 +28,7 @@ export default function useThemeColours() {
         backgroundL0,
         backgroundL1,
         backgroundL2,
-        backgroundL3
+        backgroundL3,
+        active
     };
 }

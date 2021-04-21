@@ -83,6 +83,7 @@ export const AudioController: FC = () => {
 
     const handleComplete = useCallback(() => {
         // play the next song
+        dispatch(setPaused());
         dispatch(beginQueue());
     }, [dispatch]);
 
@@ -109,7 +110,7 @@ export const AudioController: FC = () => {
     useEffect(() => {
         audio.addEventListener("ended", handleComplete);
         return () => audio.removeEventListener("ended", handleComplete);
-    });
+    }, [handleComplete]);
 
     useEffect(() => {
         const interval = setInterval(() => {

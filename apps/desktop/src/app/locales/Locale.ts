@@ -6,7 +6,9 @@ export default interface Locale extends ResourceLanguage {
             normal: string;
             playing: string;
         };
-        switchLightTheme: string;
-        switchDarkTheme: string;
+        mediaControls: {
+            toggleShuffle: string;
+            switchRepeatMode: string;
+        };
     };
 }

@@ -9,6 +9,12 @@ import {
 // will restart song instead of going to previous after this many seconds
 const RESTART_THRESHOLD = 2;
 
+export enum RepeatMode {
+    noRepeat,
+    repeatQueue,
+    repeatSong
+}
+
 export const queueAlbum = createAsyncThunk(
     "queue/queueAlbum",
     async (id: number) => {
@@ -50,12 +56,28 @@ interface GetAndRemoveNextSongOpts {
     songs: number[];
     previousSongs: number[];
     shuffled: boolean;
+    repeatMode: RepeatMode;
+    currentTime: number;
+    _currentTimeWasFromAudio: boolean;
 }
 
 function getAndRemoveNextSong(opts: GetAndRemoveNextSongOpts): number | null {
-    const {playNextSongs, songs, previousSongs, shuffled} = opts;
+    const {playNextSongs, songs, previousSongs, shuffled, repeatMode} = opts;
 
     if (playNextSongs.length > 0) return playNextSongs.shift();
+
+    if (previousSongs.length > 0) {
+        if (repeatMode === RepeatMode.repeatQueue && songs.length === 0) {
+            opts._currentTimeWasFromAudio = false;
+            opts.currentTime = 0;
+            songs.push(...previousSongs);
+        } else if (repeatMode === RepeatMode.repeatSong) {
+            opts._currentTimeWasFromAudio = false;
+            opts.currentTime = 0;
+            return previousSongs[previousSongs.length - 1];
+        }
+    }
+
     if (!shuffled) return songs.shift() || null;
 
     // try and pick a song that hasn't already been played
@@ -71,7 +93,8 @@ function getAndRemoveNextSong(opts: GetAndRemoveNextSongOpts): number | null {
     const nextSong = songsToShuffle[nextSongIndex];
 
     // delete the song being played
-    opts.previousSongs.splice(nextSongIndex, 1);
+    const songIndex = songs.indexOf(nextSong);
+    songs.splice(songIndex, 1);
 
     return nextSong || null;
 }
@@ -83,6 +106,7 @@ export const slice = createSlice({
         songs: [] as number[],
         previousSongs: [] as number[],
         shuffled: false,
+        repeatMode: RepeatMode.noRepeat,
         nowPlaying: null as number | null,
         isPlaying: false,
         currentTime: 0,
@@ -93,6 +117,7 @@ export const slice = createSlice({
             state.songs = [];
             state.playNextSongs = [];
             state.previousSongs = [];
+            state.nowPlaying = null;
         },
         queueSong(state, id: PayloadAction<number>) {
             state.songs.push(id.payload);
@@ -111,6 +136,12 @@ export const slice = createSlice({
         },
         shuffle(state) {
             state.shuffled = true;
+        },
+        setShuffled(state, {payload}: PayloadAction<boolean>) {
+            state.shuffled = payload;
+        },
+        setRepeatMode(state, {payload}: PayloadAction<RepeatMode>) {
+            state.repeatMode = payload;
         },
         skipToNext(state) {
             state.currentTime = 0;
@@ -182,6 +213,8 @@ export const {
     playAfterNext,
     playAllAfterNext,
     shuffle: shuffleQueue,
+    setShuffled,
+    setRepeatMode,
     skipToNext,
     skipToPrevious,
     begin: beginQueue,
