@@ -102,7 +102,7 @@ const Song: FC<SongProps> = props => {
                     <TransText k="queueControls.addToQueue" />
                 </MenuItem>
                 <MenuItem onClick={handlePlayNext}>
-                    <TransText k="queueControls.addToQueue" />
+                    <TransText k="queueControls.playNext" />
                 </MenuItem>
                 <Divider direction="horizontal" />
                 <MenuItem onClick={handleCopyPath}>
