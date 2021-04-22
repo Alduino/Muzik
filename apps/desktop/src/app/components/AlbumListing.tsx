@@ -76,6 +76,7 @@ interface AlbumProps {
 const Album: FC<AlbumProps> = ({album, isSelected, isPlaying, ...props}) => {
     const dispatch = useAppDispatch();
     const {onContextMenu, props: contextMenuProps} = useContextMenu();
+    const colours = useThemeColours();
 
     const [isHovered, setHovered] = useBoolean();
 
@@ -103,6 +104,7 @@ const Album: FC<AlbumProps> = ({album, isSelected, isPlaying, ...props}) => {
         <HStack
             pr={4}
             cursor="pointer"
+            spacing={3}
             {...props}
             onClick={handleAlbumSelect}
             onMouseEnter={setHovered.on}
@@ -118,7 +120,16 @@ const Album: FC<AlbumProps> = ({album, isSelected, isPlaying, ...props}) => {
                 </MenuItem>
             </ContextMenu>
 
-            <AlbumArt artPath={artPath} width={24} mr={4} borderRadius={0} />
+            <AlbumArt artPath={artPath} width={24} borderRadius={0} />
+
+            <Box
+                bg={colours.active}
+                width={1}
+                height={4}
+                borderRadius="sm"
+                opacity={isSelected ? 1 : 0}
+            />
+
             <FadeOverflow flex={1}>
                 <Heading
                     size="md"
