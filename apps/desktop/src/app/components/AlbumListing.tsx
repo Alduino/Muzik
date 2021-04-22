@@ -51,6 +51,7 @@ import {AlbumArt} from "./lib/AlbumArt";
 import {TransText} from "./lib/TransText";
 import {FadeOverflow} from "./lib/FadeOverflow";
 import {PlayButtonAlbumArt} from "./lib/PlayButtonAlbumArt";
+import {VisualiserIcon} from "./lib/AudioController";
 
 const fetchAlbums = () => invoke<AlbumListResponse>(EVENT_ALBUM_LIST);
 const fetchAlbumSongs = (albumId: number) =>
@@ -139,13 +140,18 @@ const Album: FC<AlbumProps> = ({album, isSelected, isPlaying, ...props}) => {
             />
 
             <FadeOverflow flex={1}>
-                <Heading
-                    size="md"
-                    textDecoration={isHovered && "underline"}
-                    whiteSpace="nowrap"
-                >
-                    {album.name}
-                </Heading>
+                <HStack>
+                    <Heading
+                        size="md"
+                        textDecoration={isHovered && "underline"}
+                        whiteSpace="nowrap"
+                    >
+                        {album.name}
+                    </Heading>
+                    {isPlaying && (
+                        <VisualiserIcon bands={3} width={4} height={4} />
+                    )}
+                </HStack>
                 <HStack divider={<Text mx={2}>·</Text>}>
                     <Text whiteSpace="nowrap">by {album.artist.name}</Text>
                 </HStack>

@@ -22,6 +22,7 @@ import {invoke} from "../../../lib/ipc/renderer";
 import {EVENT_GET_SONG, GetSongResponse} from "../../../lib/ipc-constants";
 import defaultAlbumArt from "../../assets/default-album-art.svg";
 import {mediaSessionHandler} from "../../utils/media-session";
+import {chakra} from "@chakra-ui/react";
 
 interface ControllerContextValue {
     audioCtx: AudioContext;
@@ -235,9 +236,10 @@ export const MediaSessionController: FC = () => {
 export interface VisualiserIconProps {
     bands: number;
     gap?: number;
+    className?: string;
 }
 
-export const VisualiserIcon: FC<VisualiserIconProps> = props => {
+export const VisualiserIcon = chakra((props: VisualiserIconProps) => {
     const {audioCtx, analyser} = useContext(ControllerContext);
 
     const [heights, setHeights] = useState<number[]>([]);
@@ -292,7 +294,7 @@ export const VisualiserIcon: FC<VisualiserIconProps> = props => {
     const gap = (props.gap || 0.1) * 2;
 
     return (
-        <svg viewBox="0 0 1 1">
+        <svg viewBox="0 0 1 1" className={props.className}>
             {heights.map((height, i) => (
                 <rect
                     key={i}
@@ -305,4 +307,5 @@ export const VisualiserIcon: FC<VisualiserIconProps> = props => {
             ))}
         </svg>
     );
-};
+});
+VisualiserIcon.displayName = "VisualiserIcon";

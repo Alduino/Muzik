@@ -34,6 +34,7 @@ import {AlbumArt} from "./AlbumArt";
 import defaultAlbumArt from "../../assets/default-album-art.svg";
 import AutoSizer from "react-virtualized-auto-sizer";
 import {PlayButtonAlbumArt} from "./PlayButtonAlbumArt";
+import {VisualiserIcon} from "./AudioController";
 
 interface SongProps {
     song: SongType;
@@ -122,9 +123,14 @@ const Song: FC<SongProps> = props => {
             />
 
             <FadeOverflow flexGrow={1}>
-                <Heading size="sm" whiteSpace="nowrap" ref={titleRef}>
-                    {props.song.name}
-                </Heading>
+                <HStack>
+                    <Heading size="sm" whiteSpace="nowrap" ref={titleRef}>
+                        {props.song.name}
+                    </Heading>
+                    {isCurrent && (
+                        <VisualiserIcon bands={3} width={4} height={4} />
+                    )}
+                </HStack>
                 <Text fontSize="sm" opacity={0.5}>
                     {props.song.album.artist.name}
                 </Text>

@@ -207,6 +207,11 @@ const MediaButtons: FC<MediaButtonProps> = props => {
         variant: "ghost"
     };
 
+    const playPauseButtonProps = {
+        ...iconButtonProps,
+        variant: "solid"
+    };
+
     const handlePreviousSong = () => dispatch(skipToPrevious());
     const handleNextSong = () => dispatch(skipToNext());
     const handlePause = () => dispatch(setPaused());
@@ -228,7 +233,7 @@ const MediaButtons: FC<MediaButtonProps> = props => {
 
             {isPlaying ? (
                 <IconButton
-                    {...iconButtonProps}
+                    {...playPauseButtonProps}
                     aria-label="Pause"
                     icon={<GrPause {...iconProps} />}
                     isDisabled={!props.canPlayPause}
@@ -236,7 +241,7 @@ const MediaButtons: FC<MediaButtonProps> = props => {
                 />
             ) : (
                 <IconButton
-                    {...iconButtonProps}
+                    {...playPauseButtonProps}
                     aria-label="Play"
                     icon={<GrPlay {...iconProps} />}
                     isDisabled={!props.canPlayPause}
