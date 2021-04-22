@@ -50,6 +50,7 @@ import {ContextMenu, MenuItem, useContextMenu} from "./lib/ContextMenu";
 import {AlbumArt} from "./lib/AlbumArt";
 import {TransText} from "./lib/TransText";
 import {FadeOverflow} from "./lib/FadeOverflow";
+import {PlayButtonAlbumArt} from "./lib/PlayButtonAlbumArt";
 
 const fetchAlbums = () => invoke<AlbumListResponse>(EVENT_ALBUM_LIST);
 const fetchAlbumSongs = (albumId: number) =>
@@ -120,7 +121,14 @@ const Album: FC<AlbumProps> = ({album, isSelected, isPlaying, ...props}) => {
                 </MenuItem>
             </ContextMenu>
 
-            <AlbumArt artPath={artPath} width={24} borderRadius={0} />
+            <PlayButtonAlbumArt
+                isHovered={isHovered}
+                isCurrent={isPlaying}
+                artPath={artPath}
+                artSize={24}
+                buttonSize="lg"
+                onPlay={handleAlbumPlay}
+            />
 
             <Box
                 bg={colours.active}
@@ -142,13 +150,6 @@ const Album: FC<AlbumProps> = ({album, isSelected, isPlaying, ...props}) => {
                     <Text whiteSpace="nowrap">by {album.artist.name}</Text>
                 </HStack>
             </FadeOverflow>
-
-            <PlayButton
-                size="lg"
-                isCurrent={isPlaying}
-                isHovered={isHovered}
-                onPlay={handleAlbumPlay}
-            />
         </HStack>
     );
 };

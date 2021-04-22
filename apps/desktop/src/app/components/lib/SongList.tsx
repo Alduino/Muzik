@@ -1,5 +1,6 @@
 import {
     Box,
+    Center,
     Divider,
     Heading,
     HStack,
@@ -32,6 +33,7 @@ import {FadeOverflow} from "./FadeOverflow";
 import {AlbumArt} from "./AlbumArt";
 import defaultAlbumArt from "../../assets/default-album-art.svg";
 import AutoSizer from "react-virtualized-auto-sizer";
+import {PlayButtonAlbumArt} from "./PlayButtonAlbumArt";
 
 interface SongProps {
     song: SongType;
@@ -90,8 +92,8 @@ const Song: FC<SongProps> = props => {
             pr={4}
             pl={2}
             style={props.style}
-            onMouseEnter={() => setHovered.on}
-            onMouseLeave={() => setHovered.off}
+            onMouseEnter={setHovered.on}
+            onMouseLeave={setHovered.off}
             onContextMenu={onContextMenu}
         >
             <ContextMenu {...contextMenuProps}>
@@ -110,7 +112,14 @@ const Song: FC<SongProps> = props => {
                 </MenuItem>
             </ContextMenu>
 
-            <AlbumArt artPath={artPath} borderRadius={0} height={16} />
+            <PlayButtonAlbumArt
+                isHovered={isHovered}
+                isCurrent={isCurrent}
+                artPath={artPath}
+                artSize={16}
+                buttonSize="sm"
+                onPlay={handleSongPlay}
+            />
 
             <FadeOverflow flexGrow={1}>
                 <Heading size="sm" whiteSpace="nowrap" ref={titleRef}>

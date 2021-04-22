@@ -314,7 +314,7 @@ const SongDisplayImpl: FC = () => {
             backgroundColor={colours.backgroundL1}
         >
             <AlbumArt
-                height="100%"
+                size={16}
                 flexShrink={0}
                 artPath={
                     currentSong.result?.song.album.art?.path || defaultAlbumArt

@@ -1,26 +1,17 @@
-import {Box, IconButton} from "@chakra-ui/react";
+import {IconButton} from "@chakra-ui/react";
 import React, {FC, ReactElement} from "react";
 import {GrPause, GrPlay, GrResume} from "react-icons/gr";
 import {setPaused, setResumed} from "../../reducers/queue";
-import {VisualiserIcon} from "./AudioController";
 import {useAppDispatch, useAppSelector} from "../../store-hooks";
 import useThemeColours from "../../hooks/useThemeColours";
 
 interface UsePlayButtonIconResult {
-    isVisible: boolean;
     icon: ReactElement | null;
 }
 
-function usePlayButtonIcon(
-    isCurrent: boolean,
-    isHovered: boolean
-): UsePlayButtonIconResult {
+function usePlayButtonIcon(isCurrent: boolean): UsePlayButtonIconResult {
     const colours = useThemeColours();
     const isPlaying = useAppSelector(v => v.queue.isPlaying);
-
-    const baseResult = {
-        isVisible: isHovered
-    };
 
     const iconProps = {
         ...colours.invertThemeReverse
@@ -28,31 +19,16 @@ function usePlayButtonIcon(
 
     if (isCurrent) {
         if (isPlaying) {
-            if (isHovered) {
-                return {
-                    ...baseResult,
-                    icon: <GrPause {...iconProps} />
-                };
-            } else {
-                return {
-                    ...baseResult,
-                    isVisible: true,
-                    icon: (
-                        <Box p="25%" width="full" height="full" grow={1}>
-                            <VisualiserIcon bands={3} />
-                        </Box>
-                    )
-                };
-            }
+            return {
+                icon: <GrPause {...iconProps} />
+            };
         } else {
             return {
-                ...baseResult,
                 icon: <GrResume {...iconProps} />
             };
         }
     } else {
         return {
-            ...baseResult,
             icon: <GrPlay {...iconProps} />
         };
     }
@@ -61,7 +37,6 @@ function usePlayButtonIcon(
 export interface PlayButtonProps {
     size: string;
     isCurrent: boolean;
-    isHovered: boolean;
 
     onPlay?: () => void;
 }
@@ -71,10 +46,7 @@ export const PlayButton: FC<PlayButtonProps> = props => {
     const isStopped = useAppSelector(v => v.queue.nowPlaying === null);
     const dispatch = useAppDispatch();
 
-    const {icon, isVisible} = usePlayButtonIcon(
-        props.isCurrent,
-        props.isHovered
-    );
+    const {icon} = usePlayButtonIcon(props.isCurrent);
 
     const handleClick = () => {
         if (!props.isCurrent || (isStopped && !isPlaying)) {
@@ -95,7 +67,6 @@ export const PlayButton: FC<PlayButtonProps> = props => {
             colorScheme="blue"
             overflow="hidden"
             isRound
-            opacity={isVisible ? 1 : 0}
             aria-label="Play"
             icon={icon}
             onClick={handleClick}
