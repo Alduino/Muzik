@@ -80,6 +80,7 @@
     "@roarr/cli": "^3.2.3",
     "@types/react": "^17.0.3",
     "@types/react-dom": "^17.0.3",
+    "@types/react-virtualized-auto-sizer": "^1.0.0",
     "@types/react-window": "^1.8.2",
     "@types/webpack-env": "^1.16.0",
     "@types/wicg-mediasession": "^1.1.0",
@@ -121,6 +122,7 @@
     "react-icons": "^4.2.0",
     "react-redux": "^7.2.3",
     "react-spinners": "^0.10.6",
+    "react-virtualized-auto-sizer": "^1.0.5",
     "react-window": "^1.8.6",
     "unzip-crx-3": "^0.2.0"
   }

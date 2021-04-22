@@ -31,6 +31,7 @@ import {TransText} from "./TransText";
 import {FadeOverflow} from "./FadeOverflow";
 import {AlbumArt} from "./AlbumArt";
 import defaultAlbumArt from "../../assets/default-album-art.svg";
+import AutoSizer from "react-virtualized-auto-sizer";
 
 interface SongProps {
     song: SongType;
@@ -129,18 +130,23 @@ const Song: FC<SongProps> = props => {
 
 export interface SongListProps {
     songs: SongType[];
-    height: number;
 }
 
 export const SongList: FC<SongListProps> = props => (
-    <FixedSizeList
-        itemSize={68}
-        height={props.height}
-        itemCount={props.songs.length}
-        width="100%"
-        itemData={props.songs}
-        className="custom-scroll"
-    >
-        {({data, index, style}) => <Song song={data[index]} style={style} />}
-    </FixedSizeList>
+    <AutoSizer>
+        {size => (
+            <FixedSizeList
+                itemSize={68}
+                itemCount={props.songs.length}
+                width={size.width}
+                height={size.height}
+                itemData={props.songs}
+                className="custom-scroll"
+            >
+                {({data, index, style}) => (
+                    <Song song={data[index]} style={style} />
+                )}
+            </FixedSizeList>
+        )}
+    </AutoSizer>
 );

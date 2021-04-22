@@ -1,5 +1,3 @@
-// TODO tomorrow: show play buttons over top of album art
-
 import type {Album as AlbumType} from "@muzik/database";
 import {
     Box,
@@ -8,7 +6,6 @@ import {
     Heading,
     HStack,
     Skeleton,
-    Stack,
     Text,
     useBoolean
 } from "@chakra-ui/react";
@@ -23,6 +20,7 @@ import React, {
 } from "react";
 import {useAsync} from "react-async-hook";
 import {FixedSizeList} from "react-window";
+import AutoSizer from "react-virtualized-auto-sizer";
 import {invoke} from "../../lib/ipc/renderer";
 import {
     AlbumListResponse,
@@ -169,46 +167,43 @@ const AlbumList: FC<AlbumListProps> = ({
     height,
     ...props
 }) => (
-    <FixedSizeList
-        itemSize={100}
-        height={height}
-        itemCount={albums.length}
-        itemData={albums.map(item => ({
-            album: item,
+    <AutoSizer>
+        {size => (
+            <FixedSizeList
+                itemSize={100}
+                itemCount={albums.length}
+                itemData={albums.map(item => ({
+                    album: item,
             selected: item.id === selectedAlbum
         }))}
-        width="100%"
-        className="custom-scroll"
-        ref={props.listRef}
-    >
-        {({data, index, style}) => (
-            <Album
-                album={data[index].album}
-                isSelected={data[index].selected}
-                style={style}
-            />
+                }))}
+                width={size.width}
+                height={size.height}
+                className="custom-scroll"
+                ref={props.listRef}
+            >
+                {({data, index, style}) => (
+                    <Album
+                        album={data[index].album}
+                        isSelected={data[index].selected}
+                        style={style}
+                    />
+                )}
+            </FixedSizeList>
         )}
-    </FixedSizeList>
+    </AutoSizer>
 );
 
 export const AlbumListing: FC = () => {
     const colours = useThemeColours();
-    const [windowHeight, setWindowHeight] = useState(window.innerHeight);
     const selectedAlbum = useAppSelector(
         v => v.albumListingRoute.selectedAlbum
     );
+    const playingSong = useAppSelector(v => v.queue.nowPlaying);
+    const playingAlbum = useAsync(fetchAlbumIdOf, [playingSong]);
     const albums = useAsync(fetchAlbums, []);
     const albumSongs = useAsync(fetchAlbumSongs, [selectedAlbum]);
     const albumListRef = useRef<FixedSizeList>();
-
-    useEffect(() => {
-        function handler() {
-            setWindowHeight(window.innerHeight);
-        }
-
-        window.addEventListener("resize", handler);
-        return () => window.removeEventListener("resize", handler);
-    });
 
     useEffect(() => {
         const {current} = albumListRef;
@@ -226,17 +221,16 @@ export const AlbumListing: FC = () => {
         return songs.sort((a, b) => a.trackNo - b.trackNo);
     }, [albumSongs.result?.songs]);
 
-    // window height minus height of top bar (96px)
-    const height = windowHeight - 96;
-
     if (albums.error) {
         return <ErrorLabel message={albums.error.message} />;
     } else {
         return (
             <HStack
                 justify="start"
+                align="stretch"
                 spacing={0}
                 background={colours.backgroundL2}
+                height="100%"
             >
                 <Container flexGrow={1}>
                     {albums.loading ? (
@@ -247,7 +241,7 @@ export const AlbumListing: FC = () => {
                         <AlbumList
                             albums={albums.result.albums}
                             selectedAlbum={selectedAlbum}
-                            height={height}
+                                    height={size.height}
                             listRef={albumListRef}
                         />
                     )}
@@ -257,7 +251,7 @@ export const AlbumListing: FC = () => {
 
                 {sortedSongs.length > 0 && (
                     <Container width="28rem">
-                        <SongList songs={sortedSongs} height={height} />
+                        <SongList songs={sortedSongs} />
                     </Container>
                 )}
             </HStack>
