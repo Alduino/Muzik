@@ -15,8 +15,7 @@ import React, {
     MutableRefObject,
     useEffect,
     useMemo,
-    useRef,
-    useState
+    useRef
 } from "react";
 import {useAsync} from "react-async-hook";
 import {FixedSizeList} from "react-window";
@@ -55,41 +54,30 @@ import {FadeOverflow} from "./lib/FadeOverflow";
 const fetchAlbums = () => invoke<AlbumListResponse>(EVENT_ALBUM_LIST);
 const fetchAlbumSongs = (albumId: number) =>
     invoke<AlbumSongsResponse, AlbumSongsRequest>(EVENT_ALBUM_SONGS, {albumId});
-
-const checkAlbumPlaying = async (songId: number | null, albumId: number) => {
-    if (songId === null) return false;
-    const {song} = await invoke<GetSongResponse, GetSongRequest>(
-        EVENT_GET_SONG,
-        {songId}
-    );
-    return song.albumId === albumId;
-};
-
-interface AlbumProps {
-    album: AlbumType;
-    isSelected: boolean;
-    style?: CSSProperties;
-}
+const fetchAlbumIdOf = (songId: number) =>
+    invoke(EVENT_GET_SONG, {songId}).then(res => res.song.albumId);
 
 const ContainerImpl: FC<{className?: string}> = props => (
-    <Box className={props.className}>{props.children}</Box>
+    <Box className={props.className} height="fill">
+        {props.children}
+    </Box>
 );
 ContainerImpl.displayName = "Container";
 
 const Container = chakra(ContainerImpl);
 
-const Album: FC<AlbumProps> = ({album, isSelected, ...props}) => {
+interface AlbumProps {
+    album: AlbumType;
+    isSelected: boolean;
+    isPlaying: boolean;
+    style?: CSSProperties;
+}
+
+const Album: FC<AlbumProps> = ({album, isSelected, isPlaying, ...props}) => {
     const dispatch = useAppDispatch();
     const {onContextMenu, props: contextMenuProps} = useContextMenu();
 
     const [isHovered, setHovered] = useBoolean();
-
-    const currentSongId = useAppSelector(v => v.queue.nowPlaying);
-
-    const isAlbumPlaying = useAsync(checkAlbumPlaying, [
-        currentSongId,
-        album.id
-    ]);
 
     const artPath = album.art?.path || defaultAlbumArt;
 
@@ -146,7 +134,7 @@ const Album: FC<AlbumProps> = ({album, isSelected, ...props}) => {
 
             <PlayButton
                 size="lg"
-                isCurrent={isAlbumPlaying.result || false}
+                isCurrent={isPlaying}
                 isHovered={isHovered}
                 onPlay={handleAlbumPlay}
             />
@@ -157,14 +145,14 @@ const Album: FC<AlbumProps> = ({album, isSelected, ...props}) => {
 interface AlbumListProps {
     albums: AlbumType[];
     selectedAlbum: number;
-    height: number;
+    playingAlbum: number | null;
     listRef?: MutableRefObject<FixedSizeList>;
 }
 
 const AlbumList: FC<AlbumListProps> = ({
     albums,
     selectedAlbum,
-    height,
+    playingAlbum,
     ...props
 }) => (
     <AutoSizer>
@@ -174,8 +162,8 @@ const AlbumList: FC<AlbumListProps> = ({
                 itemCount={albums.length}
                 itemData={albums.map(item => ({
                     album: item,
-            selected: item.id === selectedAlbum
-        }))}
+                    selected: item.id === selectedAlbum,
+                    playing: item.id === playingAlbum
                 }))}
                 width={size.width}
                 height={size.height}
@@ -186,6 +174,7 @@ const AlbumList: FC<AlbumListProps> = ({
                     <Album
                         album={data[index].album}
                         isSelected={data[index].selected}
+                        isPlaying={data[index].playing}
                         style={style}
                     />
                 )}
@@ -241,7 +230,7 @@ export const AlbumListing: FC = () => {
                         <AlbumList
                             albums={albums.result.albums}
                             selectedAlbum={selectedAlbum}
-                                    height={size.height}
+                            playingAlbum={playingAlbum.result}
                             listRef={albumListRef}
                         />
                     )}
