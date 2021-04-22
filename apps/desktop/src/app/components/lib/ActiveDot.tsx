@@ -2,10 +2,16 @@ import {Box, Circle} from "@chakra-ui/react";
 import React, {FC} from "react";
 import useThemeColours from "../../hooks/useThemeColours";
 
-export const ActiveDot: FC = () => {
+export const ActiveDot: FC<{isActive?: boolean}> = props => {
     const colour = useThemeColours();
 
-    return <Circle backgroundColor={colour.active} size={1} />;
+    return (
+        <Circle
+            opacity={props.isActive === false ? 0 : 1}
+            backgroundColor={colour.active}
+            size={1}
+        />
+    );
 };
 
 export const ActiveDotContainer: FC<{

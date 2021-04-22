@@ -106,6 +106,7 @@
     "@redux-devtools/dock-monitor": "^1.4.0",
     "@redux-devtools/log-monitor": "^2.3.0",
     "@reduxjs/toolkit": "^1.5.1",
+    "async-mutex": "^0.3.1",
     "electron-store": "^7.0.2",
     "eventemitter3": "^4.0.7",
     "execa": "^5.0.0",

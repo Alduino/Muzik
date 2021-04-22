@@ -10,11 +10,22 @@ export const en: Locale = {
             toggleShuffle: "Toggle shuffle",
             switchRepeatMode: "Switch repeat mode",
             addToQueue: "Add to queue",
-            playNext: "Play next"
+            playNext: "Play next",
+            playSong: "Play song",
+            playAlbum: "Play album",
+            playAll: "Play all"
         },
         utils: {
             copyFilePath: "Copy file path",
             openContainingFolder: "Open containing folder"
+        },
+        routes: {
+            albums: "Albums",
+            songs: "Songs"
+        },
+        sidebarGroups: {
+            routes: "Routes",
+            playlists: "Playlists"
         }
     }
 };

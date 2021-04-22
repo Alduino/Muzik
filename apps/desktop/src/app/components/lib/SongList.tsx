@@ -1,16 +1,7 @@
-import {
-    Box,
-    Center,
-    Divider,
-    Heading,
-    HStack,
-    Text,
-    useBoolean
-} from "@chakra-ui/react";
+import {Divider, Heading, HStack, Text, useBoolean} from "@chakra-ui/react";
 import type {Song as SongType} from "@muzik/database";
-import React, {CSSProperties, FC, useEffect, useRef} from "react";
+import React, {CSSProperties, FC, useRef} from "react";
 import {FixedSizeList} from "react-window";
-import {PlayButton} from "./PlayButton";
 import {useAppDispatch, useAppSelector} from "../../store-hooks";
 import {
     beginQueue,
@@ -18,6 +9,7 @@ import {
     clearQueue,
     playAfterNext,
     playNext,
+    queueAlbum,
     queueSong
 } from "../../reducers/queue";
 import {formatDuration} from "../../utils/formatDuration";
@@ -30,7 +22,6 @@ import {
 import {useTranslation} from "react-i18next";
 import {TransText} from "./TransText";
 import {FadeOverflow} from "./FadeOverflow";
-import {AlbumArt} from "./AlbumArt";
 import defaultAlbumArt from "../../assets/default-album-art.svg";
 import AutoSizer from "react-virtualized-auto-sizer";
 import {PlayButtonAlbumArt} from "./PlayButtonAlbumArt";
@@ -60,6 +51,14 @@ const Song: FC<SongProps> = props => {
         dispatch(clearQueue());
         dispatch(queueSong(props.song.id));
         dispatch(beginQueue());
+    };
+
+    const handleAlbumPlay = () => {
+        dispatch(cancelPlaying());
+        dispatch(clearQueue());
+        dispatch(queueAlbum(props.song.albumId)).then(() =>
+            dispatch(beginQueue())
+        );
     };
 
     const handlePlayNext = () => {
@@ -98,13 +97,20 @@ const Song: FC<SongProps> = props => {
             onContextMenu={onContextMenu}
         >
             <ContextMenu {...contextMenuProps}>
+                <MenuItem onClick={handleSongPlay}>
+                    <TransText k="queueControls.playSong" />
+                </MenuItem>
+                <MenuItem onClick={handleAlbumPlay}>
+                    <TransText k="queueControls.playAlbum" />
+                </MenuItem>
+                <Divider />
                 <MenuItem onClick={handleAddToQueue}>
                     <TransText k="queueControls.addToQueue" />
                 </MenuItem>
                 <MenuItem onClick={handlePlayNext}>
                     <TransText k="queueControls.playNext" />
                 </MenuItem>
-                <Divider direction="horizontal" />
+                <Divider />
                 <MenuItem onClick={handleCopyPath}>
                     <TransText k="utils.copyFilePath" />
                 </MenuItem>

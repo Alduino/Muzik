@@ -1,11 +1,5 @@
 import {Album, Song} from "@muzik/database";
-import type {IpcName} from "./ipc/common";
-
-function g<TResponse, TRequest = never, TProgress = never>(
-    name: string
-): IpcName<TResponse, TRequest, TProgress> {
-    return [name];
-}
+import {g} from "./ipc/common";
 
 export const EVENT_DATABASE_INIT = g<void>("database init");
 export const EVENT_MUSIC_IMPORT = g<void, MusicImportRequest, number>(
@@ -14,16 +8,22 @@ export const EVENT_MUSIC_IMPORT = g<void, MusicImportRequest, number>(
 export const EVENT_SELECT_MUSIC_IMPORT_PATH = g<boolean>(
     "select music import path"
 );
-export const EVENT_ALBUM_LIST = g<AlbumListResponse>("album list");
+export const EVENT_ALBUM_LIST = g<AlbumListResponse>("album list", true);
 export const EVENT_ALBUM_SONGS = g<AlbumSongsResponse, AlbumSongsRequest>(
-    "album songs"
+    "album songs",
+    true
 );
-export const EVENT_GET_SONG = g<GetSongResponse, GetSongRequest>("get song");
+export const EVENT_GET_SONG = g<GetSongResponse, GetSongRequest>(
+    "get song",
+    true
+);
 export const EVENT_REDUX_DEV_TOOLS_ENABLED = g<boolean>(
-    "redux dev tools enabled"
+    "redux dev tools enabled",
+    true
 );
 export const EVENT_GET_ALL_SONG_IDS = g<GetAllSongIdsResponse>(
-    "get all song ids"
+    "get all song ids",
+    true
 );
 export const EVENT_CLIPBOARD_WRITE = g<void, WriteClipboardRequest>(
     "clipboard write"

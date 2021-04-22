@@ -39,6 +39,7 @@ import {formatDuration} from "../../utils/formatDuration";
 import {AlbumArt} from "./AlbumArt";
 import {ActiveDotContainer} from "./ActiveDot";
 import {FadeOverflow} from "./FadeOverflow";
+import {GlobalRoute, setGlobalRoute} from "../../reducers/routing";
 
 interface SongInfoProps {
     song: SongType;
@@ -50,6 +51,7 @@ const SongInfoImpl: FC<SongInfoProps> = props => {
 
     const handleAlbumClick = () => {
         dispatch(selectAlbum(props.song.album.id));
+        dispatch(setGlobalRoute(GlobalRoute.albumListing));
     };
 
     return (
@@ -61,9 +63,7 @@ const SongInfoImpl: FC<SongInfoProps> = props => {
             <Text whiteSpace="nowrap">
                 {props.song.album.artist.name}
                 {" - "}
-                <Link href="#" onClick={handleAlbumClick}>
-                    {props.song.album.name}
-                </Link>
+                <Link onClick={handleAlbumClick}>{props.song.album.name}</Link>
             </Text>
         </FadeOverflow>
     );

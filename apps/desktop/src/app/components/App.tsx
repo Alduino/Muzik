@@ -20,6 +20,7 @@ import {ErrorLabel} from "./lib/ErrorLabel";
 import {useAppSelector} from "../store-hooks";
 import {MediaControls, SongDisplay} from "./lib/MediaControls";
 import {FilledSidebar} from "./lib/FilledSidebar";
+import {SongListing} from "./SongListing";
 
 const CornerClip = chakra((props: {className?: string}) => {
     const colours = useThemeColours();
@@ -68,8 +69,18 @@ const LoadedApp: FC = () => {
                     <AlbumListing />
                 </PageContainer>
             );
+        case GlobalRoute.songListing:
+            return (
+                <PageContainer>
+                    <SongListing />
+                </PageContainer>
+            );
         default:
-            return <ErrorLabel message={"NOT_FOUND:" + GlobalRoute[route]} />;
+            return (
+                <PageContainer>
+                    <ErrorLabel message={"NOT_FOUND:" + GlobalRoute[route]} />
+                </PageContainer>
+            );
     }
 };
 

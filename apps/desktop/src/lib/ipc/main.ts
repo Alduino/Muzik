@@ -5,7 +5,6 @@ import {
     eventName,
     IpcName,
     MESSAGE_EVENT,
-    readIpcName,
     TYPE_ABORT,
     TYPE_COMPLETE,
     TYPE_ERROR,
@@ -42,7 +41,7 @@ export function handle<TResponse, TRequest = never, TProgress = never>(
     event: IpcName<TResponse, TRequest, TProgress>,
     respond: Responder<TRequest, TResponse, TProgress>
 ): void {
-    const name = readIpcName(event);
+    const {name} = event;
 
     if (listeners.has(name))
         throw new Error("More than one listener registered");
