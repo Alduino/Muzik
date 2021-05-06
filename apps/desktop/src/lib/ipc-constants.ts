@@ -43,6 +43,7 @@ export interface AppStateValue {
     repeatMode: number;
     nowPlaying: number;
     songs: number[];
+    route: number;
 }
 
 export interface MusicImportRequest {
