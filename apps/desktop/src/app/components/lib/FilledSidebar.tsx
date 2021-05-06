@@ -5,7 +5,7 @@ import {useAppDispatch, useAppSelector} from "../../store-hooks";
 import {TransText} from "./TransText";
 import {GlobalRoute, setGlobalRoute} from "../../reducers/routing";
 import {invoke} from "../../../lib/ipc/renderer";
-import {EVENT_GET_ALL_SONG_IDS} from "../../../lib/ipc-constants";
+import {EVENT_GET_ALL_TRACKS} from "../../../lib/ipc-constants";
 import {
     beginQueue,
     cancelPlaying,
@@ -33,10 +33,10 @@ export const FilledSidebar = chakra((props: FilledSidebarProps) => {
     const setSongListing = useRouteSetter(GlobalRoute.songListing);
 
     const handlePlayAll = useCallback(async () => {
-        const allSongIds = await invoke(EVENT_GET_ALL_SONG_IDS);
+        const allSongIds = await invoke(EVENT_GET_ALL_TRACKS);
         dispatch(cancelPlaying());
         dispatch(clearQueue());
-        dispatch(queueSongs(allSongIds.songIds));
+        dispatch(queueSongs(allSongIds.tracks.map(track => track.id)));
         dispatch(beginQueue());
     }, [dispatch]);
 

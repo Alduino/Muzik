@@ -1,51 +1,29 @@
-import React, {FC, useState} from "react";
-import {Box, Progress} from "@chakra-ui/react";
-import {useAsync, UseAsyncReturn} from "react-async-hook";
-import type {Song as SongType} from "@muzik/database";
+import React, {FC} from "react";
+import {Box} from "@chakra-ui/react";
 import useThemeColours from "../hooks/useThemeColours";
 import {invoke} from "../../lib/ipc/renderer";
-import {EVENT_GET_ALL_SONG_IDS, EVENT_GET_SONG} from "../../lib/ipc-constants";
+import {EVENT_GET_ALL_TRACKS} from "../../lib/ipc-constants";
 import {ErrorLabel} from "./lib/ErrorLabel";
 import {SongList} from "./lib/SongList";
+import {useAsync} from "react-async-hook";
 
-interface UseAllSongsResult extends UseAsyncReturn<SongType[]> {
-    progress: number;
-}
-
-function useAllSongs(): UseAllSongsResult {
-    const [progress, setProgress] = useState(0);
-
-    const asyncResult = useAsync(async () => {
-        const {songIds} = await invoke(EVENT_GET_ALL_SONG_IDS);
-
-        return Promise.all(
-            songIds.map(async (songId, idx) => {
-                const song = await invoke(EVENT_GET_SONG, {songId});
-                setProgress(prev =>
-                    Math.max(prev, (idx / songIds.length) * 100)
-                );
-                return song.song;
-            })
-        );
-    }, []);
-
-    return {progress, ...asyncResult};
-}
+const fetchTracks = () => invoke(EVENT_GET_ALL_TRACKS);
 
 export const SongListing: FC = () => {
     const colours = useThemeColours();
-    const songsAsync = useAllSongs();
 
-    if (songsAsync.error || songsAsync.error) {
-        return <ErrorLabel message={songsAsync.error.message} />;
+    const tracksAsync = useAsync(fetchTracks, []);
+    console.log(tracksAsync.result);
+
+    if (tracksAsync.error || tracksAsync.error) {
+        return <ErrorLabel message={tracksAsync.error.message} />;
     }
 
     return (
         <Box height="100%" bg={colours.backgroundL2}>
-            {songsAsync.loading && (
-                <Progress hasStripe isAnimated value={songsAsync.progress} />
+            {tracksAsync.result && (
+                <SongList songs={tracksAsync.result.tracks} />
             )}
-            {songsAsync.result && <SongList songs={songsAsync.result} />}
         </Box>
     );
 };

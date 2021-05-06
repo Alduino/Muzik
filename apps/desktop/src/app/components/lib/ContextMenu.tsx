@@ -202,7 +202,7 @@ export const ContextMenu: FC<ContextMenuProps> = props => {
 
 export interface MenuItemProps {
     // return `true` to cancel default actions
-    onClick?(): boolean | void;
+    onClick?(): boolean | void | Promise<boolean | void>;
 }
 
 export const MenuItem: FC<MenuItemProps> = props => {
@@ -212,8 +212,8 @@ export const MenuItem: FC<MenuItemProps> = props => {
 
     const colours = useThemeColours();
 
-    const handleClick = () => {
-        if (!props.onClick?.()) context.close();
+    const handleClick = async () => {
+        if (!(await props.onClick?.())) context.close();
     };
 
     return (

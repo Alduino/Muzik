@@ -17,5 +17,8 @@ module.exports = {
             resolve(__dirname, "node_modules"),
             resolve(__dirname, "../../node_modules")
         ]
-    }
+    },
+    externals: [
+        "sqlite3"
+    ]
 };

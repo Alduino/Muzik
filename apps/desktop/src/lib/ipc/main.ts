@@ -32,7 +32,7 @@ ipcMain.on(MESSAGE_EVENT, (event, arg: EventMessage<unknown>) => {
         console.warn("Received unknown event", name);
         event.reply(
             eventName(id, TYPE_ERROR),
-            new Error(`Invalid event ${name}`)
+            new Error(`Invalid event, '${name}'`)
         );
     }
 });

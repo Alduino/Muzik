@@ -19,7 +19,7 @@ import {
 } from "../../reducers/queue";
 import {useAppDispatch, useAppSelector} from "../../store-hooks";
 import {invoke} from "../../../lib/ipc/renderer";
-import {EVENT_GET_SONG, GetSongResponse} from "../../../lib/ipc-constants";
+import {EVENT_GET_NAMES, EVENT_GET_SONG} from "../../../lib/ipc-constants";
 import defaultAlbumArt from "../../assets/default-album-art.svg";
 import {mediaSessionHandler} from "../../utils/media-session";
 import {chakra} from "@chakra-ui/react";
@@ -126,8 +126,28 @@ export const AudioController: FC = () => {
     return null;
 };
 
-const getSongInfo = (songId: number): Promise<GetSongResponse | null> =>
-    songId === null ? Promise.resolve(null) : invoke(EVENT_GET_SONG, {songId});
+const getSongInfo = async (
+    songId: number
+): Promise<{
+    art: {url: string; mime: string};
+    trackName: string;
+    albumName: string;
+    artistName: string;
+} | null> =>
+    songId === null
+        ? Promise.resolve(null)
+        : {
+              art: await invoke(EVENT_GET_SONG, {songId}).then(
+                  res => res.song?.art
+              ),
+              ...(await invoke(EVENT_GET_NAMES, {
+                  trackId: songId
+              }).then(res => ({
+                  trackName: res.track,
+                  albumName: res.album,
+                  artistName: res.artist
+              })))
+          };
 
 export const MediaSessionController: FC = () => {
     const playingSongId = useAppSelector(state => state.queue.nowPlaying);
@@ -146,15 +166,15 @@ export const MediaSessionController: FC = () => {
             return;
         }
 
-        const {song} = playingSongResult;
+        const {art, trackName, albumName, artistName} = playingSongResult;
 
-        const artUri = song.album.art?.path || defaultAlbumArt;
-        const artMime = song.album.art?.mime || "image/svg";
+        const artUri = art?.url || defaultAlbumArt;
+        const artMime = art?.mime || "image/svg";
 
         navigator.mediaSession.metadata = new MediaMetadata({
-            title: song.name,
-            album: song.album.name,
-            artist: song.album.artist.name,
+            title: trackName,
+            album: albumName,
+            artist: artistName,
             artwork: [
                 {
                     src: artUri,

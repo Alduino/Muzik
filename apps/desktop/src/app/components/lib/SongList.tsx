@@ -1,5 +1,4 @@
 import {Divider, Heading, HStack, Text, useBoolean} from "@chakra-ui/react";
-import type {Song as SongType} from "@muzik/database";
 import React, {CSSProperties, FC, useRef} from "react";
 import {FixedSizeList} from "react-window";
 import {useAppDispatch, useAppSelector} from "../../store-hooks";
@@ -17,7 +16,8 @@ import {ContextMenu, MenuItem, useContextMenu} from "./ContextMenu";
 import {invoke} from "../../../lib/ipc/renderer";
 import {
     EVENT_CLIPBOARD_WRITE,
-    EVENT_FILEDIR_OPEN
+    EVENT_FILEDIR_OPEN,
+    EVENT_GET_NAMES
 } from "../../../lib/ipc-constants";
 import {useTranslation} from "react-i18next";
 import {TransText} from "./TransText";
@@ -26,11 +26,15 @@ import defaultAlbumArt from "../../assets/default-album-art.svg";
 import AutoSizer from "react-virtualized-auto-sizer";
 import {PlayButtonAlbumArt} from "./PlayButtonAlbumArt";
 import {VisualiserIcon} from "./AudioController";
+import {ExtendedTrack} from "../../../lib/ExtendedAlbum";
+import {useAsync} from "react-async-hook";
 
 interface SongProps {
-    song: SongType;
+    song: ExtendedTrack;
     style?: CSSProperties;
 }
+
+const fetchNames = (trackId: number) => invoke(EVENT_GET_NAMES, {trackId});
 
 const Song: FC<SongProps> = props => {
     const dispatch = useAppDispatch();
@@ -44,7 +48,9 @@ const Song: FC<SongProps> = props => {
     const currentSongId = useAppSelector(v => v.queue.nowPlaying);
     const isCurrent = currentSongId === props.song.id;
 
-    const artPath = props.song.album.art?.path || defaultAlbumArt;
+    const namesAsync = useAsync(fetchNames, [props.song.id]);
+
+    const artPath = props.song.art?.url || defaultAlbumArt;
 
     const handleSongPlay = () => {
         dispatch(cancelPlaying());
@@ -69,19 +75,23 @@ const Song: FC<SongProps> = props => {
         dispatch(playAfterNext(props.song.id));
     };
 
-    const handleCopyPath = () => {
+    const handleCopyPath = async () => {
+        const names = await invoke(EVENT_GET_NAMES, {
+            trackId: props.song.id
+        });
+
         invoke(EVENT_CLIPBOARD_WRITE, {
-            text: props.song.path,
+            text: props.song.audioSrcPath,
             bookmark: t("title.playing", {
-                artist: props.song.album.artist.name,
-                track: props.song.name
+                artist: names.artist,
+                track: names.track
             })
         });
     };
 
     const handleOpenDirectory = () => {
         invoke(EVENT_FILEDIR_OPEN, {
-            path: props.song.path
+            path: props.song.audioSrcPath
         });
     };
 
@@ -138,7 +148,7 @@ const Song: FC<SongProps> = props => {
                     )}
                 </HStack>
                 <Text fontSize="sm" opacity={0.5}>
-                    {props.song.album.artist.name}
+                    {namesAsync.result?.artist}
                 </Text>
             </FadeOverflow>
 
@@ -150,7 +160,7 @@ const Song: FC<SongProps> = props => {
 };
 
 export interface SongListProps {
-    songs: SongType[];
+    songs: ExtendedTrack[];
 }
 
 export const SongList: FC<SongListProps> = props => (

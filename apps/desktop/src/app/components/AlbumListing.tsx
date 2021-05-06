@@ -1,4 +1,4 @@
-import type {Album as AlbumType} from "@muzik/database";
+import type {DbArtist} from "@muzik/database";
 import {
     Box,
     chakra,
@@ -14,7 +14,6 @@ import React, {
     FC,
     MutableRefObject,
     useEffect,
-    useMemo,
     useRef
 } from "react";
 import {useAsync} from "react-async-hook";
@@ -23,13 +22,10 @@ import AutoSizer from "react-virtualized-auto-sizer";
 import {invoke} from "../../lib/ipc/renderer";
 import {
     AlbumListResponse,
-    AlbumSongsRequest,
-    AlbumSongsResponse,
     EVENT_ALBUM_LIST,
     EVENT_ALBUM_SONGS,
-    EVENT_GET_SONG,
-    GetSongRequest,
-    GetSongResponse
+    EVENT_ARTIST_LIST,
+    EVENT_GET_SONG
 } from "../../lib/ipc-constants";
 import useThemeColours from "../hooks/useThemeColours";
 import defaultAlbumArt from "../assets/default-album-art.svg";
@@ -44,18 +40,21 @@ import {
     playAlbumNext,
     playAlbumAfterNext
 } from "../reducers/queue";
-import {PlayButton} from "./lib/PlayButton";
 import {useAppDispatch, useAppSelector} from "../store-hooks";
 import {ContextMenu, MenuItem, useContextMenu} from "./lib/ContextMenu";
-import {AlbumArt} from "./lib/AlbumArt";
 import {TransText} from "./lib/TransText";
 import {FadeOverflow} from "./lib/FadeOverflow";
 import {PlayButtonAlbumArt} from "./lib/PlayButtonAlbumArt";
 import {VisualiserIcon} from "./lib/AudioController";
+import ExtendedAlbum from "../../lib/ExtendedAlbum";
 
 const fetchAlbums = () => invoke<AlbumListResponse>(EVENT_ALBUM_LIST);
+const fetchArtistsMap = () =>
+    invoke(EVENT_ARTIST_LIST).then(
+        res => new Map<number, DbArtist>(res.artists.map(val => [val.id, val]))
+    );
 const fetchAlbumSongs = (albumId: number) =>
-    invoke<AlbumSongsResponse, AlbumSongsRequest>(EVENT_ALBUM_SONGS, {albumId});
+    invoke(EVENT_ALBUM_SONGS, {albumId});
 const fetchAlbumIdOf = (songId: number) =>
     invoke(EVENT_GET_SONG, {songId}).then(res => res.song.albumId);
 
@@ -69,20 +68,25 @@ ContainerImpl.displayName = "Container";
 const Container = chakra(ContainerImpl);
 
 interface AlbumProps {
-    album: AlbumType;
-    isSelected: boolean;
+    album: ExtendedAlbum;
+    artist: DbArtist;
     isPlaying: boolean;
     style?: CSSProperties;
 }
 
-const Album: FC<AlbumProps> = ({album, isSelected, isPlaying, ...props}) => {
+const Album: FC<AlbumProps> = ({album, artist, isPlaying, ...props}) => {
     const dispatch = useAppDispatch();
     const {onContextMenu, props: contextMenuProps} = useContextMenu();
     const colours = useThemeColours();
 
+    const selectedAlbum = useAppSelector(
+        v => v.albumListingRoute.selectedAlbum
+    );
+    const isSelected = selectedAlbum === album.id;
+
     const [isHovered, setHovered] = useBoolean();
 
-    const artPath = album.art?.path || defaultAlbumArt;
+    const artPath = album.art?.url || defaultAlbumArt;
 
     const handleAlbumSelect = () => {
         dispatch(selectAlbum(album.id));
@@ -153,7 +157,7 @@ const Album: FC<AlbumProps> = ({album, isSelected, isPlaying, ...props}) => {
                     )}
                 </HStack>
                 <HStack divider={<Text mx={2}>·</Text>}>
-                    <Text whiteSpace="nowrap">by {album.artist.name}</Text>
+                    <Text whiteSpace="nowrap">by {artist.name}</Text>
                 </HStack>
             </FadeOverflow>
         </HStack>
@@ -161,15 +165,15 @@ const Album: FC<AlbumProps> = ({album, isSelected, isPlaying, ...props}) => {
 };
 
 interface AlbumListProps {
-    albums: AlbumType[];
-    selectedAlbum: number;
+    albums: ExtendedAlbum[];
+    artists: Map<number, DbArtist>;
     playingAlbum: number | null;
     listRef?: MutableRefObject<FixedSizeList>;
 }
 
 const AlbumList: FC<AlbumListProps> = ({
     albums,
-    selectedAlbum,
+    artists,
     playingAlbum,
     ...props
 }) => (
@@ -180,7 +184,6 @@ const AlbumList: FC<AlbumListProps> = ({
                 itemCount={albums.length}
                 itemData={albums.map(item => ({
                     album: item,
-                    selected: item.id === selectedAlbum,
                     playing: item.id === playingAlbum
                 }))}
                 width={size.width}
@@ -188,14 +191,21 @@ const AlbumList: FC<AlbumListProps> = ({
                 className="custom-scroll"
                 ref={props.listRef}
             >
-                {({data, index, style}) => (
-                    <Album
-                        album={data[index].album}
-                        isSelected={data[index].selected}
-                        isPlaying={data[index].playing}
-                        style={style}
-                    />
-                )}
+                {({data, index, style}) => {
+                    const {album, playing} = data[index] as {
+                        album: ExtendedAlbum;
+                        playing: boolean;
+                    };
+
+                    return (
+                        <Album
+                            album={album}
+                            artist={artists.get(album.artistId)}
+                            isPlaying={playing}
+                            style={style}
+                        />
+                    );
+                }}
             </FixedSizeList>
         )}
     </AutoSizer>
@@ -209,6 +219,7 @@ export const AlbumListing: FC = () => {
     const playingSong = useAppSelector(v => v.queue.nowPlaying);
     const playingAlbum = useAsync(fetchAlbumIdOf, [playingSong]);
     const albums = useAsync(fetchAlbums, []);
+    const artists = useAsync(fetchArtistsMap, []);
     const albumSongs = useAsync(fetchAlbumSongs, [selectedAlbum]);
     const albumListRef = useRef<FixedSizeList>();
 
@@ -223,13 +234,10 @@ export const AlbumListing: FC = () => {
         current.scrollToItem(index, "smart");
     }, [albumListRef.current, albums.result, selectedAlbum]);
 
-    const sortedSongs = useMemo(() => {
-        const songs = albumSongs.result?.songs.slice() ?? [];
-        return songs.sort((a, b) => a.trackNo - b.trackNo);
-    }, [albumSongs.result?.songs]);
-
     if (albums.error) {
         return <ErrorLabel message={albums.error.message} />;
+    } else if (artists.error) {
+        return <ErrorLabel message={artists.error.message} />;
     } else {
         return (
             <HStack
@@ -240,25 +248,25 @@ export const AlbumListing: FC = () => {
                 height="100%"
             >
                 <Container flexGrow={1}>
-                    {albums.loading ? (
+                    {albums.loading || artists.loading ? (
                         Array.from({length: 4}, (_, i) => (
                             <Skeleton key={i} width="full" mx={4} mt={4} />
                         ))
                     ) : (
                         <AlbumList
                             albums={albums.result.albums}
-                            selectedAlbum={selectedAlbum}
+                            artists={artists.result}
                             playingAlbum={playingAlbum.result}
                             listRef={albumListRef}
                         />
                     )}
                 </Container>
 
-                {sortedSongs.length > 0 && <Divider orientation="vertical" />}
+                {!albumSongs.result && <Divider orientation="vertical" />}
 
-                {sortedSongs.length > 0 && (
+                {albumSongs.result?.songs.length > 0 && (
                     <Container width="28rem">
-                        <SongList songs={sortedSongs} />
+                        <SongList songs={albumSongs.result.songs} />
                     </Container>
                 )}
             </HStack>

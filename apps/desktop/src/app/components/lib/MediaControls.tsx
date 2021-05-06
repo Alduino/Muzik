@@ -1,6 +1,5 @@
 import React, {FC, useState} from "react";
 import {
-    Box,
     chakra,
     Divider,
     Heading,
@@ -17,10 +16,10 @@ import {GrRewind, GrFastForward, GrPause, GrPlay} from "react-icons/gr";
 import {RiShuffleLine, RiRepeat2Line, RiRepeatOneLine} from "react-icons/ri";
 import {useAsync} from "react-async-hook";
 import {useTranslation} from "react-i18next";
-import {Song as SongType} from "@muzik/database";
+import {DbTrack} from "@muzik/database";
 import {useAppDispatch, useAppSelector} from "../../store-hooks";
 import {invoke} from "../../../lib/ipc/renderer";
-import {EVENT_GET_SONG} from "../../../lib/ipc-constants";
+import {EVENT_GET_NAMES, EVENT_GET_SONG} from "../../../lib/ipc-constants";
 import useThemeColours from "../../hooks/useThemeColours";
 import defaultAlbumArt from "../../assets/default-album-art.svg";
 import {
@@ -42,28 +41,34 @@ import {FadeOverflow} from "./FadeOverflow";
 import {GlobalRoute, setGlobalRoute} from "../../reducers/routing";
 
 interface SongInfoProps {
-    song: SongType;
+    track: DbTrack;
     className?: string;
 }
+
+const fetchNames = (trackId: number) => invoke(EVENT_GET_NAMES, {trackId});
 
 const SongInfoImpl: FC<SongInfoProps> = props => {
     const dispatch = useAppDispatch();
 
+    const namesAsync = useAsync(fetchNames, [props.track.id]);
+
     const handleAlbumClick = () => {
-        dispatch(selectAlbum(props.song.album.id));
+        dispatch(selectAlbum(props.track.albumId));
         dispatch(setGlobalRoute(GlobalRoute.albumListing));
     };
 
     return (
         <FadeOverflow className={props.className}>
             <Heading size="sm" whiteSpace="nowrap" mb={1}>
-                {props.song.name}
+                {props.track.name}
             </Heading>
 
             <Text whiteSpace="nowrap">
-                {props.song.album.artist.name}
+                {namesAsync.result?.artist}
                 {" - "}
-                <Link onClick={handleAlbumClick}>{props.song.album.name}</Link>
+                <Link onClick={handleAlbumClick}>
+                    {namesAsync.result?.album}
+                </Link>
             </Text>
         </FadeOverflow>
     );
@@ -321,13 +326,11 @@ const SongDisplayImpl: FC = () => {
             <AlbumArt
                 size={16}
                 flexShrink={0}
-                artPath={
-                    currentSong.result?.song.album.art?.path || defaultAlbumArt
-                }
+                artPath={currentSong.result?.song.art?.url || defaultAlbumArt}
             />
 
             {currentSong.result && (
-                <SongInfo song={currentSong.result.song} maxWidth="100%" />
+                <SongInfo track={currentSong.result.song} maxWidth="100%" />
             )}
         </HStack>
     );

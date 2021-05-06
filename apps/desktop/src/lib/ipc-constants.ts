@@ -1,5 +1,6 @@
-import {Album, Song} from "@muzik/database";
+import {DbArtist, DbTrack} from "@muzik/database";
 import {g} from "./ipc/common";
+import ExtendedAlbum, {ExtendedTrack} from "./ExtendedAlbum";
 
 export const EVENT_DATABASE_INIT = g<void>("database init");
 export const EVENT_MUSIC_IMPORT = g<void, MusicImportRequest, number>(
@@ -21,8 +22,8 @@ export const EVENT_REDUX_DEV_TOOLS_ENABLED = g<boolean>(
     "redux dev tools enabled",
     true
 );
-export const EVENT_GET_ALL_SONG_IDS = g<GetAllSongIdsResponse>(
-    "get all song ids",
+export const EVENT_GET_ALL_TRACKS = g<GetAllTracksResponse>(
+    "get all tracks",
     true
 );
 export const EVENT_CLIPBOARD_WRITE = g<void, WriteClipboardRequest>(
@@ -31,6 +32,11 @@ export const EVENT_CLIPBOARD_WRITE = g<void, WriteClipboardRequest>(
 export const EVENT_FILEDIR_OPEN = g<void, FiledirOpenRequest>("filedir open");
 export const EVENT_APP_STATE_GET = g<AppStateValue>("app state get");
 export const EVENT_APP_STATE_SET = g<void, AppStateValue>("app state set");
+export const EVENT_ARTIST_LIST = g<ArtistListResponse>("artist list", true);
+export const EVENT_GET_NAMES = g<GetNamesResponse, GetNamesRequest>(
+    "get album by id",
+    true
+);
 
 export interface AppStateValue {
     shuffled: boolean;
@@ -65,18 +71,35 @@ export interface FiledirOpenRequest {
     path: string;
 }
 
+export interface GetNamesRequest {
+    trackId: number;
+}
+
 export interface AlbumListResponse {
-    albums: Album[];
+    albums: ExtendedAlbum[];
 }
 
 export interface AlbumSongsResponse {
-    songs: Song[];
+    songs: ExtendedTrack[];
 }
 
 export interface GetSongResponse {
-    song: Song;
+    song: ExtendedTrack;
 }
 
-export interface GetAllSongIdsResponse {
-    songIds: number[];
+export interface GetAllTracksResponse {
+    tracks: ExtendedTrack[];
+}
+
+export interface ArtistListResponse {
+    artists: DbArtist[];
+}
+
+export interface GetNamesResponse {
+    track: string;
+    album: string;
+    artist: string;
+    trackSortable: string;
+    albumSortable: string;
+    artistSortable: string;
 }
