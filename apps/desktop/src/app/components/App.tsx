@@ -21,6 +21,7 @@ import {useAppSelector} from "../store-hooks";
 import {MediaControls, SongDisplay} from "./lib/MediaControls";
 import {FilledSidebar} from "./lib/FilledSidebar";
 import {SongListing} from "./SongListing";
+import {QueueListing} from "./QueueListing";
 
 const CornerClip = chakra((props: {className?: string}) => {
     const colours = useThemeColours();
@@ -73,6 +74,12 @@ const LoadedApp: FC = () => {
             return (
                 <PageContainer>
                     <SongListing />
+                </PageContainer>
+            );
+        case GlobalRoute.queueListing:
+            return (
+                <PageContainer>
+                    <QueueListing />
                 </PageContainer>
             );
         default:

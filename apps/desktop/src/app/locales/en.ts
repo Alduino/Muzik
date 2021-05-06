@@ -21,7 +21,16 @@ export const en: Locale = {
         },
         routes: {
             albums: "Albums",
-            songs: "Songs"
+            songs: "Songs",
+            queue: "Queue"
+        },
+        queueRoute: {
+            nowPlaying: "Now playing",
+            upNext: "Up next",
+            later: "Later",
+            emptyQueue: "Your queue is empty",
+            nothingPlaying: "Nothing is playing right now",
+            loading: "Loading..."
         },
         sidebarGroups: {
             routes: "Routes",

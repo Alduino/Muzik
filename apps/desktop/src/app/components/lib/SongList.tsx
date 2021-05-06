@@ -1,4 +1,12 @@
-import {Divider, Heading, HStack, Text, useBoolean} from "@chakra-ui/react";
+import {
+    chakra,
+    Divider,
+    Heading,
+    HStack,
+    Stack,
+    Text,
+    useBoolean
+} from "@chakra-ui/react";
 import React, {CSSProperties, FC, useRef} from "react";
 import {FixedSizeList} from "react-window";
 import {useAppDispatch, useAppSelector} from "../../store-hooks";
@@ -31,12 +39,13 @@ import {useAsync} from "react-async-hook";
 
 interface SongProps {
     song: ExtendedTrack;
+    clearQueueOnPlay: boolean;
     style?: CSSProperties;
 }
 
 const fetchNames = (trackId: number) => invoke(EVENT_GET_NAMES, {trackId});
 
-const Song: FC<SongProps> = props => {
+export const Song = chakra((props: SongProps) => {
     const dispatch = useAppDispatch();
     const {t} = useTranslation("app");
     const {onContextMenu, props: contextMenuProps} = useContextMenu();
@@ -54,14 +63,14 @@ const Song: FC<SongProps> = props => {
 
     const handleSongPlay = () => {
         dispatch(cancelPlaying());
-        dispatch(clearQueue());
+        if (props.clearQueueOnPlay) dispatch(clearQueue());
         dispatch(queueSong(props.song.id));
         dispatch(beginQueue());
     };
 
     const handleAlbumPlay = () => {
         dispatch(cancelPlaying());
-        dispatch(clearQueue());
+        if (props.clearQueueOnPlay) dispatch(clearQueue());
         dispatch(queueAlbum(props.song.albumId)).then(() =>
             dispatch(beginQueue())
         );
@@ -157,10 +166,11 @@ const Song: FC<SongProps> = props => {
             </Text>
         </HStack>
     );
-};
+});
 
 export interface SongListProps {
     songs: ExtendedTrack[];
+    clearQueueOnPlay?: boolean;
 }
 
 export const SongList: FC<SongListProps> = props => (
@@ -175,9 +185,25 @@ export const SongList: FC<SongListProps> = props => (
                 className="custom-scroll"
             >
                 {({data, index, style}) => (
-                    <Song song={data[index]} style={style} />
+                    <Song
+                        song={data[index]}
+                        clearQueueOnPlay={props.clearQueueOnPlay !== false}
+                        style={style}
+                    />
                 )}
             </FixedSizeList>
         )}
     </AutoSizer>
+);
+
+export const LiteralSongList: FC<SongListProps> = props => (
+    <Stack>
+        {props.songs.map(song => (
+            <Song
+                song={song}
+                clearQueueOnPlay={props.clearQueueOnPlay !== false}
+                key={song.id}
+            />
+        ))}
+    </Stack>
 );

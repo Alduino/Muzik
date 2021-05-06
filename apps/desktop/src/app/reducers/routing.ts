@@ -4,6 +4,7 @@ export enum GlobalRoute {
     artistListing,
     albumListing,
     songListing,
+    queueListing,
     musicStorePicker
 }
 

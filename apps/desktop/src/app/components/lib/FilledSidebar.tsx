@@ -31,6 +31,7 @@ export const FilledSidebar = chakra((props: FilledSidebarProps) => {
     const currentRoute = useAppSelector(state => state.routing.globalRoute);
     const setAlbumListing = useRouteSetter(GlobalRoute.albumListing);
     const setSongListing = useRouteSetter(GlobalRoute.songListing);
+    const setQueueListing = useRouteSetter(GlobalRoute.queueListing);
 
     const handlePlayAll = useCallback(async () => {
         const allSongIds = await invoke(EVENT_GET_ALL_TRACKS);
@@ -58,6 +59,12 @@ export const FilledSidebar = chakra((props: FilledSidebarProps) => {
                     onClick={setSongListing}
                 >
                     <TransText k="routes.songs" />
+                </SidebarItem>
+                <SidebarItem
+                    isSelected={currentRoute === GlobalRoute.queueListing}
+                    onClick={setQueueListing}
+                >
+                    <TransText k="routes.queue" />
                 </SidebarItem>
             </SidebarGroup>
         </Sidebar>

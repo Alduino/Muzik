@@ -42,6 +42,7 @@ export interface AppStateValue {
     shuffled: boolean;
     repeatMode: number;
     nowPlaying: number;
+    upNext: number[];
     songs: number[];
     route: number;
 }

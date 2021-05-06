@@ -22,6 +22,15 @@ export default interface Locale extends ResourceLanguage {
         routes: {
             albums: string;
             songs: string;
+            queue: string;
+        };
+        queueRoute: {
+            nowPlaying: string;
+            upNext: string;
+            later: string;
+            nothingPlaying: string;
+            emptyQueue: string;
+            loading: string;
         };
         sidebarGroups: {
             routes: string;

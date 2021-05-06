@@ -118,7 +118,7 @@ export const AudioController: FC = () => {
             const time = audio.currentTime;
             if (!isPlaying || time == null) return;
             dispatch(setCurrentTimeFromAudio(time));
-        }, 500);
+        }, 100);
 
         return () => clearInterval(interval);
     }, [audio, dispatch, isPlaying]);

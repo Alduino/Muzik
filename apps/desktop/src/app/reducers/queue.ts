@@ -5,6 +5,7 @@ import {
     AlbumSongsResponse,
     EVENT_ALBUM_SONGS
 } from "../../lib/ipc-constants";
+import seedrandom from "seedrandom";
 
 // will restart song instead of going to previous after this many seconds
 const RESTART_THRESHOLD = 2;
@@ -51,6 +52,21 @@ export const playAlbumNext = createAsyncThunk(
     }
 );
 
+const rngSeed = Math.round(Date.now());
+let rngOffset = 0;
+
+export function getShuffleIndex(
+    max: number,
+    increment: boolean,
+    offset = 0
+): number {
+    const seed = rngSeed + rngOffset + offset;
+    if (increment) rngOffset++;
+    const random = seedrandom(seed.toString());
+    const value = random.quick();
+    return Math.floor(value * max);
+}
+
 interface GetAndRemoveNextSongOpts {
     playNextSongs: number[];
     songs: number[];
@@ -89,7 +105,7 @@ function getAndRemoveNextSong(opts: GetAndRemoveNextSongOpts): number | null {
     // if there are no songs that haven't been played, just pick a random one
     const songsToShuffle = notPlayedSongs.length > 0 ? notPlayedSongs : songs;
 
-    const nextSongIndex = Math.floor(Math.random() * songsToShuffle.length);
+    const nextSongIndex = getShuffleIndex(songsToShuffle.length, true);
     const nextSong = songsToShuffle[nextSongIndex];
 
     // delete the song being played
@@ -127,6 +143,9 @@ export const slice = createSlice({
         },
         playNext(state, id: PayloadAction<number>) {
             state.playNextSongs.unshift(id.payload);
+        },
+        playAllNext(state, {payload}: PayloadAction<number[]>) {
+            state.playNextSongs.unshift(...payload);
         },
         playAfterNext(state, {payload}: PayloadAction<number>) {
             state.playNextSongs.push(payload);
@@ -213,6 +232,7 @@ export const {
     queueSong,
     queueSongs,
     playNext,
+    playAllNext,
     playAfterNext,
     playAllAfterNext,
     shuffle: shuffleQueue,

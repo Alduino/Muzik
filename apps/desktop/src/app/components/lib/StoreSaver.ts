@@ -2,6 +2,7 @@ import {FC, useEffect, useState} from "react";
 import {useAppDispatch, useAppSelector} from "../../store-hooks";
 import {invoke} from "../../../lib/ipc/renderer";
 import {
+    playAllNext,
     queueSongs,
     setNowPlaying,
     setRepeatMode,
@@ -18,6 +19,7 @@ export const StoreSaver: FC = () => {
     const shuffled = useAppSelector(state => state.queue.shuffled);
     const repeatMode = useAppSelector(state => state.queue.repeatMode);
     const nowPlaying = useAppSelector(state => state.queue.nowPlaying);
+    const upNext = useAppSelector(state => state.queue.playNextSongs);
     const songs = useAppSelector(state => state.queue.songs);
     const route = useAppSelector(state => state.routing.globalRoute);
 
@@ -30,6 +32,7 @@ export const StoreSaver: FC = () => {
             dispatch(setShuffled(state.shuffled));
             dispatch(setRepeatMode(state.repeatMode));
             dispatch(setNowPlaying(state.nowPlaying));
+            dispatch(playAllNext(state.upNext));
             dispatch(queueSongs(state.songs || []));
             dispatch(setGlobalRoute(state.route || 0));
         });
@@ -41,6 +44,7 @@ export const StoreSaver: FC = () => {
             shuffled,
             repeatMode,
             nowPlaying,
+            upNext,
             songs,
             route
         });

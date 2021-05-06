@@ -46,6 +46,7 @@ importers:
       react-spinners: 0.10.6_react-dom@17.0.2+react@17.0.2
       react-virtualized-auto-sizer: 1.0.5_react-dom@17.0.2+react@17.0.2
       react-window: 1.8.6_react-dom@17.0.2+react@17.0.2
+      seedrandom: 3.0.5
       unzip-crx-3: 0.2.0
     devDependencies:
       '@electron-forge/cli': 6.0.0-beta.54
@@ -62,6 +63,7 @@ importers:
       '@types/react-dom': 17.0.3
       '@types/react-virtualized-auto-sizer': 1.0.0
       '@types/react-window': 1.8.2
+      '@types/seedrandom': 3.0.0
       '@types/webpack-env': 1.16.0
       '@types/wicg-mediasession': 1.1.0
       '@typescript-eslint/eslint-plugin': 4.20.0_08655f1af47a99f295fbf21bcc8b4221
@@ -99,6 +101,7 @@ importers:
       '@types/react-dom': ^17.0.3
       '@types/react-virtualized-auto-sizer': ^1.0.0
       '@types/react-window': ^1.8.2
+      '@types/seedrandom': ^3.0.0
       '@types/webpack-env': ^1.16.0
       '@types/wicg-mediasession': ^1.1.0
       '@typescript-eslint/eslint-plugin': ^4.20.0
@@ -128,6 +131,7 @@ importers:
       react-spinners: ^0.10.6
       react-virtualized-auto-sizer: ^1.0.5
       react-window: ^1.8.6
+      seedrandom: ^3.0.5
       style-loader: ^1.3.0
       ts-loader: ^8.1.0
       typescript: ^4.2.3
@@ -2085,6 +2089,10 @@ packages:
   /@types/scheduler/0.16.1:
     resolution:
       integrity: sha512-EaCxbanVeyxDRTQBkdLb3Bvl/HK7PBK6UJjsSixB0iHKoWxE5uu2Q/DgtpOhPIojN0Zl1whvOd7PoHs2P0s5eA==
+  /@types/seedrandom/3.0.0:
+    dev: true
+    resolution:
+      integrity: sha512-Jr03BtXs7v6M/wtTum2VOMLBq7R8zpjdZLynhA/IOJq83czXrnVo8iSUI05gcq8Ecq0Swt+nuoK3y2ji/TWyMA==
   /@types/source-list-map/0.1.2:
     dev: true
     resolution:
@@ -8929,6 +8937,10 @@ packages:
       node: '>=0.8'
     resolution:
       integrity: sha512-reIbCxanRxsbrzwDyJKH7UuxjUWJTz5LVcTEIxQ+7joLDaNkomaLZ6YerF6BcvTPdJR7E2Z7TzFkjPI4ksiW7g==
+  /seedrandom/3.0.5:
+    dev: false
+    resolution:
+      integrity: sha512-8OwmbklUNzwezjGInmZ+2clQmExQPvomqjL7LFqOYqtmuxRgQYqOD3mHaU+MvZn5FLUeVxVfQjwLZW/n/JFuqg==
   /semver-compare/1.0.0:
     resolution:
       integrity: sha1-De4hahyUGrN+nvsXiPavxf9VN/w=
