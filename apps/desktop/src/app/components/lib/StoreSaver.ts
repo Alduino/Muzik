@@ -11,6 +11,7 @@ import {
     EVENT_APP_STATE_GET,
     EVENT_APP_STATE_SET
 } from "../../../lib/ipc-constants";
+import {setGlobalRoute} from "../../reducers/routing";
 
 export const StoreSaver: FC = () => {
     const dispatch = useAppDispatch();
@@ -18,6 +19,7 @@ export const StoreSaver: FC = () => {
     const repeatMode = useAppSelector(state => state.queue.repeatMode);
     const nowPlaying = useAppSelector(state => state.queue.nowPlaying);
     const songs = useAppSelector(state => state.queue.songs);
+    const route = useAppSelector(state => state.routing.globalRoute);
 
     const [loaded, setLoaded] = useState(false);
 
@@ -28,7 +30,8 @@ export const StoreSaver: FC = () => {
             dispatch(setShuffled(state.shuffled));
             dispatch(setRepeatMode(state.repeatMode));
             dispatch(setNowPlaying(state.nowPlaying));
-            dispatch(queueSongs(state.songs));
+            dispatch(queueSongs(state.songs || []));
+            dispatch(setGlobalRoute(state.route || 0));
         });
     }, []);
 
@@ -38,9 +41,10 @@ export const StoreSaver: FC = () => {
             shuffled,
             repeatMode,
             nowPlaying,
-            songs
+            songs,
+            route
         });
-    }, [loaded, shuffled, nowPlaying, repeatMode]);
+    }, [loaded, shuffled, nowPlaying, repeatMode, route]);
 
     return null;
 };
