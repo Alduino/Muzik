@@ -1,4 +1,5 @@
 import {
+    Box,
     chakra,
     Divider,
     Heading,
@@ -36,6 +37,7 @@ import {PlayButtonAlbumArt} from "./PlayButtonAlbumArt";
 import {VisualiserIcon} from "./AudioController";
 import {ExtendedTrack} from "../../../lib/ExtendedAlbum";
 import {useAsync} from "react-async-hook";
+import useDraggable from "../../hooks/useDraggable";
 
 interface SongProps {
     song: ExtendedTrack;
@@ -49,6 +51,10 @@ export const Song = chakra((props: SongProps) => {
     const dispatch = useAppDispatch();
     const {t} = useTranslation("app");
     const {onContextMenu, props: contextMenuProps} = useContextMenu();
+    const {onDragStart, onDragEnd, props: draggableProps} = useDraggable({
+        resize: (w, h) => [300, h],
+        offset: (w, h) => [40, h / 2]
+    });
 
     const titleRef = useRef<HTMLHeadingElement>();
 
@@ -113,7 +119,10 @@ export const Song = chakra((props: SongProps) => {
             style={props.style}
             onMouseEnter={setHovered.on}
             onMouseLeave={setHovered.off}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
             onContextMenu={onContextMenu}
+            {...draggableProps}
         >
             <ContextMenu {...contextMenuProps}>
                 <MenuItem onClick={handleSongPlay}>
@@ -160,7 +169,6 @@ export const Song = chakra((props: SongProps) => {
                     {namesAsync.result?.artist}
                 </Text>
             </FadeOverflow>
-
             <Text fontSize="sm" opacity={0.5}>
                 {durationText}
             </Text>

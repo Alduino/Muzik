@@ -13,7 +13,6 @@ export const SongListing: FC = () => {
     const colours = useThemeColours();
 
     const tracksAsync = useAsync(fetchTracks, []);
-    console.log(tracksAsync.result);
 
     if (tracksAsync.error || tracksAsync.error) {
         return <ErrorLabel message={tracksAsync.error.message} />;
