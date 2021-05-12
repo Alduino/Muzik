@@ -55,7 +55,7 @@ export const QueueListing: FC = () => {
 
     return (
         <Box>
-            <Heading size="sm" mb={2}>
+            <Heading size="sm" m={2}>
                 {t("queueRoute.nowPlaying")}
             </Heading>
             {nowPlaying ? (
@@ -64,7 +64,7 @@ export const QueueListing: FC = () => {
                 <InfoBox label="queueRoute.nothingPlaying" />
             )}
             {upNextTracks.result?.length ? (
-                <Heading size="sm" mt={16} mb={2}>
+                <Heading size="sm" mt={16} mb={2} ml={2}>
                     {t("queueRoute.upNext")}
                 </Heading>
             ) : null}
@@ -74,7 +74,7 @@ export const QueueListing: FC = () => {
                     clearQueueOnPlay={false}
                 />
             ) : null}
-            <Heading size="sm" mt={16} mb={2}>
+            <Heading size="sm" mt={16} mb={2} ml={2}>
                 {t("queueRoute.later")}
             </Heading>
             {laterTracks.result?.length ? (
