@@ -54,12 +54,7 @@ export const QueueListing: FC = () => {
     const laterTracks = useAsync(fetchTracksByIds, [nextTenShuffled]);
 
     return (
-        <Box
-            height="full"
-            overflowY="scroll"
-            overflowX="hidden"
-            className="custom-scroll"
-        >
+        <Box>
             <Heading size="sm" mb={2}>
                 {t("queueRoute.nowPlaying")}
             </Heading>

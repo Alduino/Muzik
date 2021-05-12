@@ -43,12 +43,19 @@ const CornerClip = chakra((props: {className?: string}) => {
 const PageContainer: FC = props => (
     <Grid
         templateAreas={`"nowpl mctrl" "nav route"`}
-        templateColumns="16rem 1fr"
-        templateRows="6rem 1fr"
+        templateColumns="16rem minmax(0, 1fr)"
+        templateRows="6rem minmax(0, 1fr)"
         width="100vw"
         height="100vh"
     >
-        <Box as="main" gridArea="route">
+        <Box
+            as="main"
+            gridArea="route"
+            width="100%"
+            height="100%"
+            overflow="auto"
+            className="custom-scroll"
+        >
             {props.children}
         </Box>
         <SongDisplay gridArea="nowpl" />
