@@ -40,30 +40,35 @@ const CornerClip = chakra((props: {className?: string}) => {
     );
 });
 
-const PageContainer: FC = props => (
-    <Grid
-        templateAreas={`"nowpl mctrl" "nav route"`}
-        templateColumns="16rem minmax(0, 1fr)"
-        templateRows="6rem minmax(0, 1fr)"
-        width="100vw"
-        height="100vh"
-    >
-        <Box
-            as="main"
-            gridArea="route"
-            width="100%"
-            height="100%"
-            overflow="auto"
-            className="custom-scroll"
+const PageContainer: FC = props => {
+    const colours = useThemeColours();
+
+    return (
+        <Grid
+            templateAreas={`"nowpl mctrl" "nav route"`}
+            templateColumns="16rem minmax(0, 1fr)"
+            templateRows="6rem minmax(0, 1fr)"
+            width="100vw"
+            height="100vh"
         >
-            {props.children}
-        </Box>
-        <SongDisplay gridArea="nowpl" />
-        <MediaControls gridArea="mctrl" />
-        <FilledSidebar gridArea="nav" />
-        <CornerClip gridArea="route" zIndex={10} />
-    </Grid>
-);
+            <Box
+                as="main"
+                bg={colours.backgroundL2}
+                gridArea="route"
+                width="100%"
+                height="100%"
+                overflow="auto"
+                className="custom-scroll"
+            >
+                {props.children}
+            </Box>
+            <SongDisplay gridArea="nowpl" />
+            <MediaControls gridArea="mctrl" />
+            <FilledSidebar gridArea="nav" />
+            <CornerClip gridArea="route" zIndex={10} />
+        </Grid>
+    );
+};
 
 const LoadedApp: FC = () => {
     const route = useAppSelector(state => state.routing.globalRoute);
