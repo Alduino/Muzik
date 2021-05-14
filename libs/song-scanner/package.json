@@ -17,7 +17,6 @@
         "get-audio-duration": "^2.0.3",
         "music-metadata": "^7.8.3",
         "normalize-diacritics": "^2.13.2",
-        "readdir-enhanced": "^6.0.4",
-        "roarr": "^4.2.5"
+        "readdir-enhanced": "^6.0.4"
     }
 }

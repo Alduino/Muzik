@@ -4,7 +4,7 @@
   "description": "My Electron application description",
   "main": ".webpack/main",
   "scripts": {
-    "start": "ROARR_LOG=true electron-forge start | roarr --fe '{\"context.logLevel\":{gt:10}}'",
+    "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish"
@@ -77,7 +77,6 @@
     "@muzik/database": "workspace:*",
     "@muzik/logger": "workspace:*",
     "@muzik/song-scanner": "workspace:*",
-    "@roarr/cli": "^3.2.3",
     "@types/react": "^17.0.3",
     "@types/react-dom": "^17.0.3",
     "@types/react-virtualized-auto-sizer": "^1.0.0",

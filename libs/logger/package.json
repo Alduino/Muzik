@@ -9,13 +9,7 @@
         "build:watch": "tsc --watch"
     },
     "dependencies": {
-        "@roarr/middleware-serialize-error": "^1.0.0",
-        "tslib": "^2.1.0"
-    },
-    "peerDependencies": {
-        "roarr": "^4.2.5"
-    },
-    "devDependencies": {
-        "roarr": "^4.2.5"
+        "tslib": "^2.1.0",
+        "printf": "^0.6.1"
     }
 }

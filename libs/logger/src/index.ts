@@ -1,13 +1,62 @@
-import log, {Logger} from "roarr";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore Doesn't really need types anyway
-import createSerializeErrorMiddleware from "@roarr/middleware-serialize-error";
+import printf from "printf";
+
+type SprintfArg = string | number | boolean | null;
+
+interface LogFunction {
+    (context: unknown, message: string, ...args: SprintfArg[]): void;
+    (message: string, ...args: SprintfArg[]): void;
+}
+
+export interface Logger {
+    trace: LogFunction;
+    debug: LogFunction;
+    info: LogFunction;
+    warn: LogFunction;
+    fatal: LogFunction;
+}
+
+class LoggerImpl implements Logger {
+    private static formatContext(context: unknown) {
+        if (typeof context === "undefined") return "";
+
+        if (context instanceof Error) {
+            return `\n${context.message}\n${context.stack}`;
+        }
+
+        return printf(" %O", context);
+    }
+
+    private createLogFn(level: string): LogFunction {
+        return (contextOrMessage: unknown | string, ...args: SprintfArg[]) => {
+            const context =
+                typeof contextOrMessage === "string"
+                    ? undefined
+                    : contextOrMessage;
+            const message =
+                typeof contextOrMessage === "string"
+                    ? contextOrMessage
+                    : (args[0] as string);
+            const rest =
+                typeof contextOrMessage == "string" ? args : args.slice(1);
+
+            const formattedString = printf(message, ...rest);
+            const contextString = LoggerImpl.formatContext(context);
+
+            console.log(
+                `[${level}] ${this.name}: ${formattedString}${contextString}`
+            );
+        };
+    }
+
+    trace = this.createLogFn("trace");
+    debug = this.createLogFn("debug");
+    info = this.createLogFn("info");
+    warn = this.createLogFn("warn");
+    fatal = this.createLogFn("fatal");
+
+    constructor(private name: string) {}
+}
 
 export function createLogger(name: string, isApp = false): Logger {
-    // logger already adds the @, we don't want to duplicate it
-    name = name.replace(/^@/, "");
-
-    const context = isApp ? {application: name} : {package: name};
-
-    return log.child(context).child(createSerializeErrorMiddleware());
+    return new LoggerImpl(name);
 }
