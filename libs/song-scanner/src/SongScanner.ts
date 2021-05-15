@@ -21,12 +21,22 @@ interface MetadataAlbumArt {
     format: string;
 }
 
+interface SongScannerCallbacks {
+    supportsMimeType(type: string): Promise<boolean>;
+
+    getAverageColour(mime: string, buffer: Uint8Array): Promise<string>;
+}
+
+const MIME_MAPPING: Record<string, string> = {
+    "audio/x-flac": "audio/flac"
+};
+
 export default class SongScanner extends Emittery {
     private listenedDirectories = new Set<string>();
 
     constructor(
         private readonly db: Database,
-        private readonly checkMimeSupport: (mime: string) => boolean,
+        private readonly callbacks: SongScannerCallbacks,
         private readonly triggerDelay = 1000
     ) {
         super();
@@ -110,78 +120,6 @@ export default class SongScanner extends Emittery {
         return name;
     }
 
-    private static async getMetadata(
-        path: string
-    ): Promise<{
-        track: Track;
-        albumArt?: AlbumArt;
-        album: Album;
-        artist: Artist;
-    }> {
-        const metadata = await getFileMetadata(path, {duration: true});
-        const albumArt: MetadataAlbumArt | undefined =
-            selectCover(metadata.common.picture) ||
-            (await this.loadAlbumArt(path, metadata));
-        const albumArtHash = albumArt && this.hashBuffer(albumArt.data);
-
-        const trackName = metadata.common.title;
-        if (!trackName)
-            this.throwTrackError(path, "Track does not have a title");
-        const trackNameSortable =
-            metadata.common.titlesort || this.normaliseName(trackName);
-
-        const albumName = metadata.common.album;
-        if (!albumName)
-            this.throwTrackError(path, "Track does not have an album");
-        const albumNameSortable =
-            metadata.common.albumsort || this.normaliseName(albumName);
-
-        const artistName = metadata.common.artist;
-        if (!artistName)
-            this.throwTrackError(path, "Track does not have an artist");
-        const artistNameSortable =
-            metadata.common.artistsort || this.normaliseName(artistName);
-
-        const releaseDateUnix = metadata.common.date
-            ? Date.parse(metadata.common.date)
-            : null;
-
-        const releaseDate =
-            releaseDateUnix && !Number.isNaN(releaseDateUnix)
-                ? new Date(releaseDateUnix)
-                : null;
-
-        const duration = metadata.format.duration;
-        if (!duration)
-            this.throwTrackError(path, "Track does not have a duration");
-
-        const trackNo = metadata.common.track.no;
-
-        return {
-            track: {
-                name: trackName,
-                sortableName: trackNameSortable,
-                releaseDate,
-                duration,
-                trackNo,
-                audioSrcPath: path
-            },
-            albumArt: albumArt && {
-                source: albumArt.data,
-                mimeType: albumArt.format,
-                hash: albumArtHash as string
-            },
-            album: {
-                name: albumName,
-                sortableName: albumNameSortable
-            },
-            artist: {
-                name: artistName,
-                sortableName: artistNameSortable
-            }
-        };
-    }
-
     private static hashBuffer(data: Buffer) {
         return createHash("sha256").update(data).digest("hex");
     }
@@ -222,6 +160,85 @@ export default class SongScanner extends Emittery {
         watcher.on("unlink", path => this.handleFileDeleted(path));
     }
 
+    private async getMetadata(
+        path: string
+    ): Promise<{
+        track: Track;
+        albumArt?: AlbumArt;
+        album: Album;
+        artist: Artist;
+    }> {
+        const metadata = await getFileMetadata(path, {duration: true});
+        const albumArt: MetadataAlbumArt | undefined =
+            selectCover(metadata.common.picture) ||
+            (await SongScanner.loadAlbumArt(path, metadata));
+        const albumArtHash = albumArt && SongScanner.hashBuffer(albumArt.data);
+        const albumArtAvgColour =
+            albumArt &&
+            (await this.callbacks.getAverageColour(
+                albumArt.format,
+                albumArt.data
+            ));
+
+        const trackName = metadata.common.title;
+        if (!trackName)
+            SongScanner.throwTrackError(path, "Track does not have a title");
+        const trackNameSortable =
+            metadata.common.titlesort || SongScanner.normaliseName(trackName);
+
+        const albumName = metadata.common.album;
+        if (!albumName)
+            SongScanner.throwTrackError(path, "Track does not have an album");
+        const albumNameSortable =
+            metadata.common.albumsort || SongScanner.normaliseName(albumName);
+
+        const artistName = metadata.common.artist;
+        if (!artistName)
+            SongScanner.throwTrackError(path, "Track does not have an artist");
+        const artistNameSortable =
+            metadata.common.artistsort || SongScanner.normaliseName(artistName);
+
+        const releaseDateUnix = metadata.common.date
+            ? Date.parse(metadata.common.date)
+            : null;
+
+        const releaseDate =
+            releaseDateUnix && !Number.isNaN(releaseDateUnix)
+                ? new Date(releaseDateUnix)
+                : null;
+
+        const duration = metadata.format.duration;
+        if (!duration)
+            SongScanner.throwTrackError(path, "Track does not have a duration");
+
+        const trackNo = metadata.common.track.no;
+
+        return {
+            track: {
+                name: trackName,
+                sortableName: trackNameSortable,
+                releaseDate,
+                duration,
+                trackNo,
+                audioSrcPath: path
+            },
+            albumArt: albumArt && {
+                source: albumArt.data,
+                mimeType: albumArt.format,
+                avgColour: albumArtAvgColour as string,
+                hash: albumArtHash as string
+            },
+            album: {
+                name: albumName,
+                sortableName: albumNameSortable
+            },
+            artist: {
+                name: artistName,
+                sortableName: artistNameSortable
+            }
+        };
+    }
+
     private async handleFileChanged(path: string) {
         const {mtimeMs: lastUpdated} = await stat(path);
         await this.updateTrack(path, lastUpdated);
@@ -248,7 +265,7 @@ export default class SongScanner extends Emittery {
     }
 
     private async writeNewTrack(path: string, lastUpdated: number) {
-        const metadata = await SongScanner.getMetadata(path).catch(() => null);
+        const metadata = await this.getMetadata(path).catch(() => null);
 
         if (metadata === null) {
             return false;
@@ -288,12 +305,13 @@ export default class SongScanner extends Emittery {
 
     private async updateTrack(path: string, lastUpdated: number) {
         const {mime} = (await getFileMime(path)) ?? {mime: "unknown"};
+        const mappedMime = MIME_MAPPING[mime] ?? mime;
 
-        if (!this.checkMimeSupport(mime)) {
+        if (!(await this.callbacks.supportsMimeType(mappedMime))) {
             log.trace(
                 "Skipping file at `%s` as its mime type (%s) is not supported",
                 path,
-                mime
+                mappedMime
             );
             return false;
         }

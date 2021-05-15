@@ -1,6 +1,8 @@
 import {app, BrowserWindow} from "electron";
 import {DEVTOOL_REACT, installDevtool} from "./devtool-installer";
 import "./node";
+import {registerWC} from "./lib/ipc/main";
+import {Target} from "./lib/window-ids";
 
 try {
     if (require("electron-squirrel-startup")) app.quit();
@@ -22,6 +24,7 @@ const createWindow = async () => {
     });
 
     mainWindow.setMenuBarVisibility(false);
+    registerWC(Target.main, mainWindow.webContents);
 
     // and load the index.html of the app.
     await mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);

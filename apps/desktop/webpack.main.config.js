@@ -6,6 +6,7 @@ module.exports = {
      * that runs in the main process.
      */
     entry: "./src/index.ts",
+    target: "electron-main",
     // Put your normal webpack config below here
     module: {
         rules: require("./webpack.rules")
@@ -18,7 +19,5 @@ module.exports = {
             resolve(__dirname, "../../node_modules")
         ]
     },
-    externals: [
-        "sqlite3"
-    ]
+    externals: ["sqlite3"]
 };

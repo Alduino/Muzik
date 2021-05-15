@@ -152,6 +152,7 @@ export const Song = chakra((props: SongProps) => {
                 isCurrent={isCurrent}
                 artPath={artPath}
                 artSize={16}
+                avgArtColour={props.song.art?.avgColour}
                 buttonSize="sm"
                 onPlay={handleSongPlay}
             />

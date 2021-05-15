@@ -1,4 +1,4 @@
-import {DbArtist, DbTrack} from "@muzik/database";
+import {DbArtist} from "@muzik/database";
 import {g} from "./ipc/common";
 import ExtendedAlbum, {ExtendedTrack} from "./ExtendedAlbum";
 

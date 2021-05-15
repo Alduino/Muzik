@@ -1,82 +1,45 @@
-import AbortController, {AbortSignal} from "node-abort-controller";
-import {ipcMain, IpcMainEvent} from "electron";
-import {
-    EventMessage,
-    eventName,
-    IpcName,
-    MESSAGE_EVENT,
-    TYPE_ABORT,
-    TYPE_COMPLETE,
-    TYPE_ERROR,
-    TYPE_PROGRESS
-} from "./common";
-import {log} from "../../node/logger";
+import listen, {HandleHandler, InvokeHandler, ListenResult} from "./impl";
+import {ipcMain, WebContents} from "electron";
+import AbortController from "node-abort-controller";
 
-export type Responder<TRequest, TResponse, TProgress> = (
-    arg: TRequest,
-    progress: (v: TProgress) => void,
-    abort: AbortSignal
-) => Promise<TResponse> | TResponse;
+const ipcObjects = new Map<string, ListenResult>();
+const handleAdders = new Set<(res: ListenResult) => void>();
 
-type HandlerFn = (
-    event: IpcMainEvent,
-    arg: EventMessage<unknown>
-) => Promise<void>;
-const listeners = new Map<string, HandlerFn>();
+export function registerWC(id: string, wc: WebContents): void {
+    if (ipcObjects.has(id))
+        throw new Error(`A target is already registered with ID '${id}'`);
 
-ipcMain.on(MESSAGE_EVENT, (event, arg: EventMessage<unknown>) => {
-    const {name, id} = arg;
-    if (listeners.has(name)) {
-        listeners.get(name)(event, arg);
-    } else {
-        console.warn("Received unknown event", name);
-        event.reply(
-            eventName(id, TYPE_ERROR),
-            new Error(`Invalid event, '${name}'`)
-        );
+    const obj = listen(
+        () => new AbortController(),
+        wc.send.bind(wc),
+        ipcMain.on.bind(ipcMain),
+        ipcMain.off.bind(ipcMain)
+    );
+
+    // add obj to list of existing
+    ipcObjects.set(id, obj);
+
+    // call any handlers that have already been set
+    for (const add of handleAdders) {
+        add(obj);
     }
-});
-
-export function handle<TResponse, TRequest = never, TProgress = never>(
-    event: IpcName<TResponse, TRequest, TProgress>,
-    respond: Responder<TRequest, TResponse, TProgress>
-): void {
-    const {name} = event;
-
-    if (listeners.has(name))
-        throw new Error("More than one listener registered");
-
-    listeners.set(name, async (event, arg: EventMessage<TRequest>) => {
-        const messageId = arg.id;
-
-        const progressSender = (progress: TProgress) => {
-            event.reply(eventName(messageId, TYPE_PROGRESS), progress);
-        };
-
-        const abortController = new AbortController();
-
-        function handleAbort() {
-            abortController.abort();
-        }
-
-        ipcMain.on(eventName(messageId, TYPE_ABORT), handleAbort);
-
-        try {
-            const result = await respond(
-                arg.data,
-                progressSender,
-                abortController.signal
-            );
-
-            event.reply(eventName(messageId, TYPE_COMPLETE), result);
-        } catch (err) {
-            event.reply(eventName(messageId, TYPE_ERROR), {
-                message: err.message,
-                stack: err.stack
-            });
-            log.warn({stack: err.stack}, "An error occurred in an invocation");
-        }
-
-        ipcMain.off(eventName(messageId, TYPE_ABORT), handleAbort);
-    });
 }
+
+export const handle: HandleHandler = (ev, respond) => {
+    // add handlers to ipc objects that don't exist yet
+    handleAdders.add(({handle}) => {
+        handle(ev, respond);
+    });
+
+    // add handlers to existing ipc objects
+    for (const [, {handle}] of ipcObjects.entries()) {
+        handle(ev, respond);
+    }
+};
+
+type InvokeHandlerFactory = (id: string) => InvokeHandler;
+export const invoke: InvokeHandlerFactory = id => {
+    if (!ipcObjects.has(id))
+        throw new Error(`No target found with name '${id}'`);
+    return ipcObjects.get(id).invoke;
+};

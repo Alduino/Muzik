@@ -8,6 +8,7 @@ export interface PlayButtonAlbumArtProps {
     isCurrent: boolean;
     artPath: string;
     artSize: string | number;
+    avgArtColour?: string;
     buttonSize: string;
     transitionTime?: string;
     className?: string;
@@ -23,6 +24,7 @@ export const PlayButtonAlbumArt = chakra((props: PlayButtonAlbumArtProps) => (
         flexGrow={0}
         size={props.artSize}
         artPath={props.artPath}
+        avgColour={props.avgArtColour}
         className={props.className}
     >
         <Center

@@ -327,6 +327,7 @@ const SongDisplayImpl: FC = () => {
                 size={16}
                 flexShrink={0}
                 artPath={currentSong.result?.song.art?.url || defaultAlbumArt}
+                avgColour={currentSong.result?.song.art?.avgColour}
             />
 
             {currentSong.result && (

@@ -1,5 +1,4 @@
 import {app, clipboard, dialog, protocol, shell} from "electron";
-import {handle} from "../lib/ipc/main";
 import {
     AlbumListResponse,
     AlbumSongsRequest,
@@ -18,8 +17,6 @@ import {
     EVENT_MUSIC_IMPORT,
     EVENT_REDUX_DEV_TOOLS_ENABLED,
     EVENT_SELECT_MUSIC_IMPORT_PATH,
-    GetSongRequest,
-    GetSongResponse,
     MusicImportRequest
 } from "../lib/ipc-constants";
 import {log} from "./logger";
@@ -38,6 +35,7 @@ import {
 } from "./database";
 import {store} from "./configuration";
 import ExtendedAlbum from "../lib/ExtendedAlbum";
+import {handle} from "../lib/ipc/main";
 
 protocol.registerSchemesAsPrivileged([
     {
@@ -132,13 +130,16 @@ handle<AlbumListResponse>(EVENT_ALBUM_LIST, async () => {
 
                     if (!artHash) return album;
 
-                    const {mimeType} = await getAlbumArtInfoByHash(artHash);
+                    const {mimeType, avgColour} = await getAlbumArtInfoByHash(
+                        artHash
+                    );
 
                     return {
                         ...album,
                         art: {
                             url: `albumart://${artHash}`,
-                            mime: mimeType
+                            mime: mimeType,
+                            avgColour
                         }
                     };
                 }
@@ -167,7 +168,8 @@ handle<AlbumSongsResponse, AlbumSongsRequest>(EVENT_ALBUM_SONGS, async arg => {
                     ...track,
                     art: trackArt && {
                         url: `albumart://${track.albumArtHash}`,
-                        mime: trackArt.mimeType
+                        mime: trackArt.mimeType,
+                        avgColour: trackArt.avgColour
                     }
                 };
             })
@@ -190,7 +192,8 @@ handle(EVENT_GET_SONG, async arg => {
             ...song,
             art: trackArt && {
                 url: `albumart://${trackArt.hash}`,
-                mime: trackArt.mimeType
+                mime: trackArt.mimeType,
+                avgColour: trackArt.avgColour
             }
         }
     };
@@ -200,10 +203,10 @@ handle(EVENT_GET_ALL_TRACKS, async () => {
     const tracks = await getAllTracks();
 
     const tracksMapped = tracks.map(trackAndArt => {
-        const {mimeType, hash, ...track} = trackAndArt;
+        const {mimeType, avgColour, hash, ...track} = trackAndArt;
         return {
             ...track,
-            art: hash && {url: `albumart://${hash}`, mime: mimeType}
+            art: hash && {url: `albumart://${hash}`, mime: mimeType, avgColour}
         };
     });
 

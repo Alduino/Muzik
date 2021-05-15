@@ -9,7 +9,7 @@
         "build:watch": "tsc --watch"
     },
     "dependencies": {
-        "tslib": "^2.1.0",
-        "printf": "^0.6.1"
+        "fast-printf": "^1.6.5",
+        "tslib": "^2.1.0"
     }
 }

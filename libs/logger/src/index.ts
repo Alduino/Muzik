@@ -1,4 +1,4 @@
-import printf from "printf";
+import {printf} from "fast-printf";
 
 type SprintfArg = string | number | boolean | null;
 
@@ -21,9 +21,14 @@ class LoggerImpl implements Logger {
 
         if (context instanceof Error) {
             return `\n${context.message}\n${context.stack}`;
+        } else {
+            return (
+                ": " +
+                Object.entries(context as Record<string, unknown>)
+                    .map(([key, value]) => `${key}=${JSON.stringify(value)}`)
+                    .join(", ")
+            );
         }
-
-        return printf(" %O", context);
     }
 
     private createLogFn(level: string): LogFunction {

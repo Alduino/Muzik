@@ -16,7 +16,7 @@ export interface EventMessage<T> {
     data: T;
 }
 
-export function eventName(id: string, type: string) {
+export function eventName(id: string, type: string): string {
     return `${id}:${type}`;
 }
 

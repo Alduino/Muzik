@@ -6,6 +6,7 @@ const migration: Migration = {
         await knex.schema.createTable("albumArt", builder => {
             builder.string("hash").primary();
 
+            builder.string("avgColour");
             builder.string("mimeType");
             builder.binary("source");
         });
@@ -55,6 +56,7 @@ const migration: Migration = {
     async down(knex: Knex) {
         await knex.schema.dropTable("tracks");
         await knex.schema.dropTable("albums");
+        await knex.schema.dropTable("artists");
         await knex.schema.dropTable("albumArt");
     }
 };
