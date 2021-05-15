@@ -47,7 +47,7 @@ export const QueueListing: FC = () => {
         return Array.from(
             {length: 10},
             (_, idx) => later[getShuffleIndex(later.length, false, idx)]
-        );
+        ).filter(el => el);
     }, [later]);
 
     const upNextTracks = useAsync(fetchTracksByIds, [upNext]);
