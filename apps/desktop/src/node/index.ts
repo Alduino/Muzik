@@ -117,10 +117,9 @@ handle<AlbumListResponse>(EVENT_ALBUM_LIST, async () => {
                         artCounts.set(art, (artCounts.get(art) ?? 0) + 1);
                     }
 
-                    const [artHash] = (Array.from(artCounts) as [
-                        string,
-                        number
-                    ][]).reduce((prev, [hash, count]) =>
+                    const [artHash] = Array.from(
+                        artCounts.entries()
+                    ).reduce((prev, [hash, count]) =>
                         prev
                             ? count > prev[1]
                                 ? [hash, count]

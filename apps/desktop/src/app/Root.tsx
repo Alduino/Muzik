@@ -1,4 +1,4 @@
-import React, {FC} from "react";
+import React, {FC, ReactNode} from "react";
 import {Provider as ReduxProvider} from "react-redux";
 import {ChakraProvider, ColorModeProvider} from "@chakra-ui/react";
 import {useAsync} from "react-async-hook";
@@ -17,8 +17,16 @@ import {ContextMenuProvider} from "./components/lib/ContextMenu";
 import {TitleController} from "./components/lib/TitleController";
 import {StoreSaver} from "./components/lib/StoreSaver";
 import {CustomScrollProvider} from "./components/lib/CustomScrollProvider";
+import {useAppSelector} from "./store-hooks";
 
 const getDevToolsEnabled = () => invoke(EVENT_REDUX_DEV_TOOLS_ENABLED);
+
+function WhenInitialised({children}: {children: ReactNode}) {
+    const isInitialised = useAppSelector(state => state.loadState.value);
+
+    if (!isInitialised) return null;
+    return <>{children}</>;
+}
 
 export const Root: FC = () => {
     const devToolsEnabled = useAsync(getDevToolsEnabled, []);
@@ -32,11 +40,13 @@ export const Root: FC = () => {
                         useSystemColorMode: true
                     }}
                 >
-                    <TitleController />
-                    <StoreSaver />
                     <AudioControllerProvider>
-                        <AudioController />
-                        <MediaSessionController />
+                        <WhenInitialised>
+                            <AudioController />
+                            <MediaSessionController />
+                            <TitleController />
+                            <StoreSaver />
+                        </WhenInitialised>
                         <ContextMenuProvider>
                             <CustomScrollProvider>
                                 <App />

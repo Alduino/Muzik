@@ -1,4 +1,3 @@
-import {Logger} from "roarr";
-import {createLogger} from "@muzik/logger";
+import {createLogger, Logger} from "@muzik/logger";
 
 export const log: Logger = createLogger("@muzik/database");

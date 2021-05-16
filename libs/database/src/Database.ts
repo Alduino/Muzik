@@ -1,4 +1,4 @@
-import knex, {Knex} from "knex";
+import Sqlite3Db, {Database as Sqlite3} from "better-sqlite3";
 import MigrationManager from "./migration-manager";
 import migrations from "./migrations";
 import {join} from "path";
@@ -10,255 +10,336 @@ import AlbumArt from "./tables/AlbumArt";
 type NamesWithSortable<T extends string> = {[key in T]: string} &
     {[key in `${T}Sortable`]: string};
 
+const TABLE_TRACKS = "tracks";
+const TABLE_ALBUM_ART = "albumArt";
+const TABLE_ALBUMS = "albums";
+const TABLE_ARTISTS = "artists";
+
+type NoId<T> = Omit<T, "id">;
+
+class DeleteTracksNotInStatements {
+    readonly deleteTracksNotIn_deleteTempTable = this.db.prepare(
+        `DROP TABLE possiblePathsTemp`
+    );
+    readonly deleteTracksNotIn_insertToTempTable = this.db.prepare<string>(
+        `INSERT INTO possiblePathsTemp (path) VALUES (?)`
+    );
+    readonly deleteTracksNotIn = this.db.prepare(`
+        DELETE FROM ${TABLE_TRACKS}
+        WHERE audioSrcPath NOT IN (SELECT path FROM possiblePathsTemp)
+    `);
+
+    constructor(private db: Sqlite3) {}
+}
+
+class Statements {
+    readonly deleteTracksWhereAudioSrcPathLike = this.db.prepare<string>(
+        `DELETE FROM ${TABLE_TRACKS} WHERE audioSrcPath LIKE ?`
+    );
+    readonly deleteTrackWhereAudioSrcPathEq = this.db.prepare<string>(
+        `DELETE FROM ${TABLE_TRACKS} WHERE audioSrcPath = ?`
+    );
+    readonly deleteTrackById = this.db.prepare<number>(
+        `DELETE FROM ${TABLE_TRACKS} WHERE id = ?`
+    );
+    readonly upsertTrack = this.db.prepare<
+        Omit<DbTrack, "id" | "releaseDate"> & {releaseDate?: number}
+    >(`
+        INSERT INTO ${TABLE_TRACKS} (
+            lastUpdated, albumId, albumArtHash, name, sortableName,
+            releaseDate, duration, trackNo, audioSrcPath
+        ) VALUES (
+            @lastUpdated, @albumId, @albumArtHash, @name, @sortableName,
+            @releaseDate, @duration, @trackNo, @audioSrcPath
+        ) ON CONFLICT(audioSrcPath) DO UPDATE SET
+            lastUpdated = excluded.lastUpdated,
+            albumId = excluded.albumId,
+            albumArtHash = excluded.albumArtHash,
+            name = excluded.name,
+            sortableName = excluded.sortableName,
+            releaseDate = excluded.releaseDate,
+            duration = excluded.duration,
+            trackNo = excluded.trackNo
+    `);
+    readonly getTrackIdByPath = this.db.prepare<string>(
+        `SELECT id FROM ${TABLE_TRACKS} WHERE audioSrcPath = ?`
+    );
+    readonly upsertAlbum = this.db.prepare<NoId<DbAlbum>>(`
+        INSERT INTO ${TABLE_ALBUMS} (
+            lastUpdated, artistId, name, sortableName
+        ) VALUES (
+            @lastUpdated, @artistId, @name, @sortableName
+        ) ON CONFLICT(sortableName, artistId) DO UPDATE SET
+            lastUpdated = excluded.lastUpdated,
+            name = excluded.name
+    `);
+    readonly getAlbumIdBySortableNameAndArtistId = this.db.prepare<
+        Pick<DbAlbum, "sortableName" | "artistId">
+    >(
+        `SELECT id FROM ${TABLE_ALBUMS} WHERE sortableName = @sortableName AND artistId = @artistId`
+    );
+    readonly upsertArtist = this.db.prepare<NoId<DbArtist>>(`
+        INSERT INTO ${TABLE_ARTISTS} (
+            lastUpdated, name, sortableName
+        ) VALUES (
+            @lastUpdated, @name, @sortableName
+        ) ON CONFLICT(sortableName) DO UPDATE SET
+            lastUpdated = excluded.lastUpdated,
+            name = excluded.name
+    `);
+    readonly getArtistIdBySortableName = this.db.prepare<string>(
+        `SELECT id FROM ${TABLE_ARTISTS} WHERE sortableName = ?`
+    );
+    readonly upsertAlbumArt = this.db.prepare<AlbumArt>(`
+        INSERT INTO ${TABLE_ALBUM_ART} (
+            hash, mimeType, avgColour, source
+        ) VALUES (
+            @hash, @mimeType, @avgColour, @source
+        ) ON CONFLICT DO NOTHING
+    `);
+    readonly deleteUnusedAlbumArt = this.db.prepare(`
+        DELETE FROM ${TABLE_ALBUM_ART}
+        WHERE NOT EXISTS (
+            SELECT albumArtHash FROM ${TABLE_TRACKS}
+            WHERE ${TABLE_TRACKS}.albumArtHash = ${TABLE_ALBUM_ART}.hash
+        )
+    `);
+    readonly deleteUnusedAlbums = this.db.prepare(`
+        DELETE FROM ${TABLE_ALBUMS}
+        WHERE NOT EXISTS (
+            SELECT albumId FROM ${TABLE_TRACKS}
+            WHERE ${TABLE_TRACKS}.albumId = ${TABLE_ALBUMS}.id
+        )
+    `);
+    readonly deleteUnusedArtists = this.db.prepare(`
+        DELETE FROM ${TABLE_ARTISTS}
+        WHERE NOT EXISTS (
+            SELECT artistId FROM ${TABLE_ALBUMS}
+            WHERE ${TABLE_ALBUMS}.artistId = ${TABLE_ARTISTS}.id
+        )
+    `);
+    readonly deleteTracksNotIn_createTempTable = this.db.prepare(`
+        CREATE TEMPORARY TABLE possiblePathsTemp (
+            path TEXT
+        )
+    `);
+    readonly getAllAlbums = this.db.prepare(`
+        SELECT al.* FROM ${TABLE_ALBUMS} al
+        INNER JOIN ${TABLE_ARTISTS} ar ON al.artistId = ar.id
+        ORDER BY ar.sortableName, al.sortableName
+    `);
+    readonly getAllArtists = this.db.prepare(`
+        SELECT * FROM ${TABLE_ARTISTS}
+        ORDER BY sortableName
+    `);
+    readonly getTrackArtHashByAlbumId = this.db.prepare<number>(`
+        SELECT tr.albumArtHash FROM ${TABLE_ALBUMS} al
+        INNER JOIN ${TABLE_TRACKS} tr ON tr.albumId = al.id
+        WHERE al.id = ?
+    `);
+    readonly getTracksByAlbumId = this.db.prepare<number>(`
+        SELECT * FROM ${TABLE_TRACKS}
+        WHERE albumId = ?
+        ORDER BY trackNo
+    `);
+    readonly getAllExtendedTracks = this.db.prepare(`
+        SELECT tr.*, aa.hash, aa.mimeType
+        FROM ${TABLE_TRACKS} tr
+        INNER JOIN ${TABLE_ALBUMS} al ON tr.albumId = al.id
+        INNER JOIN ${TABLE_ARTISTS} ar ON al.artistId = ar.id
+        INNER JOIN ${TABLE_ALBUM_ART} aa ON tr.albumArtHash = aa.hash
+        ORDER BY ar.sortableName, al.sortableName, tr.trackNo
+    `);
+    readonly getTrackById = this.db.prepare<number>(`
+        SELECT * FROM ${TABLE_TRACKS}
+        WHERE id = ?
+        LIMIT 1
+    `);
+    readonly getNamesByTrackId = this.db.prepare<number>(`
+        SELECT
+            tr.name as track,
+            tr.sortableName as trackSortable,
+            al.name as album,
+            al.sortableName as albumSortable,
+            ar.name as artist,
+            ar.sortableName as artistSortable
+        FROM ${TABLE_TRACKS} tr
+        INNER JOIN ${TABLE_ALBUMS} al ON tr.albumId = al.id
+        INNER JOIN ${TABLE_ARTISTS} ar ON al.artistId = ar.id
+        WHERE tr.id = ?
+        LIMIT 1
+    `);
+    readonly getTrackLastUpdatedByPath = this.db.prepare<string>(`
+        SELECT lastUpdated FROM ${TABLE_TRACKS}
+        WHERE audioSrcPath = ?
+        LIMIT 1
+    `);
+    readonly getAlbumArtByHash = this.db.prepare<string>(`
+        SELECT * FROM ${TABLE_ALBUM_ART}
+        WHERE hash = ?
+        LIMIT 1
+    `);
+    readonly getAlbumArtInfoByHash = this.db.prepare<string>(`
+        SELECT hash, mimeType, avgColour FROM ${TABLE_ALBUM_ART}
+        WHERE hash = ?
+        LIMIT 1
+    `);
+    readonly vacuum = this.db.prepare("VACUUM");
+    readonly beginTransaction = this.db.prepare("BEGIN");
+    readonly commitTransaction = this.db.prepare("COMMIT");
+
+    constructor(private db: Sqlite3) {}
+}
+
 export default class Database {
-    private readonly knex: Knex;
-    private transaction?: Knex.Transaction;
-    private readonly transactionProvider: () => Promise<Knex.Transaction>;
+    private readonly db: Sqlite3;
+    private sVal: Statements | null = null;
 
     constructor(dbDir: string) {
         const filePath = join(dbDir, "database.sqlite");
-
-        this.knex = knex({
-            client: "sqlite",
-            connection: filePath,
-            useNullAsDefault: true,
-            asyncStackTraces: process.env.NODE_ENV !== "production"
-        });
-
-        this.transactionProvider = this.knex.transactionProvider();
+        this.db = new Sqlite3Db(filePath);
     }
 
-    private get q() {
-        return this.transaction || this.knex;
+    private get s() {
+        if (this.sVal === null) throw new Error("Database is not initialised");
+        return this.sVal;
     }
 
-    private get tracks() {
-        return this.q.table<DbTrack>("tracks");
-    }
-
-    private get albumArt() {
-        return this.q.table<AlbumArt>("albumArt");
-    }
-
-    private get albums() {
-        return this.q.table<DbAlbum>("albums");
-    }
-
-    private get artists() {
-        return this.q.table<DbArtist>("artists");
-    }
-
-    async initialise() {
-        const migrationManager = new MigrationManager(this.knex, migrations);
-        await migrationManager.migrate();
+    initialise() {
+        const migrationManager = new MigrationManager(this.db, migrations);
+        migrationManager.migrate();
+        this.sVal = new Statements(this.db);
     }
 
     /**
      * Deletes any songs from the database that are inside `directory`
      * @remarks Uses `like "directory%"` on the audio src path to find songs
      */
-    deleteFromDirectory(directory: string): PromiseLike<void> {
+    deleteFromDirectory(directory: string): void {
         // make sure it ends with a `/`
         if (!directory.endsWith("/")) directory = directory + "/";
 
-        return this.tracks
-            .where("audioSrcPath", "like", `${directory}%`)
-            .delete();
+        this.s.deleteTracksWhereAudioSrcPathLike.run(`${directory}%`);
     }
 
-    deleteTrackByPath(path: string): PromiseLike<void> {
-        return this.tracks.where({audioSrcPath: path}).delete();
+    deleteTrackByPath(path: string): void {
+        this.s.deleteTrackWhereAudioSrcPathEq.run(path);
     }
 
-    deleteTrackById(id: number): PromiseLike<void> {
-        return this.tracks.where({id}).delete();
+    deleteTrackById(id: number): void {
+        this.s.deleteTrackById.run(id);
     }
 
-    async createOrUpdateTrack(details: Omit<DbTrack, "id">): Promise<number> {
-        await this.tracks.insert(details).onConflict("audioSrcPath").merge();
-
-        return this.tracks
-            .where({audioSrcPath: details.audioSrcPath})
-            .first()
-            .then(res => res?.id as number);
+    createOrUpdateTrack(details: NoId<DbTrack>): number {
+        const dateValue = details.releaseDate?.getTime();
+        this.s.upsertTrack.run({...details, releaseDate: dateValue});
+        return this.s.getTrackIdByPath.get(details.audioSrcPath)?.id;
     }
 
-    async createOrUpdateAlbum(details: Omit<DbAlbum, "id">): Promise<number> {
-        await this.albums
-            .insert(details)
-            .onConflict(["sortableName", "artistId"])
-            .merge();
-
-        return this.albums
-            .where({
-                sortableName: details.sortableName,
-                artistId: details.artistId
-            })
-            .first()
-            .then(res => res?.id as number);
+    createOrUpdateAlbum(details: NoId<DbAlbum>): number {
+        this.s.upsertAlbum.run(details);
+        return this.s.getAlbumIdBySortableNameAndArtistId.get({
+            sortableName: details.sortableName,
+            artistId: details.artistId
+        })?.id;
     }
 
-    async createOrUpdateArtist(details: Omit<DbArtist, "id">): Promise<number> {
-        await this.artists.insert(details).onConflict("sortableName").merge();
-
-        return this.artists
-            .where({sortableName: details.sortableName})
-            .first()
-            .then(res => res?.id as number);
+    createOrUpdateArtist(details: NoId<DbArtist>): number {
+        this.s.upsertArtist.run(details);
+        return this.s.getArtistIdBySortableName.get(details.sortableName)?.id;
     }
 
-    async createOrIgnoreAlbumArt(details: AlbumArt): Promise<void> {
-        await this.albumArt.insert(details).onConflict("hash").ignore();
+    createOrIgnoreAlbumArt(details: AlbumArt): void {
+        this.s.upsertAlbumArt.run(details);
     }
 
-    updateTrackByPath(
-        path: string,
-        details: Partial<Omit<DbTrack, "id" | "audioSrcPath">>
-    ): PromiseLike<void> {
-        return this.tracks.where({audioSrcPath: path}).update(details);
+    deleteOrphanAlbumArt(): void {
+        this.s.deleteUnusedAlbumArt.run();
     }
 
-    async deleteOrphanAlbumArt(): Promise<void> {
-        await this.albumArt
-            .whereNotExists(builder =>
-                builder
-                    .table<DbTrack>("tracks")
-                    .whereRaw("tracks.albumArtHash = albumArt.hash")
-                    .select("*")
-            )
-            .delete();
+    deleteOrphanAlbums(): void {
+        this.s.deleteUnusedAlbums.run();
     }
 
-    async deleteOrphanAlbums(): Promise<void> {
-        await this.albums
-            .whereNotExists(builder =>
-                builder
-                    .table<DbTrack>("tracks")
-                    .whereRaw("tracks.albumId = albums.id")
-                    .select("*")
-            )
-            .delete();
+    deleteOrphanArtists(): void {
+        this.s.deleteUnusedArtists.run();
     }
 
-    async deleteOrphanArtists(): Promise<void> {
-        await this.artists
-            .whereNotExists(builder =>
-                builder
-                    .table<DbAlbum>("albums")
-                    .whereRaw("albums.artistId = artists.id")
-                    .select("*")
-            )
-            .delete();
+    deleteTracksNotIn(list: Set<string>): void {
+        this.s.deleteTracksNotIn_createTempTable.run();
+        // needs to be constructed separately so temp table exists when statements are prepared
+        const s = new DeleteTracksNotInStatements(this.db);
+        for (const item of list)
+            s.deleteTracksNotIn_insertToTempTable.run(item);
+        s.deleteTracksNotIn.run();
+        s.deleteTracksNotIn_deleteTempTable.run();
     }
 
-    deleteTracksNotIn(list: Set<string>): PromiseLike<void> {
-        return this.tracks
-            .whereNotIn("audioSrcPath", Array.from(list))
-            .delete();
+    getAllAlbums(): DbAlbum[] {
+        return this.s.getAllAlbums.all();
     }
 
-    async inTransaction(cb: () => Promise<void>) {
-        await this.knex.transaction(async trx => {
-            this.transaction = trx;
-            try {
-                await cb();
-            } finally {
-                this.transaction = undefined;
-            }
-        });
+    getAllArtists(): DbArtist[] {
+        return this.s.getAllArtists.all();
     }
 
-    vacuum(): PromiseLike<void> {
-        return this.knex.raw("VACUUM");
-    }
-
-    getAllAlbums(): PromiseLike<DbAlbum[]> {
-        return this.albums
-            .join<DbArtist>("artists", "albums.artistId", "=", "artists.id")
-            .select("albums.*")
-            .orderBy(["artists.sortableName", "albums.sortableName"]);
-    }
-
-    getAllArtists(): PromiseLike<DbArtist[]> {
-        return this.artists.select("*").orderBy("sortableName");
-    }
-
-    getTrackArtHashByAlbumId(albumId: number): PromiseLike<string[]> {
+    getTrackArtHashByAlbumId(albumId: number): string[] {
         if (typeof albumId === "undefined")
             throw new Error("albumId must be defined");
-        return this.albums
-            .join<DbTrack>("tracks", "tracks.albumId", "=", "albums.id")
-            .where("albums.id", albumId)
-            .select("tracks.albumArtHash")
-            .then(res => res.map(item => item.albumArtHash));
+        return this.s.getTrackArtHashByAlbumId
+            .all(albumId)
+            .map(res => res.albumArtHash);
     }
 
-    getTracksByAlbumId(albumId: number): PromiseLike<DbTrack[]> {
+    getTracksByAlbumId(albumId: number): DbTrack[] {
         if (typeof albumId === "undefined")
             throw new Error("albumId must be defined");
-        return this.tracks.where({albumId}).select("*").orderBy("trackNo");
+        return this.s.getTracksByAlbumId.all(albumId);
     }
 
-    getAllTracks(): PromiseLike<(DbTrack & Omit<AlbumArt, "source">)[]> {
-        return this.tracks
-            .join<DbAlbum>("albums", "tracks.albumId", "albums.id")
-            .join<DbArtist>("artists", "albums.artistId", "artists.id")
-            .join<AlbumArt>("albumArt", "tracks.albumArtHash", "albumArt.hash")
-            .orderBy([
-                "artists.sortableName",
-                "albums.sortableName",
-                "tracks.trackNo"
-            ])
-            .select("tracks.*", "albumArt.hash", "albumArt.mimeType");
+    getAllTracks(): (DbTrack & Omit<AlbumArt, "source">)[] {
+        return this.s.getAllExtendedTracks.all();
     }
 
-    getTrackById(trackId: number): PromiseLike<DbTrack | undefined> {
+    getTrackById(trackId: number): DbTrack | undefined {
         if (typeof trackId === "undefined")
             throw new Error("trackId must be defined");
-        return this.tracks.where({id: trackId}).select("*").first();
+        return this.s.getTrackById.get(trackId);
     }
 
     getNamesByTrackId(
         trackId: number
-    ): Promise<NamesWithSortable<"track" | "album" | "artist">> {
+    ): NamesWithSortable<"track" | "album" | "artist"> {
         if (typeof trackId === "undefined")
             throw new Error("trackId must be defined");
-        return this.tracks
-            .join<DbAlbum>("albums", "tracks.albumId", "=", "albums.id")
-            .join<DbArtist>("artists", "albums.artistId", "=", "artists.id")
-            .where("tracks.id", trackId)
-            .select(
-                "tracks.name as track",
-                "tracks.sortableName as trackSortable",
-                "albums.name as album",
-                "albums.sortableName as albumSortable",
-                "artists.name as artist",
-                "artists.sortableName as artistSortable"
-            )
-            .first();
+        return this.s.getNamesByTrackId.get(trackId);
     }
 
-    getLastUpdatedByPath(path: string): PromiseLike<number | undefined> {
+    getLastUpdatedByPath(path: string): number | undefined {
         if (typeof path === "undefined")
             throw new Error("path must be defined");
-        return this.tracks
-            .where({audioSrcPath: path})
-            .select("id", "lastUpdated")
-            .first()
-            .then(res => res?.lastUpdated);
+        return this.s.getTrackLastUpdatedByPath.get(path)?.lastUpdated;
     }
 
-    getAlbumArtByHash(hash: string): PromiseLike<AlbumArt | undefined> {
+    getAlbumArtByHash(hash: string): AlbumArt | undefined {
         if (typeof hash === "undefined")
             throw new Error("hash must be defined");
-        return this.albumArt.where({hash}).select("*").first();
+        return this.s.getAlbumArtByHash.get(hash);
     }
 
-    getAlbumArtInfoByHash(
-        hash: string
-    ): PromiseLike<Omit<AlbumArt, "source"> | undefined> {
+    getAlbumArtInfoByHash(hash: string): Omit<AlbumArt, "source"> | undefined {
         if (typeof hash === "undefined")
             throw new Error("hash must be defined");
-        return this.albumArt.where({hash}).select(["hash", "mimeType"]).first();
+        return this.s.getAlbumArtInfoByHash.get(hash);
+    }
+
+    async inTransaction(cb: () => Promise<void>): Promise<void> {
+        this.s.beginTransaction.run();
+        await cb();
+        this.s.commitTransaction.run();
+    }
+
+    vacuum(): void {
+        this.s.vacuum.run();
     }
 }

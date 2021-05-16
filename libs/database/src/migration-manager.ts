@@ -1,8 +1,9 @@
-import {Knex} from "knex";
+import {Database, Statement} from "better-sqlite3";
 
 export interface Migration {
-    up(knex: Knex): PromiseLike<void>;
-    down(knex: Knex): PromiseLike<void>;
+    up(db: Database): void;
+
+    down(knex: Database): void;
 }
 
 interface FirstLastName {
@@ -56,7 +57,7 @@ export class MigrationList {
     /**
      * Applies all migrations after `lastName`
      */
-    async migrateUp(knex: Knex, lastName?: string): Promise<FirstLastName> {
+    migrateUp(db: Database, lastName?: string): FirstLastName {
         const {
             migrations,
             firstName,
@@ -64,7 +65,7 @@ export class MigrationList {
         } = this.getMigrations(lastName);
 
         for (const migration of migrations) {
-            await migration.up(knex);
+            migration.up(db);
         }
 
         return {firstName, lastName: lastAppliedName};
@@ -73,11 +74,7 @@ export class MigrationList {
     /**
      * Removes all migrations between `from` (inclusive) until `target` (exclusive)
      */
-    async migrateDown(
-        knex: Knex,
-        from?: string,
-        target?: string
-    ): Promise<FirstLastName> {
+    migrateDown(db: Database, from?: string, target?: string): FirstLastName {
         const {migrations, firstName, lastName} = this.getMigrations(
             target,
             from
@@ -85,87 +82,126 @@ export class MigrationList {
         migrations.reverse();
 
         for (const migration of migrations) {
-            await migration.down(knex);
+            migration.down(db);
         }
 
         return {firstName, lastName};
     }
 }
 
-interface MigrationInfo {
-    name: string;
+class Statements {
+    hasTable = () =>
+        this.db
+            .prepare<string>(
+                `SELECT count(name) FROM sqlite_master
+            WHERE type='table' AND name=?`
+            )
+            .bind(this.tableName) as Statement;
+    readonly createTable = () =>
+        this.db.prepare(`
+        CREATE TABLE ${this.tableName} (
+            name TEXT NOT NULL
+        )
+    `);
+    readonly getLatestMigration = () =>
+        this.db.prepare(`
+        SELECT name FROM ${this.tableName}
+        LIMIT 1
+    `);
+    readonly hasRow = () =>
+        this.db.prepare(`
+        SELECT count(name) FROM ${this.tableName}
+    `);
+    readonly deleteRow = () =>
+        this.db.prepare(`
+        DELETE FROM ${this.tableName}
+    `);
+    readonly updateRow = () =>
+        this.db.prepare<string>(`
+        UPDATE ${this.tableName}
+        SET name = ?
+    `);
+    readonly insertRow = () =>
+        this.db.prepare<string>(`
+        INSERT INTO ${this.tableName} (name)
+        VALUES (?)
+    `);
+
+    constructor(
+        private readonly db: Database,
+        private readonly tableName: string
+    ) {}
 }
 
 export default class MigrationManager {
+    private readonly s: Statements;
     private initialised = false;
 
     constructor(
-        private knex: Knex,
+        private db: Database,
         private migrations: MigrationList,
         private tableName = "latestMigration"
-    ) {}
-
-    private async initialise() {
-        if (this.initialised) return;
-        if (await this.knex.schema.hasTable(this.tableName)) return;
-        this.initialised = true;
-
-        try {
-            await this.knex.schema.createTable(this.tableName, builder => {
-                builder.string("name");
-            });
-        } catch {
-            this.initialised = false;
-        }
-    }
-
-    private async getLatestMigration() {
-        await this.initialise();
-        const row = await this.knex
-            .select("name")
-            .from<MigrationInfo>(this.tableName)
-            .first();
-
-        if (!row) return undefined;
-        return row.name;
-    }
-
-    private async setLatestMigration(name: string) {
-        await this.initialise();
-
-        const rowExists = !!(await this.knex
-            .table(this.tableName)
-            .select("name")
-            .first());
-
-        if (rowExists) {
-            if (!name) {
-                await this.knex.table(this.tableName).delete();
-            } else {
-                await this.knex.table(this.tableName).update({name});
-            }
-        } else {
-            if (name) {
-                await this.knex.table(this.tableName).insert({name});
-            }
-        }
+    ) {
+        if (/[^a-zA-Z0-9_-]/g.test(tableName))
+            throw new Error("Invalid table name");
+        this.s = new Statements(db, tableName);
     }
 
     /**
      * Runs migrations to get to the latest version
      */
-    async migrate() {
-        const last = await this.getLatestMigration();
-        const {lastName} = await this.migrations.migrateUp(this.knex, last);
-        if (lastName) await this.setLatestMigration(lastName);
+    migrate() {
+        const last = this.getLatestMigration();
+        const {lastName} = this.migrations.migrateUp(this.db, last);
+        if (lastName) this.setLatestMigration(lastName);
     }
 
     /**
      * Reverts migrations, leaving `target` as the last migration
      * @param target - Name of target migration, empty to revert all migrations
      */
-    async revert(target?: string) {
-        const latest = await this.getLatestMigration();
-        await this.migrations.migrateDown(this.knex, latest, target);
+    revert(target?: string) {
+        const latest = this.getLatestMigration();
+        this.migrations.migrateDown(this.db, latest, target);
+    }
+
+    private initialise() {
+        if (this.initialised) return;
+
+        if (this.s.hasTable().get() > 0) {
+            // table already exists
+            this.initialised = true;
+            return;
+        }
+
+        this.initialised = true;
+        try {
+            this.s.createTable().run();
+        } catch {
+            this.initialised = false;
+        }
+    }
+
+    private getLatestMigration(): string {
+        this.initialise();
+        return this.s.getLatestMigration().get()?.name;
+    }
+
+    private setLatestMigration(name: string) {
+        this.initialise();
+
+        const rowExists = this.s.hasRow().get() > 0;
+
+        if (rowExists) {
+            if (!name) {
+                this.s.deleteRow().run();
+            } else {
+                this.s.updateRow().run(name);
+            }
+        } else {
+            if (name) {
+                this.s.insertRow().run(name);
+            }
+        }
     }
 }
