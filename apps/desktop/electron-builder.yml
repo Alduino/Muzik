@@ -1,0 +1,21 @@
+appId: dev.alduino.Muzik
+productName: Muzik
+files:
+  - from: "."
+    to: "."
+    filter:
+      - "!**/*"
+      - "package.json"
+  - from: "build"
+    to: ".webpack"
+directories:
+  buildResources: build-resources
+win:
+  legalTrademarks: Zach Barham 2021
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+linux:
+  synopsis: Local music player app
+  category: Audio
