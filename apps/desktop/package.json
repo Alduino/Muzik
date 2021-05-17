@@ -6,7 +6,7 @@
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
-    "make": "./scripts/pre-build.sh && electron-builder build -lw",
+    "make": "./scripts/pre-build.sh && electron-builder build -l",
     "publish": "electron-forge publish"
   },
   "keywords": [],
