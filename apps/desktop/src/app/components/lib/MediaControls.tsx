@@ -1,7 +1,10 @@
-import React, {FC, useState} from "react";
+import React, {FC, useCallback, useState} from "react";
 import {
+    Box,
     chakra,
+    Circle,
     Divider,
+    Flex,
     Heading,
     HStack,
     IconButton,
@@ -38,7 +41,12 @@ import {formatDuration} from "../../utils/formatDuration";
 import {AlbumArt} from "./AlbumArt";
 import {ActiveDotContainer} from "./ActiveDot";
 import {FadeOverflow} from "./FadeOverflow";
-import {GlobalRoute, setGlobalRoute} from "../../reducers/routing";
+import {
+    GlobalRoute,
+    setAlbumArtSize,
+    setGlobalRoute
+} from "../../reducers/routing";
+import {BiChevronDown} from "react-icons/bi";
 
 interface SongInfoProps {
     track: DbTrack;
@@ -314,26 +322,68 @@ MediaControlsImpl.displayName = "MediaControls";
 
 const SongDisplayImpl: FC = () => {
     const colours = useThemeColours();
+    const dispatch = useAppDispatch();
     const currentSongId = useAppSelector(state => state.queue.nowPlaying);
+    const albumArtIsLarge = useAppSelector(
+        state => state.routing.albumArtIsLarge
+    );
     const currentSong = useAsync(getSong, [currentSongId]);
 
+    const handleAlbumArtExpand = useCallback(() => {
+        dispatch(setAlbumArtSize(true));
+    }, [dispatch]);
+
     return (
-        <HStack
+        <Box
+            position="relative"
+            overflow="hidden"
             color={colours.text}
             p={4}
             backgroundColor={colours.backgroundL1}
         >
+            {currentSong.result && (
+                <SongInfo
+                    position="absolute"
+                    left={albumArtIsLarge ? "1rem" : "5.5rem"}
+                    top="1.7rem"
+                    transition=".4s"
+                    zIndex={0}
+                    track={currentSong.result.song}
+                    width={albumArtIsLarge ? "15rem" : "10.5rem"}
+                />
+            )}
+
             <AlbumArt
                 size={16}
+                borderRadius={0}
+                transition=".4s"
+                position="relative"
+                zIndex={1}
                 flexShrink={0}
+                top={albumArtIsLarge ? 16 : 0}
+                opacity={albumArtIsLarge ? 0 : 1}
                 artPath={currentSong.result?.song.art?.url || defaultAlbumArt}
                 avgColour={currentSong.result?.song.art?.avgColour}
-            />
-
-            {currentSong.result && (
-                <SongInfo track={currentSong.result.song} maxWidth="100%" />
-            )}
-        </HStack>
+            >
+                <Flex p={2} direction="column" height="full" alignItems="start">
+                    <Box flexGrow={1} />
+                    <IconButton
+                        aria-label="Expand"
+                        as={BiChevronDown}
+                        size="sm"
+                        bg="black"
+                        color="white"
+                        isRound={true}
+                        opacity={0}
+                        cursor="pointer"
+                        _groupHover={{"&:not(:hover)": {opacity: 0.4}}}
+                        _hover={{opacity: 0.6}}
+                        _active={{background: "black", opacity: 1}}
+                        onClick={handleAlbumArtExpand}
+                    />
+                </Flex>
+            </AlbumArt>
+        </Box>
     );
 };
 SongDisplayImpl.displayName = "SongDisplay";

@@ -11,13 +11,17 @@ export enum GlobalRoute {
 export const slice = createSlice({
     name: "routing",
     initialState: {
-        globalRoute: GlobalRoute.albumListing
+        globalRoute: GlobalRoute.albumListing,
+        albumArtIsLarge: false
     },
     reducers: {
         setGlobalRoute(state, action: PayloadAction<GlobalRoute>) {
             state.globalRoute = action.payload;
+        },
+        setAlbumArtSize(state, {payload}: PayloadAction<boolean>) {
+            state.albumArtIsLarge = payload;
         }
     }
 });
 
-export const {setGlobalRoute} = slice.actions;
+export const {setGlobalRoute, setAlbumArtSize} = slice.actions;

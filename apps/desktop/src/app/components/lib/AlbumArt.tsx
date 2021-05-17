@@ -26,6 +26,7 @@ const AlbumArtImpl: FC<AlbumArtProps> = props => {
             background={props.avgColour}
             transition="opacity .2s"
             opacity={opacity}
+            role="group"
             className={props.className}
         >
             <Image

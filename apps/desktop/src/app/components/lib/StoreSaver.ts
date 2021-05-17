@@ -12,7 +12,7 @@ import {
     EVENT_APP_STATE_GET,
     EVENT_APP_STATE_SET
 } from "../../../lib/ipc-constants";
-import {setGlobalRoute} from "../../reducers/routing";
+import {setAlbumArtSize, setGlobalRoute} from "../../reducers/routing";
 
 export const StoreSaver: FC = () => {
     const dispatch = useAppDispatch();
@@ -22,6 +22,9 @@ export const StoreSaver: FC = () => {
     const upNext = useAppSelector(state => state.queue.playNextSongs);
     const songs = useAppSelector(state => state.queue.songs);
     const route = useAppSelector(state => state.routing.globalRoute);
+    const albumArtIsLarge = useAppSelector(
+        state => state.routing.albumArtIsLarge
+    );
 
     const [loaded, setLoaded] = useState(false);
 
@@ -35,6 +38,7 @@ export const StoreSaver: FC = () => {
             dispatch(playAllNext(state.upNext));
             dispatch(queueSongs(state.songs || []));
             dispatch(setGlobalRoute(state.route || 0));
+            dispatch(setAlbumArtSize(state.albumArtIsLarge));
         });
     }, []);
 
@@ -46,9 +50,10 @@ export const StoreSaver: FC = () => {
             nowPlaying,
             upNext,
             songs,
-            route
+            route,
+            albumArtIsLarge
         });
-    }, [loaded, shuffled, nowPlaying, repeatMode, route]);
+    }, [loaded, shuffled, nowPlaying, repeatMode, route, albumArtIsLarge]);
 
     return null;
 };
