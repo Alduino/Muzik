@@ -1,4 +1,3 @@
-import React, {FC, useCallback, useState} from "react";
 import {
     Box,
     chakra,
@@ -15,16 +14,18 @@ import {
     SliderTrack,
     Text
 } from "@chakra-ui/react";
-import {GrRewind, GrFastForward, GrPause, GrPlay} from "react-icons/gr";
-import {RiShuffleLine, RiRepeat2Line, RiRepeatOneLine} from "react-icons/ri";
+import {DbTrack} from "@muzik/database";
+import React, {FC, useCallback, useState} from "react";
 import {useAsync} from "react-async-hook";
 import {useTranslation} from "react-i18next";
-import {DbTrack} from "@muzik/database";
-import {useAppDispatch, useAppSelector} from "../../store-hooks";
-import {invoke} from "../../../lib/ipc/renderer";
+import {BiChevronDown} from "react-icons/bi";
+import {GrRewind, GrFastForward, GrPause, GrPlay} from "react-icons/gr";
+import {RiShuffleLine, RiRepeat2Line, RiRepeatOneLine} from "react-icons/ri";
 import {EVENT_GET_NAMES, EVENT_GET_SONG} from "../../../lib/ipc-constants";
-import useThemeColours from "../../hooks/useThemeColours";
+import {invoke} from "../../../lib/ipc/renderer";
 import defaultAlbumArt from "../../assets/default-album-art.svg";
+import useThemeColours from "../../hooks/useThemeColours";
+import {selectAlbum} from "../../reducers/albumListingRoute";
 import {
     beginQueue,
     RepeatMode,
@@ -36,17 +37,16 @@ import {
     skipToNext,
     skipToPrevious
 } from "../../reducers/queue";
-import {selectAlbum} from "../../reducers/albumListingRoute";
-import {formatDuration} from "../../utils/formatDuration";
-import {AlbumArt} from "./AlbumArt";
-import {ActiveDotContainer} from "./ActiveDot";
-import {FadeOverflow} from "./FadeOverflow";
 import {
     GlobalRoute,
     setAlbumArtSize,
     setGlobalRoute
 } from "../../reducers/routing";
-import {BiChevronDown} from "react-icons/bi";
+import {useAppDispatch, useAppSelector} from "../../store-hooks";
+import {formatDuration} from "../../utils/formatDuration";
+import {ActiveDotContainer} from "./ActiveDot";
+import {AlbumArt} from "./AlbumArt";
+import {FadeOverflow} from "./FadeOverflow";
 
 interface SongInfoProps {
     track: DbTrack;

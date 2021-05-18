@@ -1,4 +1,5 @@
 import {app, clipboard, dialog, protocol, shell} from "electron";
+import ExtendedAlbum from "../lib/ExtendedAlbum";
 import {
     AlbumListResponse,
     AlbumSongsRequest,
@@ -19,7 +20,8 @@ import {
     EVENT_SELECT_MUSIC_IMPORT_PATH,
     MusicImportRequest
 } from "../lib/ipc-constants";
-import {log} from "./logger";
+import {handle} from "../lib/ipc/main";
+import {store} from "./configuration";
 import {
     getAlbumArtByHash,
     getAlbumArtInfoByHash,
@@ -33,9 +35,7 @@ import {
     importMusic,
     initialise as initialiseDatabase
 } from "./database";
-import {store} from "./configuration";
-import ExtendedAlbum from "../lib/ExtendedAlbum";
-import {handle} from "../lib/ipc/main";
+import {log} from "./logger";
 
 protocol.registerSchemesAsPrivileged([
     {

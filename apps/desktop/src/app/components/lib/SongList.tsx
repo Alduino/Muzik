@@ -9,8 +9,19 @@ import {
     useBoolean
 } from "@chakra-ui/react";
 import React, {CSSProperties, FC, useRef} from "react";
+import {useAsync} from "react-async-hook";
+import {useTranslation} from "react-i18next";
+import AutoSizer from "react-virtualized-auto-sizer";
 import {FixedSizeList} from "react-window";
-import {useAppDispatch, useAppSelector} from "../../store-hooks";
+import {ExtendedTrack} from "../../../lib/ExtendedAlbum";
+import {
+    EVENT_CLIPBOARD_WRITE,
+    EVENT_FILEDIR_OPEN,
+    EVENT_GET_NAMES
+} from "../../../lib/ipc-constants";
+import {invoke} from "../../../lib/ipc/renderer";
+import defaultAlbumArt from "../../assets/default-album-art.svg";
+import useDraggable from "../../hooks/useDraggable";
 import {
     beginQueue,
     cancelPlaying,
@@ -20,24 +31,13 @@ import {
     queueAlbum,
     queueSong
 } from "../../reducers/queue";
+import {useAppDispatch, useAppSelector} from "../../store-hooks";
 import {formatDuration} from "../../utils/formatDuration";
-import {ContextMenu, MenuItem, useContextMenu} from "./ContextMenu";
-import {invoke} from "../../../lib/ipc/renderer";
-import {
-    EVENT_CLIPBOARD_WRITE,
-    EVENT_FILEDIR_OPEN,
-    EVENT_GET_NAMES
-} from "../../../lib/ipc-constants";
-import {useTranslation} from "react-i18next";
-import {TransText} from "./TransText";
-import {FadeOverflow} from "./FadeOverflow";
-import defaultAlbumArt from "../../assets/default-album-art.svg";
-import AutoSizer from "react-virtualized-auto-sizer";
-import {PlayButtonAlbumArt} from "./PlayButtonAlbumArt";
 import {VisualiserIcon} from "./AudioController";
-import {ExtendedTrack} from "../../../lib/ExtendedAlbum";
-import {useAsync} from "react-async-hook";
-import useDraggable from "../../hooks/useDraggable";
+import {ContextMenu, MenuItem, useContextMenu} from "./ContextMenu";
+import {FadeOverflow} from "./FadeOverflow";
+import {PlayButtonAlbumArt} from "./PlayButtonAlbumArt";
+import {TransText} from "./TransText";
 
 interface SongProps {
     song: ExtendedTrack;

@@ -1,3 +1,5 @@
+import {Semaphore} from "async-mutex";
+import {log} from "../../node/logger";
 import {
     EventMessage,
     eventName,
@@ -9,8 +11,6 @@ import {
     TYPE_PROGRESS
 } from "./common";
 import type {IpcMainEvent, IpcRendererEvent} from "electron";
-import {log} from "../../node/logger";
-import {Semaphore} from "async-mutex";
 
 interface AbortSignal {
     readonly aborted: boolean;

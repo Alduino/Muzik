@@ -1,5 +1,5 @@
-import FastAverageColour from "fast-average-color";
 import {fromByteArray} from "base64-js";
+import FastAverageColour from "fast-average-color";
 import handleGetAverageColour from "../lib/rpc/average-colour/app";
 import handleSupportsMimeType from "../lib/rpc/mime-support/app";
 

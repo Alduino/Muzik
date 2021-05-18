@@ -1,13 +1,13 @@
-import store from "./store";
+import {ErrorCode, isCode} from "../lib/error-constants";
+import {EVENT_DATABASE_INIT, EVENT_MUSIC_IMPORT} from "../lib/ipc-constants";
+import {invoke} from "../lib/ipc/renderer";
 import {
     setCurrentDescription,
     setCurrentProgress,
     setLoadComplete
 } from "./reducers/loadState";
-import {invoke} from "../lib/ipc/renderer";
-import {EVENT_DATABASE_INIT, EVENT_MUSIC_IMPORT} from "../lib/ipc-constants";
-import {ErrorCode, isCode} from "../lib/error-constants";
 import {GlobalRoute, setGlobalRoute} from "./reducers/routing";
+import store from "./store";
 
 const muzikInitialised = false;
 

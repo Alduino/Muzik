@@ -1,6 +1,6 @@
 import {DbArtist} from "@muzik/database";
-import {g} from "./ipc/common";
 import ExtendedAlbum, {ExtendedTrack} from "./ExtendedAlbum";
+import {g} from "./ipc/common";
 
 export const EVENT_DATABASE_INIT = g<void>("database init");
 export const EVENT_MUSIC_IMPORT = g<void, MusicImportRequest, number>(

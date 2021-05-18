@@ -1,14 +1,14 @@
 import {Box, Heading, HStack} from "@chakra-ui/react";
 import React, {FC, useMemo} from "react";
+import {useAsync} from "react-async-hook";
 import {useTranslation} from "react-i18next";
+import {AiOutlineInfoCircle} from "react-icons/ai";
+import {EVENT_GET_SONG} from "../../lib/ipc-constants";
+import {invoke} from "../../lib/ipc/renderer";
+import {getShuffleIndex} from "../reducers/queue";
 import {useAppSelector} from "../store-hooks";
 import {LiteralSongList, Song as TrackImpl} from "./lib/SongList";
-import {invoke} from "../../lib/ipc/renderer";
-import {EVENT_GET_SONG} from "../../lib/ipc-constants";
-import {useAsync} from "react-async-hook";
 import {TransText} from "./lib/TransText";
-import {AiOutlineInfoCircle} from "react-icons/ai";
-import {getShuffleIndex} from "../reducers/queue";
 
 const fetchTrackById = (songId: number) => invoke(EVENT_GET_SONG, {songId});
 const fetchTracksByIds = (ids: number[]) =>

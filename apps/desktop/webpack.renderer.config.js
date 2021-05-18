@@ -1,6 +1,6 @@
 const {resolve} = require("path");
-const rules = require("./webpack.rules");
 const plugins = require("./webpack.plugins");
+const rules = require("./webpack.rules");
 
 rules.push({
     test: /\.css$/,

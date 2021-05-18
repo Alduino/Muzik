@@ -24,10 +24,10 @@
  * SOFTWARE.
  */
 
+import {createWriteStream, existsSync} from "fs";
+import {mkdir, readdir, chmod, stat} from "fs/promises";
 import {resolve} from "path";
 import {app, net, session} from "electron";
-import {mkdir, readdir, chmod, stat} from "fs/promises";
-import {createWriteStream, existsSync} from "fs";
 import unzip from "unzip-crx-3";
 
 export const DEVTOOL_REDUX = "lmhkpmbekcpmknklioeibfkpmmfibljd";

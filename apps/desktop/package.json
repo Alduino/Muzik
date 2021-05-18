@@ -1,112 +1,114 @@
 {
-  "name": "muzik-desktop",
-  "version": "1.0.0",
-  "description": "My Electron application description",
-  "main": ".webpack/main/index.js",
-  "scripts": {
-    "start": "electron-forge start",
-    "package": "electron-forge package",
-    "make": "./scripts/pre-build.sh && electron-builder build -l",
-    "publish": "electron-forge publish"
-  },
-  "keywords": [],
-  "author": {
-    "name": "Zach Barham",
-    "email": "git@alduino.dev"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/alduino/music-app.git"
-  },
-  "license": "MIT",
-  "config": {
-    "forge": {
-      "packagerConfig": {},
-      "plugins": [
-        [
-          "@electron-forge/plugin-webpack",
-          {
-            "mainConfig": "./webpack.main.config.js",
-            "renderer": {
-              "config": "./webpack.renderer.config.js",
-              "entryPoints": [
-                {
-                  "name": "main_window",
-                  "html": "./src/index.html",
-                  "js": "./src/renderer.ts",
-                  "preload": {
-                    "js": "./src/preload.js"
-                  }
-                }
-              ]
-            }
-          }
-        ]
-      ]
+    "name": "muzik-desktop",
+    "version": "1.0.0",
+    "description": "My Electron application description",
+    "main": ".webpack/main/index.js",
+    "scripts": {
+        "start": "electron-forge start",
+        "package": "electron-forge package",
+        "make": "./scripts/pre-build.sh && electron-builder build -l",
+        "publish": "electron-forge publish",
+        "format": "prettier . --write && eslint --fix .",
+        "lint": "eslint ."
+    },
+    "keywords": [],
+    "author": {
+        "name": "Zach Barham",
+        "email": "git@alduino.dev"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/alduino/music-app.git"
+    },
+    "license": "MIT",
+    "config": {
+        "forge": {
+            "packagerConfig": {},
+            "plugins": [
+                [
+                    "@electron-forge/plugin-webpack",
+                    {
+                        "mainConfig": "./webpack.main.config.js",
+                        "renderer": {
+                            "config": "./webpack.renderer.config.js",
+                            "entryPoints": [
+                                {
+                                    "name": "main_window",
+                                    "html": "./src/index.html",
+                                    "js": "./src/renderer.ts",
+                                    "preload": {
+                                        "js": "./src/preload.js"
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            ]
+        }
+    },
+    "devDependencies": {
+        "@electron-forge/cli": "^6.0.0-beta.54",
+        "@electron-forge/maker-deb": "^6.0.0-beta.54",
+        "@electron-forge/maker-rpm": "^6.0.0-beta.54",
+        "@electron-forge/maker-squirrel": "^6.0.0-beta.54",
+        "@electron-forge/maker-zip": "^6.0.0-beta.54",
+        "@electron-forge/plugin-webpack": "^6.0.0-beta.54",
+        "@marshallofsound/webpack-asset-relocator-loader": "^0.5.0",
+        "@muzik/database": "workspace:*",
+        "@muzik/logger": "workspace:*",
+        "@muzik/song-scanner": "workspace:*",
+        "@types/react": "^17.0.3",
+        "@types/react-dom": "^17.0.3",
+        "@types/react-virtualized-auto-sizer": "^1.0.0",
+        "@types/react-window": "^1.8.2",
+        "@types/seedrandom": "^3.0.0",
+        "@types/webpack-env": "^1.16.0",
+        "@types/wicg-mediasession": "^1.1.0",
+        "@typescript-eslint/eslint-plugin": "^4.20.0",
+        "@typescript-eslint/parser": "^4.20.0",
+        "css-loader": "^4.3.0",
+        "electron": "12.0.2",
+        "electron-builder": "^22.10.5",
+        "file-loader": "^6.2.0",
+        "fork-ts-checker-webpack-plugin": "^5.2.1",
+        "node-loader": "^1.0.3",
+        "style-loader": "^1.3.0",
+        "ts-loader": "^8.1.0",
+        "typescript": "^4.2.3"
+    },
+    "dependencies": {
+        "@chakra-ui/react": "^1.4.2",
+        "@emotion/react": "^11",
+        "@emotion/styled": "^11",
+        "@fontsource/lato": "^4.2.2",
+        "@fontsource/montserrat": "^4.2.2",
+        "@redux-devtools/core": "^3.9.0",
+        "@redux-devtools/dock-monitor": "^1.4.0",
+        "@redux-devtools/log-monitor": "^2.3.0",
+        "@reduxjs/toolkit": "^1.5.1",
+        "async-mutex": "^0.3.1",
+        "base64-js": "^1.5.1",
+        "electron-store": "^7.0.2",
+        "eventemitter3": "^4.0.7",
+        "execa": "^5.0.0",
+        "fast-average-color": "^6.4.0",
+        "ffbinaries": "^1.1.4",
+        "framer-motion": "^4",
+        "i18next": "^20.1.0",
+        "i18next-browser-languagedetector": "^6.1.0",
+        "node-abort-controller": "^1.2.0",
+        "promise-limit": "^2.7.0",
+        "react": "^17.0.2",
+        "react-async-hook": "^3.6.2",
+        "react-dom": "^17.0.2",
+        "react-i18next": "^11.8.12",
+        "react-icons": "^4.2.0",
+        "react-redux": "^7.2.3",
+        "react-spinners": "^0.10.6",
+        "react-virtualized-auto-sizer": "^1.0.5",
+        "react-window": "^1.8.6",
+        "seedrandom": "^3.0.5",
+        "unzip-crx-3": "^0.2.0"
     }
-  },
-  "devDependencies": {
-    "@electron-forge/cli": "^6.0.0-beta.54",
-    "@electron-forge/maker-deb": "^6.0.0-beta.54",
-    "@electron-forge/maker-rpm": "^6.0.0-beta.54",
-    "@electron-forge/maker-squirrel": "^6.0.0-beta.54",
-    "@electron-forge/maker-zip": "^6.0.0-beta.54",
-    "@electron-forge/plugin-webpack": "^6.0.0-beta.54",
-    "@marshallofsound/webpack-asset-relocator-loader": "^0.5.0",
-    "@muzik/database": "workspace:*",
-    "@muzik/logger": "workspace:*",
-    "@muzik/song-scanner": "workspace:*",
-    "@types/react": "^17.0.3",
-    "@types/react-dom": "^17.0.3",
-    "@types/react-virtualized-auto-sizer": "^1.0.0",
-    "@types/react-window": "^1.8.2",
-    "@types/seedrandom": "^3.0.0",
-    "@types/webpack-env": "^1.16.0",
-    "@types/wicg-mediasession": "^1.1.0",
-    "@typescript-eslint/eslint-plugin": "^4.20.0",
-    "@typescript-eslint/parser": "^4.20.0",
-    "css-loader": "^4.3.0",
-    "electron": "12.0.2",
-    "electron-builder": "^22.10.5",
-    "file-loader": "^6.2.0",
-    "fork-ts-checker-webpack-plugin": "^5.2.1",
-    "node-loader": "^1.0.3",
-    "style-loader": "^1.3.0",
-    "ts-loader": "^8.1.0",
-    "typescript": "^4.2.3"
-  },
-  "dependencies": {
-    "@chakra-ui/react": "^1.4.2",
-    "@emotion/react": "^11",
-    "@emotion/styled": "^11",
-    "@fontsource/lato": "^4.2.2",
-    "@fontsource/montserrat": "^4.2.2",
-    "@redux-devtools/core": "^3.9.0",
-    "@redux-devtools/dock-monitor": "^1.4.0",
-    "@redux-devtools/log-monitor": "^2.3.0",
-    "@reduxjs/toolkit": "^1.5.1",
-    "async-mutex": "^0.3.1",
-    "base64-js": "^1.5.1",
-    "electron-store": "^7.0.2",
-    "eventemitter3": "^4.0.7",
-    "execa": "^5.0.0",
-    "fast-average-color": "^6.4.0",
-    "ffbinaries": "^1.1.4",
-    "framer-motion": "^4",
-    "i18next": "^20.1.0",
-    "i18next-browser-languagedetector": "^6.1.0",
-    "node-abort-controller": "^1.2.0",
-    "promise-limit": "^2.7.0",
-    "react": "^17.0.2",
-    "react-async-hook": "^3.6.2",
-    "react-dom": "^17.0.2",
-    "react-i18next": "^11.8.12",
-    "react-icons": "^4.2.0",
-    "react-redux": "^7.2.3",
-    "react-spinners": "^0.10.6",
-    "react-virtualized-auto-sizer": "^1.0.5",
-    "react-window": "^1.8.6",
-    "seedrandom": "^3.0.5",
-    "unzip-crx-3": "^0.2.0"
-  }
 }

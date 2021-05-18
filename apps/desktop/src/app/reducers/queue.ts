@@ -1,11 +1,11 @@
 import {createAsyncThunk, createSlice, PayloadAction} from "@reduxjs/toolkit";
-import {invoke} from "../../lib/ipc/renderer";
+import seedrandom from "seedrandom";
 import {
     AlbumSongsRequest,
     AlbumSongsResponse,
     EVENT_ALBUM_SONGS
 } from "../../lib/ipc-constants";
-import seedrandom from "seedrandom";
+import {invoke} from "../../lib/ipc/renderer";
 
 // will restart song instead of going to previous after this many seconds
 const RESTART_THRESHOLD = 2;

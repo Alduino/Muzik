@@ -1,4 +1,3 @@
-import React, {FC} from "react";
 import {
     Box,
     Center,
@@ -11,17 +10,18 @@ import {
     useToken,
     VStack
 } from "@chakra-ui/react";
+import React, {FC} from "react";
 import {PuffLoader} from "react-spinners";
-import {GlobalRoute} from "../reducers/routing";
-import {MusicStorePicker} from "./MusicStorePicker";
 import useThemeColours from "../hooks/useThemeColours";
-import {AlbumListing} from "./AlbumListing";
-import {ErrorLabel} from "./lib/ErrorLabel";
+import {GlobalRoute} from "../reducers/routing";
 import {useAppSelector} from "../store-hooks";
-import {MediaControls, SongDisplay} from "./lib/MediaControls";
-import {FilledSidebar} from "./lib/FilledSidebar";
-import {SongListing} from "./SongListing";
+import {AlbumListing} from "./AlbumListing";
+import {MusicStorePicker} from "./MusicStorePicker";
 import {QueueListing} from "./QueueListing";
+import {SongListing} from "./SongListing";
+import {ErrorLabel} from "./lib/ErrorLabel";
+import {FilledSidebar} from "./lib/FilledSidebar";
+import {MediaControls, SongDisplay} from "./lib/MediaControls";
 
 const CornerClip = chakra((props: {className?: string}) => {
     const colours = useThemeColours();

@@ -1,4 +1,3 @@
-import type {DbArtist} from "@muzik/database";
 import {
     Box,
     chakra,
@@ -17,9 +16,9 @@ import React, {
     useRef
 } from "react";
 import {useAsync} from "react-async-hook";
-import {FixedSizeList} from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
-import {invoke} from "../../lib/ipc/renderer";
+import {FixedSizeList} from "react-window";
+import ExtendedAlbum from "../../lib/ExtendedAlbum";
 import {
     AlbumListResponse,
     EVENT_ALBUM_LIST,
@@ -27,11 +26,10 @@ import {
     EVENT_ARTIST_LIST,
     EVENT_GET_SONG
 } from "../../lib/ipc-constants";
-import useThemeColours from "../hooks/useThemeColours";
+import {invoke} from "../../lib/ipc/renderer";
 import defaultAlbumArt from "../assets/default-album-art.svg";
+import useThemeColours from "../hooks/useThemeColours";
 import {selectAlbum} from "../reducers/albumListingRoute";
-import {ErrorLabel} from "./lib/ErrorLabel";
-import {SongList} from "./lib/SongList";
 import {
     cancelPlaying,
     clearQueue,
@@ -41,12 +39,14 @@ import {
     playAlbumAfterNext
 } from "../reducers/queue";
 import {useAppDispatch, useAppSelector} from "../store-hooks";
+import {VisualiserIcon} from "./lib/AudioController";
 import {ContextMenu, MenuItem, useContextMenu} from "./lib/ContextMenu";
-import {TransText} from "./lib/TransText";
+import {ErrorLabel} from "./lib/ErrorLabel";
 import {FadeOverflow} from "./lib/FadeOverflow";
 import {PlayButtonAlbumArt} from "./lib/PlayButtonAlbumArt";
-import {VisualiserIcon} from "./lib/AudioController";
-import ExtendedAlbum from "../../lib/ExtendedAlbum";
+import {SongList} from "./lib/SongList";
+import {TransText} from "./lib/TransText";
+import type {DbArtist} from "@muzik/database";
 
 const fetchAlbums = () => invoke<AlbumListResponse>(EVENT_ALBUM_LIST);
 const fetchArtistsMap = () =>

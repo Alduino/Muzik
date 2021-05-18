@@ -1,5 +1,5 @@
-import {Target} from "../../window-ids";
 import {invoke} from "../../ipc/main";
+import {Target} from "../../window-ids";
 import {event} from "./common";
 
 export default function supportsMimeType(

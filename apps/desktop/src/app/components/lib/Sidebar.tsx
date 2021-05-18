@@ -1,8 +1,8 @@
 import {chakra, Divider, Heading, HStack, VStack} from "@chakra-ui/react";
 import React, {ReactNode} from "react";
 import useThemeColours from "../../hooks/useThemeColours";
-import {TransText} from "./TransText";
 import {ActiveDot} from "./ActiveDot";
+import {TransText} from "./TransText";
 
 export interface SidebarProps {
     className?: string;

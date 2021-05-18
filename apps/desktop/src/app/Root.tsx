@@ -1,23 +1,23 @@
-import React, {FC, ReactNode} from "react";
-import {Provider as ReduxProvider} from "react-redux";
 import {ChakraProvider, ColorModeProvider} from "@chakra-ui/react";
+import React, {FC, ReactNode} from "react";
 import {useAsync} from "react-async-hook";
-import {App} from "./components/App";
-import store from "./store";
+import {Provider as ReduxProvider} from "react-redux";
+import {EVENT_REDUX_DEV_TOOLS_ENABLED} from "../lib/ipc-constants";
+import {invoke} from "../lib/ipc/renderer";
 import {DevTools} from "./DevTools";
-import theme from "./theme";
+import {App} from "./components/App";
 import {
     AudioController,
     AudioControllerProvider,
     MediaSessionController
 } from "./components/lib/AudioController";
-import {invoke} from "../lib/ipc/renderer";
-import {EVENT_REDUX_DEV_TOOLS_ENABLED} from "../lib/ipc-constants";
 import {ContextMenuProvider} from "./components/lib/ContextMenu";
-import {TitleController} from "./components/lib/TitleController";
-import {StoreSaver} from "./components/lib/StoreSaver";
 import {CustomScrollProvider} from "./components/lib/CustomScrollProvider";
+import {StoreSaver} from "./components/lib/StoreSaver";
+import {TitleController} from "./components/lib/TitleController";
+import store from "./store";
 import {useAppSelector} from "./store-hooks";
+import theme from "./theme";
 
 const getDevToolsEnabled = () => invoke(EVENT_REDUX_DEV_TOOLS_ENABLED);
 

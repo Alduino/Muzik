@@ -1,9 +1,9 @@
 import {IconButton} from "@chakra-ui/react";
 import React, {FC, ReactElement} from "react";
 import {GrPause, GrPlay, GrResume} from "react-icons/gr";
+import useThemeColours from "../../hooks/useThemeColours";
 import {setPaused, setResumed} from "../../reducers/queue";
 import {useAppDispatch, useAppSelector} from "../../store-hooks";
-import useThemeColours from "../../hooks/useThemeColours";
 
 interface UsePlayButtonIconResult {
     icon: ReactElement | null;

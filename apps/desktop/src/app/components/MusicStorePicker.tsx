@@ -1,15 +1,15 @@
 import {Button, Center, Text} from "@chakra-ui/react";
 import React, {FC} from "react";
-import {HeadedFloat} from "./lib/HeadedFloat";
-import {invoke} from "../../lib/ipc/renderer";
+import {useAsyncCallback} from "react-async-hook";
 import {
     EVENT_MUSIC_IMPORT,
     EVENT_SELECT_MUSIC_IMPORT_PATH,
     MusicImportRequest
 } from "../../lib/ipc-constants";
-import {useAsyncCallback} from "react-async-hook";
-import store from "../store";
+import {invoke} from "../../lib/ipc/renderer";
 import {GlobalRoute, setGlobalRoute} from "../reducers/routing";
+import store from "../store";
+import {HeadedFloat} from "./lib/HeadedFloat";
 
 const invokeMusicPathSelector = async () => {
     const success = await invoke(EVENT_SELECT_MUSIC_IMPORT_PATH);

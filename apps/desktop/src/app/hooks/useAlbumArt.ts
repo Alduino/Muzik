@@ -1,8 +1,8 @@
-import {AlbumArtProps} from "../components/lib/AlbumArt";
 import {useAsync} from "react-async-hook";
-import {invoke} from "../../lib/ipc/renderer";
 import {EVENT_GET_SONG} from "../../lib/ipc-constants";
+import {invoke} from "../../lib/ipc/renderer";
 import defaultAlbumArt from "../assets/default-album-art.svg";
+import {AlbumArtProps} from "../components/lib/AlbumArt";
 
 const fetchSong = (songId: number) => invoke(EVENT_GET_SONG, {songId});
 

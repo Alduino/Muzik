@@ -1,5 +1,5 @@
-import React, {FC} from "react";
 import {Center, Text} from "@chakra-ui/react";
+import React, {FC} from "react";
 import {HeadedFloat} from "./HeadedFloat";
 
 export interface ErrorLabelProps {

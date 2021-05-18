@@ -1,5 +1,8 @@
 import {FC, useEffect, useState} from "react";
-import {useAppDispatch, useAppSelector} from "../../store-hooks";
+import {
+    EVENT_APP_STATE_GET,
+    EVENT_APP_STATE_SET
+} from "../../../lib/ipc-constants";
 import {invoke} from "../../../lib/ipc/renderer";
 import {
     playAllNext,
@@ -8,11 +11,8 @@ import {
     setRepeatMode,
     setShuffled
 } from "../../reducers/queue";
-import {
-    EVENT_APP_STATE_GET,
-    EVENT_APP_STATE_SET
-} from "../../../lib/ipc-constants";
 import {setAlbumArtSize, setGlobalRoute} from "../../reducers/routing";
+import {useAppDispatch, useAppSelector} from "../../store-hooks";
 
 export const StoreSaver: FC = () => {
     const dispatch = useAppDispatch();

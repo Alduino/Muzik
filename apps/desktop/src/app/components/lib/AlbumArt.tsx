@@ -1,5 +1,5 @@
-import React, {FC, useEffect, useState} from "react";
 import {Box, Center, chakra, Image, Spinner} from "@chakra-ui/react";
+import React, {FC, useEffect, useState} from "react";
 import useThemeColours from "../../hooks/useThemeColours";
 
 export interface AlbumArtProps {

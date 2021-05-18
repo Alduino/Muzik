@@ -1,5 +1,5 @@
-import type {IpcRenderer} from "electron";
 import listen from "./impl";
+import type {IpcRenderer} from "electron";
 
 declare global {
     interface Window {

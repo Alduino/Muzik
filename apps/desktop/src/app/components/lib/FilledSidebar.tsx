@@ -1,25 +1,25 @@
 import {Box, chakra, IconButton} from "@chakra-ui/react";
 import React, {useCallback} from "react";
-import {Sidebar, SidebarGroup, SidebarItem} from "./Sidebar";
-import {useAppDispatch, useAppSelector} from "../../store-hooks";
-import {TransText} from "./TransText";
-import {
-    GlobalRoute,
-    setAlbumArtSize,
-    setGlobalRoute
-} from "../../reducers/routing";
-import {invoke} from "../../../lib/ipc/renderer";
+import {BiChevronUp} from "react-icons/bi";
 import {EVENT_GET_ALL_TRACKS} from "../../../lib/ipc-constants";
+import {invoke} from "../../../lib/ipc/renderer";
+import useAlbumArt from "../../hooks/useAlbumArt";
 import {
     beginQueue,
     cancelPlaying,
     clearQueue,
     queueSongs
 } from "../../reducers/queue";
-import {VisualiserIcon} from "./AudioController";
-import useAlbumArt from "../../hooks/useAlbumArt";
+import {
+    GlobalRoute,
+    setAlbumArtSize,
+    setGlobalRoute
+} from "../../reducers/routing";
+import {useAppDispatch, useAppSelector} from "../../store-hooks";
 import {AlbumArt} from "./AlbumArt";
-import {BiChevronUp} from "react-icons/bi";
+import {VisualiserIcon} from "./AudioController";
+import {Sidebar, SidebarGroup, SidebarItem} from "./Sidebar";
+import {TransText} from "./TransText";
 
 export interface FilledSidebarProps {
     className?: string;

@@ -1,11 +1,11 @@
 import {dirname, resolve} from "path";
 import Database, {AlbumArt, DbAlbum, DbArtist, DbTrack} from "@muzik/database";
 import SongScanner from "@muzik/song-scanner";
-import {store} from "./configuration";
 import {ErrorCode, throwError} from "../lib/error-constants";
-import {log} from "./logger";
-import supportsMimeType from "../lib/rpc/mime-support/node";
 import getAverageColour from "../lib/rpc/average-colour/node";
+import supportsMimeType from "../lib/rpc/mime-support/node";
+import {store} from "./configuration";
+import {log} from "./logger";
 
 let db: Database | null = null;
 let songScanner: SongScanner | null = null;

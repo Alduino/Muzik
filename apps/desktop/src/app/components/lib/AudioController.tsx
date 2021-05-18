@@ -1,3 +1,4 @@
+import {chakra} from "@chakra-ui/react";
 import React, {
     createContext,
     FC,
@@ -8,6 +9,9 @@ import React, {
     useState
 } from "react";
 import {useAsync} from "react-async-hook";
+import {EVENT_GET_NAMES, EVENT_GET_SONG} from "../../../lib/ipc-constants";
+import {invoke} from "../../../lib/ipc/renderer";
+import defaultAlbumArt from "../../assets/default-album-art.svg";
 import {
     beginQueue,
     cancelPlaying,
@@ -18,11 +22,7 @@ import {
     skipToPrevious
 } from "../../reducers/queue";
 import {useAppDispatch, useAppSelector} from "../../store-hooks";
-import {invoke} from "../../../lib/ipc/renderer";
-import {EVENT_GET_NAMES, EVENT_GET_SONG} from "../../../lib/ipc-constants";
-import defaultAlbumArt from "../../assets/default-album-art.svg";
 import {mediaSessionHandler} from "../../utils/media-session";
-import {chakra} from "@chakra-ui/react";
 
 interface ControllerContextValue {
     audioCtx: AudioContext;

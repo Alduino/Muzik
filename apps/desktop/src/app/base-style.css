@@ -1,4 +1,6 @@
-h2, p, img {
+h2,
+p,
+img {
     user-select: none;
 }
 

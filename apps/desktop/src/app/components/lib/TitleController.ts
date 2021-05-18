@@ -1,9 +1,9 @@
 import {FC, useEffect, useMemo} from "react";
-import {useTranslation} from "react-i18next";
-import {useAppSelector} from "../../store-hooks";
-import {invoke} from "../../../lib/ipc/renderer";
-import {EVENT_GET_NAMES} from "../../../lib/ipc-constants";
 import {useAsync} from "react-async-hook";
+import {useTranslation} from "react-i18next";
+import {EVENT_GET_NAMES} from "../../../lib/ipc-constants";
+import {invoke} from "../../../lib/ipc/renderer";
+import {useAppSelector} from "../../store-hooks";
 
 const getCurrentSong = (trackId: number) => invoke(EVENT_GET_NAMES, {trackId});
 
