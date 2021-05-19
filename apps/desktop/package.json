@@ -9,7 +9,8 @@
         "make": "./scripts/pre-build.sh && electron-builder build -l",
         "publish": "electron-forge publish",
         "format": "prettier . --write && eslint --fix .",
-        "lint": "eslint ."
+        "lint": "eslint .",
+        "build": "pnpm run package && pnpm run make"
     },
     "keywords": [],
     "author": {
