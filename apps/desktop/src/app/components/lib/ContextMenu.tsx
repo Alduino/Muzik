@@ -2,7 +2,11 @@ import {Box, HStack, Portal, SlideFade, VStack} from "@chakra-ui/react";
 import React, {
     createContext,
     FC,
+    ForwardedRef,
+    forwardRef,
     MouseEvent,
+    ReactNode,
+    RefAttributes,
     useCallback,
     useContext,
     useEffect,
@@ -13,7 +17,7 @@ import React, {
 import useThemeColours from "../../hooks/useThemeColours";
 
 export interface UseContextMenuRes {
-    props: ContextMenuProps;
+    props: Omit<ContextMenuProps, "children"> & RefAttributes<HTMLDivElement>;
 
     onContextMenu(event: MouseEvent<HTMLElement>): void;
 }
@@ -23,18 +27,33 @@ export function useContextMenu(): UseContextMenuRes {
     const [contextMenuTarget, setContextMenuTarget] = useState<
         [number, number]
     >([0, 0]);
+    const containerRef = useRef<HTMLDivElement>(null);
 
-    const handler = (event: MouseEvent) => {
-        setContextMenuTarget([event.clientX, event.clientY]);
-        setOpen(true);
-    };
+    const handler = useCallback(
+        (event: MouseEvent) => {
+            const container = containerRef.current;
+            if (!container) return;
+            const x = Math.min(
+                event.clientX,
+                window.innerWidth - container.offsetWidth
+            );
+            const y = Math.min(
+                event.clientY,
+                window.innerHeight - container.offsetHeight
+            );
+            setContextMenuTarget([x, y]);
+            setOpen(true);
+        },
+        [containerRef]
+    );
 
     return {
         onContextMenu: handler,
         props: {
             open: isOpen,
             targetPosition: contextMenuTarget,
-            onClose: () => setOpen(false)
+            onClose: () => setOpen(false),
+            ref: containerRef
         }
     };
 }
@@ -123,11 +142,15 @@ const ContextMenuContext = createContext<ContextMenuContext | null>(null);
 export interface ContextMenuProps {
     open: boolean;
     targetPosition: readonly [number, number];
+    children: ReactNode;
 
     onClose?(): void;
 }
 
-export const ContextMenu: FC<ContextMenuProps> = props => {
+export const ContextMenu = forwardRef(function ContextMenu(
+    props: ContextMenuProps,
+    ref: ForwardedRef<HTMLDivElement>
+) {
     const globalContext = useContext(GlobalContextMenuContext);
     if (globalContext === null)
         throw new Error("ContextMenuProvider must wrap your App");
@@ -187,11 +210,13 @@ export const ContextMenu: FC<ContextMenuProps> = props => {
                 zIndex={100}
                 style={{
                     top: props.targetPosition[1],
-                    left: props.targetPosition[0]
+                    left: props.targetPosition[0],
+                    pointerEvents: props.open ? "auto" : "none"
                 }}
             >
-                <SlideFade in={props.open} offsetY="20px" unmountOnExit>
+                <SlideFade in={props.open} offsetY="20px">
                     <VStack
+                        ref={ref}
                         align="stretch"
                         background={colours.backgroundL1}
                         shadow="md"
@@ -207,7 +232,7 @@ export const ContextMenu: FC<ContextMenuProps> = props => {
             </Box>
         </Portal>
     );
-};
+});
 
 export interface MenuItemProps {
     // return `true` to cancel default actions
