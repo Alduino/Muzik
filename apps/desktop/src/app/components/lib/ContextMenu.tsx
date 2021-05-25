@@ -84,6 +84,15 @@ export const ContextMenuProvider: FC = ({children}) => {
             document.body.removeEventListener("keydown", handleKeydown);
     }, [close]);
 
+    useEffect(() => {
+        function handleBlur() {
+            close();
+        }
+
+        window.addEventListener("blur", handleBlur);
+        return () => window.removeEventListener("blur", handleBlur);
+    });
+
     return (
         <GlobalContextMenuContext.Provider value={contextValue}>
             {children}
