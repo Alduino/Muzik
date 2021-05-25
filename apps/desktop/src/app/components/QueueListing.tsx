@@ -5,7 +5,7 @@ import {useTranslation} from "react-i18next";
 import {AiOutlineInfoCircle} from "react-icons/ai";
 import {EVENT_GET_SONG} from "../../lib/ipc-constants";
 import {invoke} from "../../lib/ipc/renderer";
-import {getShuffleIndex} from "../reducers/queue";
+import {getAndRemoveNextSong} from "../reducers/queue";
 import {useAppSelector} from "../store-hooks";
 import {LiteralSongList, Song as TrackImpl} from "./lib/SongList";
 import {TransText} from "./lib/TransText";
@@ -38,19 +38,44 @@ const Track: FC<TrackProps> = props => {
 export const QueueListing: FC = () => {
     const {t} = useTranslation("app");
 
-    const nowPlaying = useAppSelector(state => state.queue.nowPlaying);
+    const {
+        nowPlaying,
+        previousSongs,
+        playNextSongs,
+        songs,
+        shuffled,
+        repeatMode
+    } = useAppSelector(state => state.queue);
 
-    const upNext = useAppSelector(state => state.queue.playNextSongs);
-    const later = useAppSelector(state => state.queue.songs);
-
+    // Simulates the real song playing queue mechanics
     const nextTenShuffled = useMemo(() => {
-        return Array.from(
-            {length: 10},
-            (_, idx) => later[getShuffleIndex(later.length, false, idx)]
-        ).filter(el => el);
-    }, [later]);
+        const result: number[] = [];
 
-    const upNextTracks = useAsync(fetchTracksByIds, [upNext]);
+        const previousSongsClone = previousSongs.slice();
+        const songsClone = songs.slice();
+        for (let i = 0; i < 10; i++) {
+            const song = getAndRemoveNextSong({
+                playNextSongs: [],
+                songs: songsClone,
+                previousSongs: [...previousSongsClone, ...playNextSongs],
+                shuffled,
+                repeatMode,
+                currentTime: 0,
+                _currentTimeWasFromAudio: false,
+                rngIncrement: false,
+                rngOffset: i
+            });
+
+            if (song == null) break;
+
+            result.push(song);
+            previousSongsClone.push(song);
+        }
+
+        return result;
+    }, [playNextSongs, previousSongs, songs]);
+
+    const upNextTracks = useAsync(fetchTracksByIds, [playNextSongs]);
     const laterTracks = useAsync(fetchTracksByIds, [nextTenShuffled]);
 
     return (

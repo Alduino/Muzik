@@ -55,11 +55,7 @@ export const playAlbumNext = createAsyncThunk(
 const rngSeed = Math.round(Date.now());
 let rngOffset = 0;
 
-export function getShuffleIndex(
-    max: number,
-    increment: boolean,
-    offset = 0
-): number {
+function getShuffleIndex(max: number, increment: boolean, offset = 0): number {
     const seed = rngSeed + rngOffset + offset;
     if (increment) rngOffset++;
     const random = seedrandom(seed.toString());
@@ -75,10 +71,22 @@ interface GetAndRemoveNextSongOpts {
     repeatMode: RepeatMode;
     currentTime: number;
     _currentTimeWasFromAudio: boolean;
+    rngIncrement?: boolean;
+    rngOffset?: number;
 }
 
-function getAndRemoveNextSong(opts: GetAndRemoveNextSongOpts): number | null {
-    const {playNextSongs, songs, previousSongs, shuffled, repeatMode} = opts;
+export function getAndRemoveNextSong(
+    opts: GetAndRemoveNextSongOpts
+): number | null {
+    const {
+        playNextSongs,
+        songs,
+        previousSongs,
+        shuffled,
+        repeatMode,
+        rngIncrement = true,
+        rngOffset = 0
+    } = opts;
 
     if (playNextSongs.length > 0) return playNextSongs.shift();
 
@@ -105,7 +113,11 @@ function getAndRemoveNextSong(opts: GetAndRemoveNextSongOpts): number | null {
     // if there are no songs that haven't been played, just pick a random one
     const songsToShuffle = notPlayedSongs.length > 0 ? notPlayedSongs : songs;
 
-    const nextSongIndex = getShuffleIndex(songsToShuffle.length, true);
+    const nextSongIndex = getShuffleIndex(
+        songsToShuffle.length,
+        rngIncrement,
+        rngOffset
+    );
     const nextSong = songsToShuffle[nextSongIndex];
 
     // delete the song being played
