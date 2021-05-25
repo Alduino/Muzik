@@ -5,6 +5,7 @@ import {useTranslation} from "react-i18next";
 import {AiOutlineInfoCircle} from "react-icons/ai";
 import {EVENT_GET_SONG} from "../../lib/ipc-constants";
 import {invoke} from "../../lib/ipc/renderer";
+import {useShortStale} from "../hooks/useShortStale";
 import {getAndRemoveNextSong} from "../reducers/queue";
 import {useAppSelector} from "../store-hooks";
 import {LiteralSongList, Song as TrackImpl} from "./lib/SongList";
@@ -78,6 +79,12 @@ export const QueueListing: FC = () => {
     const upNextTracks = useAsync(fetchTracksByIds, [playNextSongs]);
     const laterTracks = useAsync(fetchTracksByIds, [nextTenShuffled]);
 
+    const staleUpNext = useShortStale(
+        upNextTracks.result,
+        !!upNextTracks.result
+    );
+    const staleLater = useShortStale(laterTracks.result, !!laterTracks.result);
+
     return (
         <Box>
             <Heading size="sm" m={2}>
@@ -88,23 +95,23 @@ export const QueueListing: FC = () => {
             ) : (
                 <InfoBox label="queueRoute.nothingPlaying" />
             )}
-            {upNextTracks.result?.length ? (
+            {staleUpNext?.length ? (
                 <Heading size="sm" mt={16} mb={2} ml={2}>
                     {t("queueRoute.upNext")}
                 </Heading>
             ) : null}
-            {upNextTracks.result?.length ? (
+            {staleUpNext?.length ? (
                 <LiteralSongList
-                    songs={upNextTracks.result?.map(item => item.song)}
+                    songs={staleUpNext.map(item => item.song)}
                     clearQueueOnPlay={false}
                 />
             ) : null}
             <Heading size="sm" mt={16} mb={2} ml={2}>
                 {t("queueRoute.later")}
             </Heading>
-            {laterTracks.result?.length ? (
+            {staleLater?.length ? (
                 <LiteralSongList
-                    songs={laterTracks.result?.map(item => item.song)}
+                    songs={staleLater?.map(item => item.song)}
                     clearQueueOnPlay={false}
                 />
             ) : (
