@@ -186,6 +186,11 @@ importers:
     specifiers:
       fast-printf: ^1.6.5
       tslib: ^2.1.0
+  libs/m3u:
+    devDependencies:
+      typescript: 4.3.2
+    specifiers:
+      typescript: ^4.3.2
   libs/song-scanner:
     dependencies:
       '@muzik/database': link:../database
@@ -10679,6 +10684,13 @@ packages:
     hasBin: true
     resolution:
       integrity: sha512-qOcYwxaByStAWrBf4x0fibwZvMRG+r4cQoTjbPtUlrWjBHbmCAww1i448U0GJ+3cNNEtebDteo/cHOR3xJ4wEw==
+  /typescript/4.3.2:
+    dev: true
+    engines:
+      node: '>=4.2.0'
+    hasBin: true
+    resolution:
+      integrity: sha512-zZ4hShnmnoVnAHpVHWpTcxdv7dWP60S2FsydQLV8V5PbS3FifjWFFRiHSWpDJahly88PRyV5teTSLoq4eG7mKw==
   /unbox-primitive/1.0.1:
     dependencies:
       function-bind: 1.1.1
