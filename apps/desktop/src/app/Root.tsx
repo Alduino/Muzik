@@ -1,4 +1,4 @@
-import {ChakraProvider, ColorModeProvider} from "@chakra-ui/react";
+import {ChakraProvider, ColorModeScript} from "@chakra-ui/react";
 import React, {FC, ReactNode} from "react";
 import {useAsync} from "react-async-hook";
 import {Provider as ReduxProvider} from "react-redux";
@@ -15,6 +15,7 @@ import {ContextMenuProvider} from "./components/lib/ContextMenu";
 import {CustomScrollProvider} from "./components/lib/CustomScrollProvider";
 import {StoreSaver} from "./components/lib/StoreSaver";
 import {TitleController} from "./components/lib/TitleController";
+import {RpcConfigurator} from "./rpc";
 import store from "./store";
 import {useAppSelector} from "./store-hooks";
 import theme from "./theme";
@@ -33,13 +34,9 @@ export const Root: FC = () => {
 
     return (
         <ReduxProvider store={store}>
-            <ChakraProvider theme={theme}>
-                <ColorModeProvider
-                    options={{
-                        initialColorMode: "light",
-                        useSystemColorMode: true
-                    }}
-                >
+            <RpcConfigurator refreshInterval={1000} instantCallThreshold={100}>
+                <ChakraProvider theme={theme}>
+                    <ColorModeScript initialColorMode="system" />
                     <AudioControllerProvider>
                         <WhenInitialised>
                             <AudioController />
@@ -53,8 +50,8 @@ export const Root: FC = () => {
                             </CustomScrollProvider>
                         </ContextMenuProvider>
                     </AudioControllerProvider>
-                </ColorModeProvider>
-            </ChakraProvider>
+                </ChakraProvider>
+            </RpcConfigurator>
             {devToolsEnabled.result &&
                 process.env.NODE_ENV === "development" && <DevTools />}
         </ReduxProvider>

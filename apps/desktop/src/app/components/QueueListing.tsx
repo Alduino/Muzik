@@ -1,19 +1,11 @@
 import {Box, Heading, HStack} from "@chakra-ui/react";
 import React, {FC, useMemo} from "react";
-import {useAsync} from "react-async-hook";
 import {useTranslation} from "react-i18next";
 import {AiOutlineInfoCircle} from "react-icons/ai";
-import {EVENT_GET_SONG} from "../../lib/ipc-constants";
-import {invoke} from "../../lib/ipc/renderer";
-import {useShortStale} from "../hooks/useShortStale";
 import {getAndRemoveNextSong} from "../reducers/queue";
 import {useAppSelector} from "../store-hooks";
-import {LiteralSongList, Song as TrackImpl} from "./lib/SongList";
+import {LiteralSongList, Track as TrackImpl} from "./lib/SongList";
 import {TransText} from "./lib/TransText";
-
-const fetchTrackById = (songId: number) => invoke(EVENT_GET_SONG, {songId});
-const fetchTracksByIds = (ids: number[]) =>
-    Promise.all(ids.map(songId => invoke(EVENT_GET_SONG, {songId})));
 
 interface TrackProps {
     id: number;
@@ -27,13 +19,7 @@ const InfoBox: FC<{label: string}> = props => (
 );
 
 const Track: FC<TrackProps> = props => {
-    const {result, loading} = useAsync(fetchTrackById, [props.id]);
-
-    if (loading) {
-        return <InfoBox label="queueRoute.loading" />;
-    }
-
-    return <TrackImpl song={result.song} clearQueueOnPlay={false} />;
+    return <TrackImpl trackId={props.id} clearQueueOnPlay={false} />;
 };
 
 export const QueueListing: FC = () => {
@@ -76,15 +62,6 @@ export const QueueListing: FC = () => {
         return result;
     }, [playNextSongs, previousSongs, songs]);
 
-    const upNextTracks = useAsync(fetchTracksByIds, [playNextSongs]);
-    const laterTracks = useAsync(fetchTracksByIds, [nextTenShuffled]);
-
-    const staleUpNext = useShortStale(
-        upNextTracks.result,
-        !!upNextTracks.result
-    );
-    const staleLater = useShortStale(laterTracks.result, !!laterTracks.result);
-
     return (
         <Box>
             <Heading size="sm" m={2}>
@@ -95,23 +72,23 @@ export const QueueListing: FC = () => {
             ) : (
                 <InfoBox label="queueRoute.nothingPlaying" />
             )}
-            {staleUpNext?.length ? (
+            {playNextSongs.length ? (
                 <Heading size="sm" mt={16} mb={2} ml={2}>
                     {t("queueRoute.upNext")}
                 </Heading>
             ) : null}
-            {staleUpNext?.length ? (
+            {playNextSongs.length ? (
                 <LiteralSongList
-                    songs={staleUpNext.map(item => item.song)}
+                    songIds={playNextSongs}
                     clearQueueOnPlay={false}
                 />
             ) : null}
             <Heading size="sm" mt={16} mb={2} ml={2}>
                 {t("queueRoute.later")}
             </Heading>
-            {staleLater?.length ? (
+            {nextTenShuffled.length ? (
                 <LiteralSongList
-                    songs={staleLater?.map(item => item.song)}
+                    songIds={nextTenShuffled}
                     clearQueueOnPlay={false}
                 />
             ) : (

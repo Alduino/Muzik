@@ -1,11 +1,6 @@
 import {createAsyncThunk, createSlice, PayloadAction} from "@reduxjs/toolkit";
 import seedrandom from "seedrandom";
-import {
-    AlbumSongsRequest,
-    AlbumSongsResponse,
-    EVENT_ALBUM_SONGS
-} from "../../lib/ipc-constants";
-import {invoke} from "../../lib/ipc/renderer";
+import getAlbumTrackIds from "../../lib/rpc/get-album-track-ids/app";
 
 // will restart song instead of going to previous after this many seconds
 const RESTART_THRESHOLD = 2;
@@ -18,37 +13,25 @@ export enum RepeatMode {
 
 export const queueAlbum = createAsyncThunk(
     "queue/queueAlbum",
-    async (id: number) => {
-        const album = await invoke<AlbumSongsResponse, AlbumSongsRequest>(
-            EVENT_ALBUM_SONGS,
-            {
-                albumId: id
-            }
-        );
-
-        return album.songs.map(song => song.id);
+    async (albumId: number) => {
+        const result = await getAlbumTrackIds({albumId});
+        return result.trackIds;
     }
 );
 
 export const playAlbumAfterNext = createAsyncThunk(
     "queue/playAlbumAfterNext",
-    async (id: number) => {
-        const album = await invoke(EVENT_ALBUM_SONGS, {
-            albumId: id
-        });
-
-        return album.songs.map(song => song.id);
+    async (albumId: number) => {
+        const result = await getAlbumTrackIds({albumId});
+        return result.trackIds;
     }
 );
 
 export const playAlbumNext = createAsyncThunk(
     "queue/playAlbumNext",
-    async (id: number) => {
-        const album = await invoke(EVENT_ALBUM_SONGS, {
-            albumId: id
-        });
-
-        return album.songs.map(song => song.id);
+    async (albumId: number) => {
+        const result = await getAlbumTrackIds({albumId});
+        return result.trackIds;
     }
 );
 

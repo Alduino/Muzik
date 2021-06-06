@@ -1,8 +1,7 @@
 import {Box, chakra, IconButton} from "@chakra-ui/react";
 import React, {useCallback} from "react";
 import {BiChevronUp} from "react-icons/bi";
-import {EVENT_GET_ALL_TRACKS} from "../../../lib/ipc-constants";
-import {invoke} from "../../../lib/ipc/renderer";
+import getAllTrackIds from "../../../lib/rpc/get-all-track-ids/app";
 import useAlbumArt from "../../hooks/useAlbumArt";
 import {
     beginQueue,
@@ -50,10 +49,10 @@ export const FilledSidebar = chakra((props: FilledSidebarProps) => {
     const albumArtProps = useAlbumArt(currentSongId);
 
     const handlePlayAll = useCallback(async () => {
-        const allSongIds = await invoke(EVENT_GET_ALL_TRACKS);
+        const allTrackIds = await getAllTrackIds();
         dispatch(cancelPlaying());
         dispatch(clearQueue());
-        dispatch(queueSongs(allSongIds.tracks.map(track => track.id)));
+        dispatch(queueSongs(allTrackIds.trackIds));
         dispatch(beginQueue());
     }, [dispatch]);
 

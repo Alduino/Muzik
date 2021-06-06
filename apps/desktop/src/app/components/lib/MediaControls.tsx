@@ -1,7 +1,6 @@
 import {
     Box,
     chakra,
-    Circle,
     Divider,
     Flex,
     Heading,
@@ -14,16 +13,12 @@ import {
     SliderTrack,
     Text
 } from "@chakra-ui/react";
-import {DbTrack} from "@muzik/database";
 import React, {FC, useCallback, useState} from "react";
-import {useAsync} from "react-async-hook";
 import {useTranslation} from "react-i18next";
 import {BiChevronDown} from "react-icons/bi";
-import {GrRewind, GrFastForward, GrPause, GrPlay} from "react-icons/gr";
-import {RiShuffleLine, RiRepeat2Line, RiRepeatOneLine} from "react-icons/ri";
-import {EVENT_GET_NAMES, EVENT_GET_SONG} from "../../../lib/ipc-constants";
-import {invoke} from "../../../lib/ipc/renderer";
-import defaultAlbumArt from "../../assets/default-album-art.svg";
+import {GrFastForward, GrPause, GrPlay, GrRewind} from "react-icons/gr";
+import {RiRepeat2Line, RiRepeatOneLine, RiShuffleLine} from "react-icons/ri";
+import useAlbumArt from "../../hooks/useAlbumArt";
 import useThemeColours from "../../hooks/useThemeColours";
 import {selectAlbum} from "../../reducers/albumListingRoute";
 import {
@@ -42,6 +37,7 @@ import {
     setAlbumArtSize,
     setGlobalRoute
 } from "../../reducers/routing";
+import {useNames, useTrack} from "../../rpc";
 import {useAppDispatch, useAppSelector} from "../../store-hooks";
 import {formatDuration} from "../../utils/formatDuration";
 import {ActiveDotContainer} from "./ActiveDot";
@@ -49,35 +45,34 @@ import {AlbumArt} from "./AlbumArt";
 import {FadeOverflow} from "./FadeOverflow";
 
 interface SongInfoProps {
-    track: DbTrack;
+    trackId: number;
     className?: string;
 }
 
-const fetchNames = (trackId: number) => invoke(EVENT_GET_NAMES, {trackId});
-
-const SongInfoImpl: FC<SongInfoProps> = props => {
+const SongInfoImpl = ({trackId, className}: SongInfoProps) => {
     const dispatch = useAppDispatch();
 
-    const namesAsync = useAsync(fetchNames, [props.track.id]);
+    const {data: track} = useTrack(trackId);
+    const {data: names} = useNames(trackId);
 
     const handleAlbumClick = () => {
-        dispatch(selectAlbum(props.track.albumId));
+        dispatch(selectAlbum(track.albumId));
         dispatch(setGlobalRoute(GlobalRoute.albumListing));
     };
 
     return (
-        <FadeOverflow className={props.className}>
+        <FadeOverflow className={className}>
             <Heading size="sm" whiteSpace="nowrap" mb={1}>
-                {props.track.name}
+                {names?.track ?? "Nothing is playing"}
             </Heading>
 
-            <Text whiteSpace="nowrap">
-                {namesAsync.result?.artist}
-                {" - "}
-                <Link onClick={handleAlbumClick}>
-                    {namesAsync.result?.album}
-                </Link>
-            </Text>
+            {names && (
+                <Text whiteSpace="nowrap">
+                    {names.artist}
+                    {" - "}
+                    <Link onClick={handleAlbumClick}>{names.album}</Link>
+                </Text>
+            )}
         </FadeOverflow>
     );
 };
@@ -273,13 +268,10 @@ const MediaButtons: FC<MediaButtonProps> = props => {
     );
 };
 
-const getSong = (songId: number) =>
-    songId === null ? null : invoke(EVENT_GET_SONG, {songId});
-
 const MediaControlsImpl: FC = () => {
     const colours = useThemeColours();
 
-    const currentSongId = useAppSelector(state => state.queue.nowPlaying);
+    const currentTrackId = useAppSelector(state => state.queue.nowPlaying);
     const previousSongsCount = useAppSelector(
         state => state.queue.previousSongs.length
     );
@@ -290,7 +282,7 @@ const MediaControlsImpl: FC = () => {
         state => state.queue.repeatMode !== RepeatMode.noRepeat
     );
 
-    const currentSong = useAsync(getSong, [currentSongId]);
+    const {data: currentTrack} = useTrack(currentTrackId);
 
     return (
         <HStack
@@ -302,14 +294,14 @@ const MediaControlsImpl: FC = () => {
         >
             <Divider orientation="vertical" />
 
-            <SongTracker duration={currentSong.result?.song.duration} />
+            <SongTracker duration={currentTrack?.duration} />
 
             <Divider orientation="vertical" />
 
             <MediaButtons
                 canSkipBackwards={previousSongsCount > 0}
                 canSkipForwards={nextSongsCount > 0 || isRepeating}
-                canPlayPause={currentSongId !== null || nextSongsCount > 0}
+                canPlayPause={currentTrackId !== null || nextSongsCount > 0}
             />
 
             <Divider orientation="vertical" />
@@ -323,11 +315,12 @@ MediaControlsImpl.displayName = "MediaControls";
 const SongDisplayImpl: FC = () => {
     const colours = useThemeColours();
     const dispatch = useAppDispatch();
-    const currentSongId = useAppSelector(state => state.queue.nowPlaying);
+    const currentTrackId = useAppSelector(state => state.queue.nowPlaying);
     const albumArtIsLarge = useAppSelector(
         state => state.routing.albumArtIsLarge
     );
-    const currentSong = useAsync(getSong, [currentSongId]);
+
+    const albumArt = useAlbumArt(currentTrackId);
 
     const handleAlbumArtExpand = useCallback(() => {
         dispatch(setAlbumArtSize(true));
@@ -341,17 +334,15 @@ const SongDisplayImpl: FC = () => {
             p={4}
             backgroundColor={colours.backgroundL1}
         >
-            {currentSong.result && (
-                <SongInfo
-                    position="absolute"
-                    left={albumArtIsLarge ? "1rem" : "5.5rem"}
-                    top="1.7rem"
-                    transition=".4s"
-                    zIndex={0}
-                    track={currentSong.result.song}
-                    width={albumArtIsLarge ? "15rem" : "10.5rem"}
-                />
-            )}
+            <SongInfo
+                position="absolute"
+                left={albumArtIsLarge ? "1rem" : "5.5rem"}
+                top="1.7rem"
+                transition=".4s"
+                zIndex={0}
+                width={albumArtIsLarge ? "15rem" : "10.5rem"}
+                trackId={currentTrackId}
+            />
 
             <AlbumArt
                 size={16}
@@ -362,8 +353,7 @@ const SongDisplayImpl: FC = () => {
                 flexShrink={0}
                 top={albumArtIsLarge ? 16 : 0}
                 opacity={albumArtIsLarge ? 0 : 1}
-                artPath={currentSong.result?.song.art?.url || defaultAlbumArt}
-                avgColour={currentSong.result?.song.art?.avgColour}
+                {...albumArt}
             >
                 <Flex p={2} direction="column" height="full" alignItems="start">
                     <Box flexGrow={1} />

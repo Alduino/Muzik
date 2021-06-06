@@ -54,12 +54,20 @@ export async function getAlbumArtInfoByHash(
     return db.getAlbumArtInfoByHash(hash);
 }
 
-export async function getAllAlbums(): Promise<DbAlbum[]> {
+export async function getAllAlbums(): Promise<number[]> {
     return db.getAllAlbums();
 }
 
 export async function getAllArtists(): Promise<DbArtist[]> {
     return db.getAllArtists();
+}
+
+export function getArtistById(id: number): DbArtist {
+    return db.getArtistById(id);
+}
+
+export function getAlbumById(id: number): DbAlbum {
+    return db.getAlbumById(id);
 }
 
 export async function getTrackArtHashByAlbumId(
@@ -68,7 +76,7 @@ export async function getTrackArtHashByAlbumId(
     return db.getTrackArtHashByAlbumId(albumId);
 }
 
-export async function getSongsByAlbumId(albumId: number): Promise<DbTrack[]> {
+export async function getTracksByAlbumId(albumId: number): Promise<number[]> {
     return db.getTracksByAlbumId(albumId);
 }
 
@@ -76,10 +84,8 @@ export async function getSongById(songId: number): Promise<DbTrack> {
     return db.getTrackById(songId);
 }
 
-export async function getAllTracks(): Promise<
-    (DbTrack & Omit<AlbumArt, "source">)[]
-> {
-    return db.getAllTracks();
+export async function getAllTracks(): Promise<number[]> {
+    return db.getAllTrackIds();
 }
 
 export function getNamesByTrackId(trackId: number) {

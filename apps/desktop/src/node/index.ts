@@ -1,37 +1,37 @@
 import {app, clipboard, dialog, protocol, shell} from "electron";
-import ExtendedAlbum from "../lib/ExtendedAlbum";
 import {
-    AlbumListResponse,
-    AlbumSongsRequest,
-    AlbumSongsResponse,
-    EVENT_ALBUM_LIST,
-    EVENT_ALBUM_SONGS,
     EVENT_APP_STATE_GET,
     EVENT_APP_STATE_SET,
     EVENT_ARTIST_LIST,
     EVENT_CLIPBOARD_WRITE,
     EVENT_DATABASE_INIT,
-    EVENT_FILEDIR_OPEN,
-    EVENT_GET_ALL_TRACKS,
-    EVENT_GET_NAMES,
-    EVENT_GET_SONG,
     EVENT_MUSIC_IMPORT,
     EVENT_REDUX_DEV_TOOLS_ENABLED,
     EVENT_SELECT_MUSIC_IMPORT_PATH,
     MusicImportRequest
 } from "../lib/ipc-constants";
 import {handle} from "../lib/ipc/main";
+import handleGetAlbumList from "../lib/rpc/album-list/node";
+import handleGetExtendedAlbum from "../lib/rpc/extended-album/node";
+import handleGetAlbumTrackIds from "../lib/rpc/get-album-track-ids/node";
+import handleGetAllTrackIds from "../lib/rpc/get-all-track-ids/node";
+import handleGetArtist from "../lib/rpc/get-artist/node";
+import handleGetNames from "../lib/rpc/get-names/node";
+import handleGetSong from "../lib/rpc/get-song/node";
+import handleOpenFileDirectory from "../lib/rpc/open-file-directory/node";
 import {store} from "./configuration";
 import {
     getAlbumArtByHash,
     getAlbumArtInfoByHash,
+    getAlbumById,
     getAllAlbums,
     getAllArtists,
     getAllTracks,
+    getArtistById,
     getNamesByTrackId,
     getSongById,
-    getSongsByAlbumId,
     getTrackArtHashByAlbumId,
+    getTracksByAlbumId,
     importMusic,
     initialise as initialiseDatabase
 } from "./database";
@@ -55,7 +55,8 @@ app.on("ready", () => {
 
         callback({
             headers: {
-                "Content-Type": art.mimeType
+                "Content-Type": art.mimeType,
+                "Cache-Control": "public, max-age=31536000, immutable"
             },
             data: art.source
         });
@@ -69,6 +70,25 @@ app.on("ready", () => {
     });
 });
 
+async function getMostCommonAlbumArtHash(
+    albumId: number
+): Promise<string | undefined> {
+    const trackArts = await getTrackArtHashByAlbumId(albumId);
+
+    const artCounts = new Map<string, number>();
+    for (const art of trackArts) {
+        artCounts.set(art, (artCounts.get(art) ?? 0) + 1);
+    }
+
+    const [artHash] = Array.from(
+        artCounts.entries()
+    ).reduce((prev, [hash, count]) =>
+        prev ? (count > prev[1] ? [hash, count] : prev) : [hash, count]
+    );
+
+    return artHash;
+}
+
 handle(EVENT_DATABASE_INIT, async () => {
     log.info("Initialising database");
     await initialiseDatabase();
@@ -76,10 +96,10 @@ handle(EVENT_DATABASE_INIT, async () => {
 
 handle<void, MusicImportRequest, number>(
     EVENT_MUSIC_IMPORT,
-    async (opts, progress) => {
+    async (opts = {}, progress) => {
         log.info("Importing music");
 
-        const timeDiff = 1000 / opts.progressFrequency;
+        const timeDiff = 1000 / (opts.progressFrequency ?? 1);
 
         let lastProgressUpdate = 0;
 
@@ -91,7 +111,13 @@ handle<void, MusicImportRequest, number>(
             progress(percent);
         }
 
-        await importMusic(importProgress);
+        if (!opts.progressFrequency) {
+            await importMusic(importProgress);
+        } else {
+            await importMusic(() => {
+                /* noop */
+            });
+        }
     }
 );
 
@@ -105,49 +131,26 @@ handle(EVENT_SELECT_MUSIC_IMPORT_PATH, async () => {
     return true;
 });
 
-handle<AlbumListResponse>(EVENT_ALBUM_LIST, async () => {
-    const albums = await Promise.all(
-        await getAllAlbums().then(res =>
-            res.map(
-                async (album): Promise<ExtendedAlbum> => {
-                    const trackArts = await getTrackArtHashByAlbumId(album.id);
+handleGetAlbumList(getAllAlbums);
 
-                    const artCounts = new Map<string, number>();
-                    for (const art of trackArts) {
-                        artCounts.set(art, (artCounts.get(art) ?? 0) + 1);
-                    }
+handleGetArtist(async ({artistId}) => getArtistById(artistId));
 
-                    const [artHash] = Array.from(
-                        artCounts.entries()
-                    ).reduce((prev, [hash, count]) =>
-                        prev
-                            ? count > prev[1]
-                                ? [hash, count]
-                                : prev
-                            : [hash, count]
-                    );
+handleGetExtendedAlbum(async id => {
+    const album = await getAlbumById(id);
 
-                    if (!artHash) return album;
+    const artHash = await getMostCommonAlbumArtHash(id);
 
-                    const {mimeType, avgColour} = await getAlbumArtInfoByHash(
-                        artHash
-                    );
+    if (!artHash) return album;
 
-                    return {
-                        ...album,
-                        art: {
-                            url: `albumart://${artHash}`,
-                            mime: mimeType,
-                            avgColour
-                        }
-                    };
-                }
-            )
-        )
-    );
+    const {mimeType, avgColour} = await getAlbumArtInfoByHash(artHash);
 
     return {
-        albums
+        ...album,
+        art: {
+            url: `albumart://${artHash}`,
+            mime: mimeType,
+            avgColour
+        }
     };
 });
 
@@ -156,72 +159,42 @@ handle(EVENT_ARTIST_LIST, async () => {
     return {artists};
 });
 
-handle<AlbumSongsResponse, AlbumSongsRequest>(EVENT_ALBUM_SONGS, async arg => {
-    const songs = await Promise.all(
-        await getSongsByAlbumId(arg.albumId).then(tracks =>
-            tracks.map(async track => {
-                const trackArt = await getAlbumArtInfoByHash(
-                    track.albumArtHash
-                );
-                return {
-                    ...track,
-                    art: trackArt && {
-                        url: `albumart://${track.albumArtHash}`,
-                        mime: trackArt.mimeType,
-                        avgColour: trackArt.avgColour
-                    }
-                };
-            })
-        )
-    );
-
+handleGetAlbumTrackIds(async ({albumId}) => {
     return {
-        songs
+        trackIds: await getTracksByAlbumId(albumId)
     };
 });
 
-handle(EVENT_GET_SONG, async arg => {
-    if (!arg.songId) return undefined;
-
-    const song = await getSongById(arg.songId);
+handleGetSong(async ({songId}) => {
+    const song = await getSongById(songId);
     const trackArt = await getAlbumArtInfoByHash(song.albumArtHash);
 
     return {
-        song: {
-            ...song,
-            art: trackArt && {
-                url: `albumart://${trackArt.hash}`,
-                mime: trackArt.mimeType,
-                avgColour: trackArt.avgColour
-            }
+        ...song,
+        art: trackArt && {
+            url: `albumart://${trackArt.hash}`,
+            mime: trackArt.mimeType,
+            avgColour: trackArt.avgColour
         }
     };
 });
 
-handle(EVENT_GET_ALL_TRACKS, async () => {
-    const tracks = await getAllTracks();
-
-    const tracksMapped = tracks.map(trackAndArt => {
-        const {mimeType, avgColour, hash, ...track} = trackAndArt;
-        return {
-            ...track,
-            art: hash && {url: `albumart://${hash}`, mime: mimeType, avgColour}
-        };
-    });
-
-    return {tracks: tracksMapped};
+handleGetAllTrackIds(async () => {
+    return {
+        trackIds: await getAllTracks()
+    };
 });
 
-handle(EVENT_GET_NAMES, async arg => {
-    return getNamesByTrackId(arg.trackId);
+handleGetNames(async ({trackId}) => {
+    return getNamesByTrackId(trackId);
 });
 
 handle(EVENT_CLIPBOARD_WRITE, arg => {
     clipboard.write(arg);
 });
 
-handle(EVENT_FILEDIR_OPEN, arg => {
-    shell.showItemInFolder(arg.path);
+handleOpenFileDirectory(async ({filePath}) => {
+    shell.showItemInFolder(filePath);
 });
 
 handle(EVENT_APP_STATE_GET, () => {

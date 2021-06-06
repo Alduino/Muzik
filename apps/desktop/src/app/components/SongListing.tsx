@@ -1,28 +1,22 @@
 import {Box} from "@chakra-ui/react";
 import React, {FC} from "react";
-import {useAsync} from "react-async-hook";
-import {EVENT_GET_ALL_TRACKS} from "../../lib/ipc-constants";
-import {invoke} from "../../lib/ipc/renderer";
 import useThemeColours from "../hooks/useThemeColours";
-import {ErrorLabel} from "./lib/ErrorLabel";
+import useAllTrackIds from "../rpc/useAllTrackIds";
+import {ErrorText} from "./lib/ErrorText";
 import {SongList} from "./lib/SongList";
-
-const fetchTracks = () => invoke(EVENT_GET_ALL_TRACKS);
 
 export const SongListing: FC = () => {
     const colours = useThemeColours();
 
-    const tracksAsync = useAsync(fetchTracks, []);
+    const {data: tracks, error} = useAllTrackIds();
 
-    if (tracksAsync.error || tracksAsync.error) {
-        return <ErrorLabel message={tracksAsync.error.message} />;
+    if (error) {
+        return <ErrorText error={error} />;
     }
 
     return (
         <Box height="100%" bg={colours.backgroundL2}>
-            {tracksAsync.result && (
-                <SongList songs={tracksAsync.result.tracks} />
-            )}
+            {tracks && <SongList songIds={tracks.trackIds} />}
         </Box>
     );
 };

@@ -114,6 +114,8 @@ function listenImpl(
         event: IpcName<TResponse, TRequest, TProgress>,
         respond: Responder<TRequest, TResponse, TProgress>
     ): void {
+        if (!event) throw new Error("IPC handler event is not defined");
+
         const {name} = event;
 
         if (listeners.has(name))
@@ -172,13 +174,14 @@ function sendImpl(
 ): InvokeHandler {
     const cache = new Map<string, unknown>();
     const semaphore = new Semaphore(15);
-
     return function invoke<TResponse, TRequest = never, TProgress = never>(
         name: IpcName<TResponse, TRequest, TProgress>,
         arg?: TRequest,
         onProgress?: (progress: TProgress) => void,
         abort?: AbortSignal
     ): Promise<TResponse> {
+        if (!name) throw new Error("IPC emitter name is not defined");
+
         return semaphore.runExclusive(async () => {
             const cacheKey = getCacheKey(name, arg);
 

@@ -1,5 +1,4 @@
 import {
-    Box,
     chakra,
     Divider,
     Heading,
@@ -9,18 +8,13 @@ import {
     useBoolean
 } from "@chakra-ui/react";
 import React, {CSSProperties, FC, useRef} from "react";
-import {useAsync} from "react-async-hook";
 import {useTranslation} from "react-i18next";
 import AutoSizer from "react-virtualized-auto-sizer";
 import {FixedSizeList} from "react-window";
-import {ExtendedTrack} from "../../../lib/ExtendedAlbum";
-import {
-    EVENT_CLIPBOARD_WRITE,
-    EVENT_FILEDIR_OPEN,
-    EVENT_GET_NAMES
-} from "../../../lib/ipc-constants";
+import {EVENT_CLIPBOARD_WRITE} from "../../../lib/ipc-constants";
 import {invoke} from "../../../lib/ipc/renderer";
-import defaultAlbumArt from "../../assets/default-album-art.svg";
+import openFileDirectory from "../../../lib/rpc/open-file-directory/app";
+import useAlbumArt from "../../hooks/useAlbumArt";
 import useDraggable from "../../hooks/useDraggable";
 import {
     beginQueue,
@@ -31,6 +25,7 @@ import {
     queueAlbum,
     queueSong
 } from "../../reducers/queue";
+import {useNames, useTrack} from "../../rpc";
 import {useAppDispatch, useAppSelector} from "../../store-hooks";
 import {formatDuration} from "../../utils/formatDuration";
 import {VisualiserIcon} from "./AudioController";
@@ -39,15 +34,13 @@ import {FadeOverflow} from "./FadeOverflow";
 import {PlayButtonAlbumArt} from "./PlayButtonAlbumArt";
 import {TransText} from "./TransText";
 
-interface SongProps {
-    song: ExtendedTrack;
+interface TrackProps {
+    trackId: number;
     clearQueueOnPlay: boolean;
     style?: CSSProperties;
 }
 
-const fetchNames = (trackId: number) => invoke(EVENT_GET_NAMES, {trackId});
-
-export const Song = chakra((props: SongProps) => {
+export const Track = chakra((props: TrackProps) => {
     const dispatch = useAppDispatch();
     const {t} = useTranslation("app");
     const {onContextMenu, props: contextMenuProps} = useContextMenu();
@@ -61,56 +54,51 @@ export const Song = chakra((props: SongProps) => {
     const [isHovered, setHovered] = useBoolean();
 
     const currentSongId = useAppSelector(v => v.queue.nowPlaying);
-    const isCurrent = currentSongId === props.song.id;
+    const isCurrent = currentSongId === props.trackId;
 
-    const namesAsync = useAsync(fetchNames, [props.song.id]);
+    const {data: track, error: trackError} = useTrack(props.trackId);
+    const {data: names, error: namesError} = useNames(props.trackId);
 
-    const artPath = props.song.art?.url || defaultAlbumArt;
+    const albumArt = useAlbumArt(props.trackId);
 
     const handleSongPlay = () => {
         dispatch(cancelPlaying());
         if (props.clearQueueOnPlay) dispatch(clearQueue());
-        dispatch(queueSong(props.song.id));
+        dispatch(queueSong(props.trackId));
         dispatch(beginQueue());
     };
 
     const handleAlbumPlay = () => {
         dispatch(cancelPlaying());
         if (props.clearQueueOnPlay) dispatch(clearQueue());
-        dispatch(queueAlbum(props.song.albumId)).then(() =>
-            dispatch(beginQueue())
-        );
+        dispatch(queueAlbum(track?.albumId)).then(() => dispatch(beginQueue()));
     };
 
     const handlePlayNext = () => {
-        dispatch(playNext(props.song.id));
+        dispatch(playNext(props.trackId));
     };
 
     const handleAddToQueue = () => {
-        dispatch(playAfterNext(props.song.id));
+        dispatch(playAfterNext(props.trackId));
     };
 
-    const handleCopyPath = async () => {
-        const names = await invoke(EVENT_GET_NAMES, {
-            trackId: props.song.id
-        });
-
+    const handleCopyPath = () => {
         invoke(EVENT_CLIPBOARD_WRITE, {
-            text: props.song.audioSrcPath,
+            text: track?.audioSrcPath,
             bookmark: t("title.playing", {
-                artist: names.artist,
-                track: names.track
+                artist: names?.artist,
+                track: names?.track
             })
         });
     };
 
     const handleOpenDirectory = () => {
-        invoke(EVENT_FILEDIR_OPEN, {
-            path: props.song.audioSrcPath
-        });
+        if (track) {
+            openFileDirectory({filePath: track.audioSrcPath});
+        }
     };
 
-    const durationText = formatDuration(props.song.duration);
+    const durationText = formatDuration(track?.duration ?? 0);
 
     return (
         <HStack
@@ -150,24 +138,23 @@ export const Song = chakra((props: SongProps) => {
             <PlayButtonAlbumArt
                 isHovered={isHovered}
                 isCurrent={isCurrent}
-                artPath={artPath}
                 artSize={16}
-                avgArtColour={props.song.art?.avgColour}
                 buttonSize="sm"
                 onPlay={handleSongPlay}
+                {...albumArt}
             />
 
             <FadeOverflow flexGrow={1}>
                 <HStack>
                     <Heading size="sm" whiteSpace="nowrap" ref={titleRef}>
-                        {props.song.name}
+                        {track?.name}
                     </Heading>
                     {isCurrent && (
                         <VisualiserIcon bands={3} width={4} height={4} />
                     )}
                 </HStack>
                 <Text fontSize="sm" opacity={0.5}>
-                    {namesAsync.result?.artist}
+                    {names?.artist}
                 </Text>
             </FadeOverflow>
             <Text fontSize="sm" opacity={0.5}>
@@ -178,7 +165,7 @@ export const Song = chakra((props: SongProps) => {
 });
 
 export interface SongListProps {
-    songs: ExtendedTrack[];
+    songIds: number[];
     clearQueueOnPlay?: boolean;
 }
 
@@ -187,15 +174,15 @@ export const SongList: FC<SongListProps> = props => (
         {size => (
             <FixedSizeList
                 itemSize={68}
-                itemCount={props.songs.length}
+                itemCount={props.songIds.length}
                 width={size.width}
                 height={size.height}
-                itemData={props.songs}
+                itemData={props.songIds}
                 className="custom-scroll"
             >
                 {({data, index, style}) => (
-                    <Song
-                        song={data[index]}
+                    <Track
+                        trackId={data[index]}
                         clearQueueOnPlay={props.clearQueueOnPlay !== false}
                         style={style}
                     />
@@ -207,11 +194,11 @@ export const SongList: FC<SongListProps> = props => (
 
 export const LiteralSongList: FC<SongListProps> = props => (
     <Stack>
-        {props.songs.map(song => (
-            <Song
-                song={song}
+        {props.songIds.map(id => (
+            <Track
+                trackId={id}
                 clearQueueOnPlay={props.clearQueueOnPlay !== false}
-                key={song.id}
+                key={id}
             />
         ))}
     </Stack>

@@ -1,0 +1,15 @@
+{
+  "name": "@muzik/create-rpc",
+  "bin": {
+    "create-rpc": "dist/src/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch"
+  },
+  "version": "1.0.0",
+  "dependencies": {
+    "commander": "^7.2.0",
+    "cosmiconfig": "^7.0.0"
+  }
+}

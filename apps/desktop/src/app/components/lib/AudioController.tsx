@@ -8,9 +8,6 @@ import React, {
     useMemo,
     useState
 } from "react";
-import {useAsync} from "react-async-hook";
-import {EVENT_GET_NAMES, EVENT_GET_SONG} from "../../../lib/ipc-constants";
-import {invoke} from "../../../lib/ipc/renderer";
 import defaultAlbumArt from "../../assets/default-album-art.svg";
 import {
     beginQueue,
@@ -21,6 +18,7 @@ import {
     skipToNext,
     skipToPrevious
 } from "../../reducers/queue";
+import {useNames, useTrack} from "../../rpc";
 import {useAppDispatch, useAppSelector} from "../../store-hooks";
 import {mediaSessionHandler} from "../../utils/media-session";
 
@@ -126,55 +124,28 @@ export const AudioController: FC = () => {
     return null;
 };
 
-const getSongInfo = async (
-    songId: number
-): Promise<{
-    art: {url: string; mime: string};
-    trackName: string;
-    albumName: string;
-    artistName: string;
-} | null> =>
-    songId === null
-        ? Promise.resolve(null)
-        : {
-              art: await invoke(EVENT_GET_SONG, {songId}).then(
-                  res => res.song?.art
-              ),
-              ...(await invoke(EVENT_GET_NAMES, {
-                  trackId: songId
-              }).then(res => ({
-                  trackName: res.track,
-                  albumName: res.album,
-                  artistName: res.artist
-              })))
-          };
-
 export const MediaSessionController: FC = () => {
-    const playingSongId = useAppSelector(state => state.queue.nowPlaying);
+    const playingTrackId = useAppSelector(state => state.queue.nowPlaying);
     const isPlaying = useAppSelector(state => state.queue.isPlaying);
 
     const dispatch = useAppDispatch();
-    const playingSongInfo = useAsync(getSongInfo, [playingSongId]);
+
+    const {data: track} = useTrack(playingTrackId);
+    const {data: names} = useNames(playingTrackId);
 
     useEffect(() => {
-        if (playingSongInfo.status !== "success") return;
-
-        const {result: playingSongResult} = playingSongInfo;
-
-        if (playingSongResult === null) {
+        if (!track || !names) {
             navigator.mediaSession.metadata = null;
             return;
         }
 
-        const {art, trackName, albumName, artistName} = playingSongResult;
-
-        const artUri = art?.url || defaultAlbumArt;
-        const artMime = art?.mime || "image/svg";
+        const artUri = track.art?.url || defaultAlbumArt;
+        const artMime = track.art?.mime || "image/svg";
 
         navigator.mediaSession.metadata = new MediaMetadata({
-            title: trackName,
-            album: albumName,
-            artist: artistName,
+            title: names.track,
+            album: names.album,
+            artist: names.artist,
             artwork: [
                 {
                     src: artUri,
@@ -182,21 +153,21 @@ export const MediaSessionController: FC = () => {
                 }
             ]
         });
-    }, [playingSongInfo]);
+    }, [track, names]);
 
     useEffect(() => {
-        if (playingSongId === null) {
+        if (playingTrackId === null) {
             navigator.mediaSession.playbackState = "none";
         } else if (isPlaying) {
             navigator.mediaSession.playbackState = "playing";
         } else {
             navigator.mediaSession.playbackState = "paused";
         }
-    }, [playingSongId, isPlaying]);
+    }, [playingTrackId, isPlaying]);
 
     useEffect(() => {
         function handler() {
-            if (playingSongId === null) dispatch(beginQueue());
+            if (playingTrackId === null) dispatch(beginQueue());
             else dispatch(setResumed());
         }
 
@@ -204,7 +175,7 @@ export const MediaSessionController: FC = () => {
         return () => {
             mediaSessionHandler.off("play", handler);
         };
-    }, [playingSongId]);
+    }, [playingTrackId]);
 
     useEffect(() => {
         function handler() {

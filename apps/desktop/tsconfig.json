@@ -6,6 +6,7 @@
         "esModuleInterop": true,
         "noImplicitAny": true,
         "sourceMap": true,
+        "target": "ES2015",
         "baseUrl": ".",
         "outDir": "dist",
         "moduleResolution": "node",
