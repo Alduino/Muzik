@@ -194,11 +194,11 @@ export const SongList: FC<SongListProps> = props => (
 
 export const LiteralSongList: FC<SongListProps> = props => (
     <Stack>
-        {props.songIds.map(id => (
+        {props.songIds.map((id, idx) => (
             <Track
                 trackId={id}
                 clearQueueOnPlay={props.clearQueueOnPlay !== false}
-                key={id}
+                key={idx}
             />
         ))}
     </Stack>
