@@ -4,13 +4,7 @@ import {useIntervalHandler} from "./RpcProvider";
 
 export interface UseRpcOptions {
     /**
-     * Multiplier of global `refetchInterval` option. Set to zero to disable refetch.
-     * @remarks Must not change over multiple invocations, i.e. every call with the same IpcName and data must have the same `refetchMultiplier`.
-     * @example
-     * refreshInterval=1000ms
-     * refetchMultiple=1 // refresh every second
-     * refetchMultiple=2 // refresh every 2 seconds
-     * refetchMultiple=0 // never refetch
+     * The minimum amount of seconds between refetching
      */
     refetchMultiplier: number;
 }

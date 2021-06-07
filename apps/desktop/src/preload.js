@@ -3,8 +3,16 @@ const {contextBridge, ipcRenderer} = require("electron");
 
 // eslint-disable-next-line no-undef
 contextBridge.exposeInMainWorld("electron", {
-    ipcSend: ipcRenderer.send.bind(ipcRenderer),
-    ipcSendSync: ipcRenderer.sendSync.bind(ipcRenderer),
-    ipcOn: ipcRenderer.on.bind(ipcRenderer),
-    ipcOff: ipcRenderer.off.bind(ipcRenderer)
+    ipcSend(...args) {
+        return ipcRenderer.send(...args);
+    },
+    ipcSendSync(...args) {
+        return ipcRenderer.sendSync(...args);
+    },
+    ipcOn(...args) {
+        ipcRenderer.on(...args);
+    },
+    ipcOff(...args) {
+        ipcRenderer.off(...args);
+    }
 });

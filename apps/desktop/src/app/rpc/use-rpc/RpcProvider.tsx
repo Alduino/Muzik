@@ -4,7 +4,6 @@ import React, {
     MutableRefObject,
     PropsWithChildren,
     ReactElement,
-    useCallback,
     useContext,
     useEffect,
     useMemo,
@@ -13,10 +12,28 @@ import React, {
 import {IpcName} from "../../../lib/ipc/common";
 import {invoke} from "../../../lib/ipc/renderer";
 
+// TODO: Remove these once TypeScript supports them
+interface RequestIdleOptions {
+    timeout?: number;
+}
+
+interface IdleDeadline {
+    readonly didTimeout: boolean;
+    timeRemaining(): DOMHighResTimeStamp;
+}
+
+declare type IdleCallbackHandle = number;
+
+declare function requestIdleCallback(
+    callback: (deadline: IdleDeadline) => void,
+    options?: RequestIdleOptions
+): IdleCallbackHandle;
+
+declare function cancelIdleCallback(handle: IdleCallbackHandle): void;
+
 export interface GlobalRpcOptions {
     /**
-     * The interval that refreshes will happen in milliseconds.
-     * RPC calls can set an integer multiple of this time to trigger a refresh that often.
+     * The minimum amount of milliseconds between refreshes
      */
     refreshInterval: number;
 
@@ -27,13 +44,12 @@ export interface GlobalRpcOptions {
 }
 
 interface IntervalHandler {
-    callback(): void;
-
     readonly dataSetters: Set<(v: unknown) => void>;
     readonly errorSetters: Set<(v: Error) => void>;
 
     lastValue?: unknown;
     lastError?: Error;
+    isEnabled: boolean;
 }
 
 type IntervalHandlerKey = `${string}::${string}`;
@@ -89,19 +105,6 @@ export const RpcConfigurator = ({
         []
     );
 
-    const callHandlers = useCallback(() => {
-        lastRefreshTime.current = performance.now();
-
-        for (const [, handler] of intervalHandlers) {
-            handler.callback();
-        }
-    }, [lastRefreshTime, intervalHandlers]);
-
-    useEffect(() => {
-        const interval = setInterval(callHandlers, refreshInterval);
-        return () => clearInterval(interval);
-    }, [callHandlers, refreshInterval]);
-
     const configObject = useMemo<GlobalRpcOptions>(
         () => ({
             refreshInterval,
@@ -136,42 +139,26 @@ interface UseIntervalHandlerOpts<Response> {
 }
 
 class IntervalHandlerImpl<Response, Request> implements IntervalHandler {
-    private counter = 0;
-
     readonly dataSetters = new Set<(v: unknown) => void>();
     readonly errorSetters = new Set<(v: Error) => void>();
     lastError: Error;
     lastValue: unknown;
+    isEnabled: boolean;
 
     constructor(
         private readonly refetchMultiplier: number,
         private readonly ipcName: IpcName<Response, Request>,
         private readonly req: Request,
         private readonly writeCache: (v: Response | undefined) => void,
-        readCache: () => Response | undefined,
-        inCache: () => boolean,
-        lastRefreshTime: React.MutableRefObject<number>,
-        config: GlobalRpcOptions
+        readCache: () => Response | undefined
     ) {
-        if (inCache()) {
-            this.lastValue = readCache();
-        } else {
-            // instantly call the callback if we are far away from the next refresh time
-            const timeToNextRefresh =
-                config.refreshInterval -
-                (performance.now() - lastRefreshTime.current);
-            if (timeToNextRefresh < config.instantCallThreshold)
-                this.callback();
-        }
+        this.lastValue = readCache();
+        this.isEnabled = true;
+        requestIdleCallback(() => this.beginCallback());
+        this.isEnabled = this.refetchMultiplier !== 0;
     }
 
-    async callback() {
-        const lastMultiplierValue = this.counter;
-        this.counter++;
-
-        if (this.refetchMultiplier === 0 && lastMultiplierValue > 0) return;
-        else if (lastMultiplierValue % this.refetchMultiplier > 0) return;
-
+    private async callback() {
         try {
             const value = await invoke(this.ipcName, this.req);
             const isPreviousEqual = deepEqual(value, this.lastValue);
@@ -186,6 +173,17 @@ class IntervalHandlerImpl<Response, Request> implements IntervalHandler {
             this.writeCache(undefined);
             for (const errorSetter of this.errorSetters) errorSetter(err);
         }
+    }
+
+    beginCallback() {
+        if (!this.isEnabled) return;
+        this.callback();
+
+        setTimeout(() => {
+            requestIdleCallback(() => {
+                this.beginCallback();
+            });
+        }, this.refetchMultiplier * 1000);
     }
 }
 
@@ -203,7 +201,7 @@ export function useIntervalHandler<Response, Request>(
     req: Request,
     {refetchMultiplier, setData, setError}: UseIntervalHandlerOpts<Response>
 ): void {
-    const {intervalHandlers, resultCache, lastRefreshTime, config} = useContext(
+    const {intervalHandlers, resultCache, lastRefreshTime} = useContext(
         RpcContext
     );
 
@@ -212,7 +210,6 @@ export function useIntervalHandler<Response, Request>(
 
         const handlerKey = createIntervalHandlerKey(ipcName, req);
 
-        const inCache = () => resultCache.has(handlerKey);
         const readCache = () => resultCache.get(handlerKey);
         const writeCache = (v: Response) => resultCache.set(handlerKey, v);
 
@@ -225,10 +222,7 @@ export function useIntervalHandler<Response, Request>(
                     ipcName,
                     req,
                     writeCache,
-                    readCache,
-                    inCache,
-                    lastRefreshTime,
-                    config
+                    readCache
                 )
             );
         }
@@ -249,6 +243,7 @@ export function useIntervalHandler<Response, Request>(
                 handler.errorSetters.size === 0
             ) {
                 // delete the handler if nothing is using it
+                handler.isEnabled = false;
                 intervalHandlers.delete(handlerKey);
             }
         };

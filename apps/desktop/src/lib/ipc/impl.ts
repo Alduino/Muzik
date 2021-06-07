@@ -1,9 +1,10 @@
-import {Semaphore} from "async-mutex";
 import {log} from "../../node/logger";
 import {
     EventMessage,
     eventName,
+    EventType,
     IpcName,
+    MESSAGE_COMMUNICATION,
     MESSAGE_EVENT,
     TYPE_ABORT,
     TYPE_COMPLETE,
@@ -14,10 +15,12 @@ import type {IpcMainEvent, IpcRendererEvent} from "electron";
 
 interface AbortSignal {
     readonly aborted: boolean;
+
     addEventListener(
         type: "abort",
         listener: (this: AbortSignal, event: Event) => void
     ): void;
+
     removeEventListener(
         type: "abort",
         listener: (this: AbortSignal, event: Event) => void
@@ -26,6 +29,7 @@ interface AbortSignal {
 
 interface AbortController {
     signal: AbortSignal;
+
     abort(): void;
 }
 
@@ -70,8 +74,54 @@ function reply<T>(ev: IpcEvent, sendFn: SendFunction, name: string, data: T) {
     }
 }
 
+function communicate<T>(
+    ev: IpcEvent,
+    sendFn: SendFunction,
+    type: EventType,
+    id: string,
+    data: T
+) {
+    reply(ev, sendFn, MESSAGE_COMMUNICATION, {name: type, id, data});
+}
+
 function getCacheKey(event: IpcName<never>, arg: unknown) {
     return JSON.stringify([event, arg]);
+}
+
+function listenToComms(listenFn: ListenFunction) {
+    const eventHandlers: Record<
+        EventType,
+        Map<string, (arg: unknown) => void>
+    > = {
+        [TYPE_ERROR]: new Map(),
+        [TYPE_PROGRESS]: new Map(),
+        [TYPE_ABORT]: new Map(),
+        [TYPE_COMPLETE]: new Map()
+    };
+
+    function handleEvent(
+        event: IpcEvent,
+        {name, id, data}: EventMessage<unknown>
+    ) {
+        const handler = eventHandlers[name as EventType].get(id);
+        if (handler) handler(data);
+    }
+
+    listenFn(MESSAGE_COMMUNICATION, handleEvent);
+
+    function listenTo<T>(
+        type: EventType,
+        id: string,
+        handler: (arg: T) => void
+    ) {
+        eventHandlers[type].set(id, handler);
+    }
+
+    function stopListeningTo(type: EventType, id: string) {
+        eventHandlers[type].delete(id);
+    }
+
+    return {listenTo, stopListeningTo};
 }
 
 export type HandleHandler = <TResponse, TRequest = never, TProgress = never>(
@@ -94,6 +144,8 @@ function listenImpl(
 ): HandleHandler {
     const listeners = new Map<string, HandlerFn>();
 
+    const {listenTo, stopListeningTo} = listenToComms(listenFn);
+
     listenFn(MESSAGE_EVENT, (event, arg: EventMessage<unknown>) => {
         const {name, id} = arg;
 
@@ -101,10 +153,11 @@ function listenImpl(
             listeners.get(name)(event, arg);
         } else {
             log.warn("Received unknown event", name);
-            reply(
+            communicate(
                 event,
                 sendFn,
-                eventName(id, TYPE_ERROR),
+                TYPE_ERROR,
+                id,
                 new Error(`Invalid event, '${name}'`)
             );
         }
@@ -126,19 +179,14 @@ function listenImpl(
             const abortController = abortControllerConstructor();
 
             function sendProgress(progress: TProgress) {
-                reply(
-                    event,
-                    sendFn,
-                    eventName(messageId, TYPE_PROGRESS),
-                    progress
-                );
+                communicate(event, sendFn, TYPE_PROGRESS, messageId, progress);
             }
 
             function handleAbort() {
                 abortController.abort();
             }
 
-            listenFn(eventName(messageId, TYPE_ABORT), handleAbort);
+            listenTo(TYPE_ABORT, messageId, handleAbort);
 
             try {
                 const result = await respond(
@@ -147,14 +195,9 @@ function listenImpl(
                     abortController.signal
                 );
 
-                reply(
-                    event,
-                    sendFn,
-                    eventName(messageId, TYPE_COMPLETE),
-                    result
-                );
+                communicate(event, sendFn, TYPE_COMPLETE, messageId, result);
             } catch (err) {
-                reply(event, sendFn, eventName(messageId, TYPE_ERROR), {
+                communicate(event, sendFn, TYPE_ERROR, messageId, {
                     message: err.message,
                     stack: err.stack
                 });
@@ -162,7 +205,7 @@ function listenImpl(
                 log.warn(err, "An error occurred in an invocation");
             }
 
-            unlistenFn(eventName(messageId, TYPE_ABORT), handleAbort);
+            stopListeningTo(TYPE_ABORT, messageId);
         });
     };
 }
@@ -173,8 +216,14 @@ function sendImpl(
     unlistenFn: ListenFunction
 ): InvokeHandler {
     const cache = new Map<string, unknown>();
-    const semaphore = new Semaphore(15);
-    return function invoke<TResponse, TRequest = never, TProgress = never>(
+
+    const {listenTo, stopListeningTo} = listenToComms(listenFn);
+
+    return async function invoke<
+        TResponse,
+        TRequest = never,
+        TProgress = never
+    >(
         name: IpcName<TResponse, TRequest, TProgress>,
         arg?: TRequest,
         onProgress?: (progress: TProgress) => void,
@@ -182,71 +231,62 @@ function sendImpl(
     ): Promise<TResponse> {
         if (!name) throw new Error("IPC emitter name is not defined");
 
-        return semaphore.runExclusive(async () => {
-            const cacheKey = getCacheKey(name, arg);
+        const cacheKey = getCacheKey(name, arg);
 
-            if (name.cache) {
-                if (cache.has(cacheKey))
-                    return cache.get(cacheKey) as TResponse;
+        if (name.cache) {
+            if (cache.has(cacheKey)) return cache.get(cacheKey) as TResponse;
+        }
+
+        const id = `message_${name.name}.${randomString(16)}` as const;
+
+        let triggerComplete: (v: TResponse) => void;
+        let triggerError: (error: Error) => void;
+
+        function handleAbort(event: IpcEvent) {
+            communicate(event, sendFn, TYPE_ABORT, id, undefined);
+        }
+
+        function handleProgress(arg: TProgress) {
+            onProgress?.(arg);
+        }
+
+        function handleError(arg: Error | string) {
+            const errorWrapper = new Error();
+
+            if (typeof arg === "string") {
+                errorWrapper.message = arg;
+            } else {
+                errorWrapper.name = arg.name || "IpcError";
+                errorWrapper.message = arg.message;
+                errorWrapper.stack = arg.stack;
             }
 
-            const id = `message_${name.name}.${randomString(16)}`;
+            triggerError(errorWrapper);
+        }
 
-            let triggerComplete: (v: TResponse) => void;
-            let triggerError: (error: Error) => void;
+        function handleComplete(arg: TResponse) {
+            triggerComplete(arg);
+        }
 
-            function handleAbort(event: IpcEvent) {
-                reply(event, sendFn, eventName(id, TYPE_ABORT), undefined);
-            }
+        if (abort) abort.addEventListener("abort", handleAbort);
 
-            function handleProgress(_: unknown, arg: TProgress) {
-                onProgress?.(arg);
-            }
+        listenTo(TYPE_PROGRESS, id, handleProgress);
+        listenTo(TYPE_ERROR, id, handleError);
+        listenTo(TYPE_COMPLETE, id, handleComplete);
 
-            function handleError(_: unknown, arg: Error | string) {
-                const errorWrapper = new Error();
+        const promise = new Promise<TResponse>((yay, nay) => {
+            triggerComplete = yay;
+            triggerError = nay;
+        });
 
-                if (typeof arg === "string") {
-                    errorWrapper.message = arg;
-                } else {
-                    errorWrapper.name = arg.name || "IpcError";
-                    errorWrapper.message = arg.message;
-                    errorWrapper.stack = arg.stack;
-                }
+        sendFn(MESSAGE_EVENT, {name: name.name, id, data: arg});
 
-                triggerError(errorWrapper);
-            }
+        return await promise.finally(function handleFinally() {
+            if (abort) abort.removeEventListener("abort", handleAbort);
 
-            function handleComplete(_: unknown, arg: TResponse) {
-                triggerComplete(arg);
-            }
-
-            const promise = new Promise<TResponse>((yay, nay) => {
-                triggerComplete = yay;
-                triggerError = nay;
-
-                abort?.addEventListener("abort", handleAbort);
-
-                listenFn(eventName(id, TYPE_PROGRESS), handleProgress);
-                listenFn(eventName(id, TYPE_ERROR), handleError);
-                listenFn(eventName(id, TYPE_COMPLETE), handleComplete);
-            });
-
-            sendFn(MESSAGE_EVENT, {name: name.name, id, data: arg});
-
-            try {
-                const result = await promise;
-                if (name.cache) cache.set(cacheKey, result);
-                return result;
-            } catch (err) {
-                err.message = `Invoke error: ${err.message}`;
-                throw err;
-            } finally {
-                abort?.removeEventListener("abort", handleAbort);
-                unlistenFn(eventName(id, TYPE_PROGRESS), handleProgress);
-                unlistenFn(eventName(id, TYPE_ERROR), handleError);
-                unlistenFn(eventName(id, TYPE_COMPLETE), handleComplete);
-            }
+            stopListeningTo(TYPE_PROGRESS, id);
+            stopListeningTo(TYPE_ERROR, id);
+            stopListeningTo(TYPE_COMPLETE, id);
         });
     };
 }
