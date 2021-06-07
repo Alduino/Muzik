@@ -206,7 +206,11 @@ export function useIntervalHandler<Response, Request>(
     );
 
     useEffect(() => {
-        if (ipcName === null) return;
+        if (ipcName === null) {
+            setData(undefined);
+            setError(undefined);
+            return;
+        }
 
         const handlerKey = createIntervalHandlerKey(ipcName, req);
 

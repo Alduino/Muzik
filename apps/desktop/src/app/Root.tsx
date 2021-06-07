@@ -1,4 +1,4 @@
-import {ChakraProvider, ColorModeScript} from "@chakra-ui/react";
+import {ChakraProvider} from "@chakra-ui/react";
 import React, {FC, ReactNode} from "react";
 import {useAsync} from "react-async-hook";
 import {Provider as ReduxProvider} from "react-redux";
@@ -36,7 +36,6 @@ export const Root: FC = () => {
         <ReduxProvider store={store}>
             <RpcConfigurator refreshInterval={1000} instantCallThreshold={100}>
                 <ChakraProvider theme={theme}>
-                    <ColorModeScript initialColorMode="system" />
                     <AudioControllerProvider>
                         <WhenInitialised>
                             <AudioController />

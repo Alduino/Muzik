@@ -42,7 +42,17 @@ protocol.registerSchemesAsPrivileged([
         scheme: "albumart",
         privileges: {
             supportFetchAPI: true,
-            corsEnabled: true
+            secure: true
+        }
+    }
+]);
+
+protocol.registerSchemesAsPrivileged([
+    {
+        scheme: "audio",
+        privileges: {
+            supportFetchAPI: true,
+            secure: true
         }
     }
 ]);
@@ -66,7 +76,12 @@ app.on("ready", () => {
         const id = parseInt(request.url.substring("audio://".length));
         const song = await getSongById(id);
         if (!song) return callback({error: 404});
-        callback(song.audioSrcPath);
+        callback({
+            path: song.audioSrcPath,
+            headers: {
+                "Cache-Control": "public, max-age=31536000, immutable"
+            }
+        });
     });
 });
 

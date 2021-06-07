@@ -9,9 +9,11 @@ import React, {
     useState
 } from "react";
 import defaultAlbumArt from "../../assets/default-album-art.svg";
+import silenceAudioFile from "../../assets/silence.mp3";
 import {
     beginQueue,
     cancelPlaying,
+    getAndRemoveNextSong,
     setCurrentTimeFromAudio,
     setPaused,
     setResumed,
@@ -22,41 +24,209 @@ import {useNames, useTrack} from "../../rpc";
 import {useAppDispatch, useAppSelector} from "../../store-hooks";
 import {mediaSessionHandler} from "../../utils/media-session";
 
+class AudioPlayer {
+    constructor(
+        private readonly ctx: AudioContext,
+        private readonly connect: (buffer: AudioBufferSourceNode) => void
+    ) {}
+
+    private stopEventHandlerWait = new Set<() => void>();
+
+    private async pauseAudio(seekTo: number) {
+        this.currentTime = seekTo;
+        this.isPlaying = false;
+
+        let completionFunction: () => void;
+        const waitPromise = new Promise<void>(yay => {
+            completionFunction = yay;
+        });
+
+        this.stopEventHandlerWait.add(completionFunction);
+
+        this.source.stop();
+
+        await waitPromise;
+
+        this.stopEventHandlerWait.delete(completionFunction);
+    }
+
+    private async handleSourceEnded() {
+        if (!this.isPlaying) {
+            this.stopEventHandlerWait.forEach(item => item());
+            return;
+        }
+
+        const continueAutomatically = this.continueAutomatically;
+
+        this.isPlaying = false;
+
+        this.stopEventHandlerWait.forEach(item => item());
+
+        if (continueAutomatically) {
+            await this.swapBuffers();
+            this.play();
+        }
+
+        this.ended.forEach(v => v());
+    }
+
+    private createNode() {
+        const buffer = this.frontBuffer;
+        const source = this.ctx.createBufferSource();
+        source.onended = () => this.handleSourceEnded();
+        source.buffer = buffer;
+        this.connect(source);
+        return source;
+    }
+
+    private isPlaying = false;
+    private currentTime = 0;
+    private source: AudioBufferSourceNode;
+    private frontBuffer: AudioBuffer;
+    private backBuffer: AudioBuffer;
+    private frontUrl: string;
+    private backUrl: string;
+    private playTime: number;
+
+    readonly ended = new Set<() => void>();
+
+    continueAutomatically = false;
+    playAutomatically = false;
+
+    private async loadBuffer(url: string) {
+        const response = await fetch(url);
+        const arrayBuff = await response.arrayBuffer();
+        return await this.ctx.decodeAudioData(arrayBuff);
+    }
+
+    async loadBuffers(front: string | null, back: string | null) {
+        if (front !== this.frontUrl) {
+            this.frontUrl = front;
+            this.frontBuffer = null;
+            this.frontBuffer = front && (await this.loadBuffer(front));
+            if (this.playAutomatically) this.play();
+        }
+
+        if (back !== this.backUrl) {
+            this.backUrl = back;
+            this.backBuffer = null;
+            this.backBuffer = back && (await this.loadBuffer(back));
+        }
+    }
+
+    /**
+     * Swaps the front buffer to be the back buffer, and the back buffer to be
+     * the front buffer.
+     */
+    async swapBuffers() {
+        await this.stop();
+
+        [this.frontBuffer, this.backBuffer] = [
+            this.backBuffer,
+            this.frontBuffer
+        ];
+
+        [this.frontUrl, this.backUrl] = [this.backUrl, this.frontUrl];
+
+        this.currentTime = 0;
+    }
+
+    /**
+     * Starts playing the front buffer
+     */
+    play() {
+        if (this.isPlaying) return;
+        if (!this.frontBuffer) return;
+        this.isPlaying = true;
+        this.source = this.createNode();
+        this.source.start(0, this.currentTime);
+        this.playTime = performance.now() / 1000 - this.currentTime;
+    }
+
+    /**
+     * Pauses the audio
+     */
+    pause() {
+        if (!this.isPlaying) return;
+        return this.pauseAudio(this.getTime());
+    }
+
+    /**
+     * Stops the audio
+     */
+    stop() {
+        if (!this.isPlaying) return;
+        return this.pauseAudio(0);
+    }
+
+    /**
+     * Seeks to the specified time in seconds
+     */
+    async seek(time: number) {
+        if (this.frontBuffer) {
+            time = Math.max(0, Math.min(time, this.frontBuffer.duration));
+        }
+
+        if (this.isPlaying) {
+            await this.stop();
+            this.currentTime = time;
+            this.play();
+        } else {
+            this.currentTime = time;
+        }
+    }
+
+    getTime() {
+        if (this.isPlaying) {
+            return performance.now() / 1000 - this.playTime;
+        } else {
+            return this.currentTime;
+        }
+    }
+
+    hasFrontBuffer() {
+        return !!this.frontBuffer;
+    }
+}
+
 interface ControllerContextValue {
     audioCtx: AudioContext;
-    audio: HTMLAudioElement;
-    source: MediaElementAudioSourceNode;
     analyser: AnalyserNode;
+    player: AudioPlayer;
 }
 
 const ControllerContext = createContext<ControllerContextValue | null>(null);
 
 export const AudioControllerProvider: FC = ({children}) => {
     const audioCtx = useMemo(() => new AudioContext(), []);
-    const audio = useMemo(() => new Audio(), [audioCtx]);
-
-    const source = useMemo(() => {
-        return audioCtx.createMediaElementSource(audio);
-    }, [audioCtx, audio]);
 
     const analyser = useMemo(() => {
         const analyser = audioCtx.createAnalyser();
         analyser.fftSize = 2048;
 
-        source.connect(analyser);
-        source.connect(audioCtx.destination);
-
         return analyser;
     }, []);
+
+    const connectBufferSource = useCallback(
+        bs => {
+            bs.connect(analyser);
+            bs.connect(audioCtx.destination);
+        },
+        [analyser]
+    );
+
+    const player = useMemo(
+        () => new AudioPlayer(audioCtx, connectBufferSource),
+        [audioCtx]
+    );
 
     const controllerCtx = useMemo(
         () => ({
             audioCtx,
-            audio,
-            source,
-            analyser
+            analyser,
+            player
         }),
-        [audioCtx, audio, source, analyser]
+        [audioCtx, analyser]
     );
 
     return (
@@ -67,11 +237,31 @@ export const AudioControllerProvider: FC = ({children}) => {
 };
 
 export const AudioController: FC = () => {
-    const {audio} = useContext(ControllerContext);
+    const {player} = useContext(ControllerContext);
 
     const dispatch = useAppDispatch();
 
-    const currentSongId = useAppSelector(v => v.queue.nowPlaying);
+    const {
+        nowPlaying: currentSongId,
+        playNextSongs,
+        previousSongs,
+        songs,
+        shuffled,
+        repeatMode
+    } = useAppSelector(v => v.queue);
+
+    const nextSongId = useMemo(() => {
+        return getAndRemoveNextSong({
+            playNextSongs: playNextSongs.slice(),
+            previousSongs: previousSongs.slice(),
+            songs: songs.slice(),
+            shuffled,
+            repeatMode,
+            currentTime: 0,
+            _currentTimeWasFromAudio: false,
+            rngIncrement: false
+        });
+    }, [playNextSongs, previousSongs, songs, shuffled, repeatMode]);
 
     const [currentTime, isCurrentTimeFromAudio] = useAppSelector(v => [
         v.queue.currentTime,
@@ -82,44 +272,49 @@ export const AudioController: FC = () => {
 
     const handleComplete = useCallback(() => {
         // play the next song
-        dispatch(setPaused());
         dispatch(beginQueue());
     }, [dispatch]);
 
     useEffect(() => {
-        audio.src = currentSongId === null ? "" : `audio://${currentSongId}`;
+        const currentSongUrl = currentSongId && `audio://${currentSongId}`;
+        const nextSongUrl = nextSongId && `audio://${nextSongId}`;
 
-        return () => {
-            audio.src = "";
-        };
-    }, [currentSongId]);
+        player.continueAutomatically = !!nextSongId;
+        player.loadBuffers(currentSongUrl, nextSongUrl);
+    }, [player, currentSongId, nextSongId]);
+
+    useEffect(() => {
+        player.playAutomatically = isPlaying;
+    }, [player, isPlaying]);
 
     useEffect(() => {
         if (isCurrentTimeFromAudio) return;
-        audio.currentTime = currentTime;
+        player.seek(currentTime);
     }, [currentTime, isCurrentTimeFromAudio]);
 
     useEffect(() => {
         // called whenever isPlaying changes or currentSongId changes
         // currentSongId is needed because audio reloads when it changes
-        if (isPlaying) audio.play();
-        else audio.pause();
+        if (isPlaying) player.play();
+        else player.pause();
     }, [isPlaying, currentSongId]);
 
     useEffect(() => {
-        audio.addEventListener("ended", handleComplete);
-        return () => audio.removeEventListener("ended", handleComplete);
+        player.ended.add(handleComplete);
+        return () => {
+            player.ended.delete(handleComplete);
+        };
     }, [handleComplete]);
 
     useEffect(() => {
         const interval = setInterval(() => {
-            const time = audio.currentTime;
+            const time = player.getTime();
             if (!isPlaying || time == null) return;
             dispatch(setCurrentTimeFromAudio(time));
         }, 100);
 
         return () => clearInterval(interval);
-    }, [audio, dispatch, isPlaying]);
+    }, [player, dispatch, isPlaying]);
 
     return null;
 };
@@ -132,6 +327,8 @@ export const MediaSessionController: FC = () => {
 
     const {data: track} = useTrack(playingTrackId);
     const {data: names} = useNames(playingTrackId);
+
+    const silentAudio = useMemo(() => new Audio(silenceAudioFile), []);
 
     useEffect(() => {
         if (!track || !names) {
@@ -164,6 +361,20 @@ export const MediaSessionController: FC = () => {
             navigator.mediaSession.playbackState = "paused";
         }
     }, [playingTrackId, isPlaying]);
+
+    useEffect(() => {
+        function handleEnded() {
+            silentAudio.play();
+        }
+
+        silentAudio.addEventListener("ended", handleEnded);
+        return () => silentAudio.removeEventListener("ended", handleEnded);
+    }, [silentAudio]);
+
+    useEffect(() => {
+        if (isPlaying) silentAudio.play();
+        else silentAudio.pause();
+    }, [silentAudio, isPlaying]);
 
     useEffect(() => {
         function handler() {
