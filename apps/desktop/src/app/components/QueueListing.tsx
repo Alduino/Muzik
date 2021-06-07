@@ -60,7 +60,7 @@ export const QueueListing: FC = () => {
         }
 
         return result;
-    }, [playNextSongs, previousSongs, songs]);
+    }, [playNextSongs, previousSongs, songs, shuffled, repeatMode]);
 
     return (
         <Box>
