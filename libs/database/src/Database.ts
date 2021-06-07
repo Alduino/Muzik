@@ -1,11 +1,11 @@
+import {join} from "path";
 import Sqlite3Db, {Database as Sqlite3} from "better-sqlite3";
 import MigrationManager from "./migration-manager";
 import migrations from "./migrations";
-import {join} from "path";
-import {DbTrack} from "./tables/Track";
 import {DbAlbum} from "./tables/Album";
-import {DbArtist} from "./tables/Artist";
 import AlbumArt from "./tables/AlbumArt";
+import {DbArtist} from "./tables/Artist";
+import {DbTrack} from "./tables/Track";
 
 type NamesWithSortable<T extends string> = {[key in T]: string} &
     {[key in `${T}Sortable`]: string};
@@ -124,7 +124,7 @@ class Statements {
         )
     `);
     readonly getAllAlbums = this.db.prepare(`
-        SELECT al.* FROM ${TABLE_ALBUMS} al
+        SELECT al.id FROM ${TABLE_ALBUMS} al
         INNER JOIN ${TABLE_ARTISTS} ar ON al.artistId = ar.id
         ORDER BY ar.sortableName, al.sortableName
     `);
@@ -132,15 +132,30 @@ class Statements {
         SELECT * FROM ${TABLE_ARTISTS}
         ORDER BY sortableName
     `);
+    readonly getArtistById = this.db.prepare<number>(`
+        SELECT * FROM ${TABLE_ARTISTS}
+        WHERE id = ?
+    `);
+    readonly getAlbumById = this.db.prepare<number>(`
+        SELECT * FROM ${TABLE_ALBUMS}
+        WHERE id = ?
+    `);
     readonly getTrackArtHashByAlbumId = this.db.prepare<number>(`
         SELECT tr.albumArtHash FROM ${TABLE_ALBUMS} al
         INNER JOIN ${TABLE_TRACKS} tr ON tr.albumId = al.id
         WHERE al.id = ?
     `);
     readonly getTracksByAlbumId = this.db.prepare<number>(`
-        SELECT * FROM ${TABLE_TRACKS}
+        SELECT id FROM ${TABLE_TRACKS}
         WHERE albumId = ?
         ORDER BY trackNo
+    `);
+    readonly getAllTrackIds = this.db.prepare(`
+        SELECT tr.id FROM ${TABLE_TRACKS} tr
+        INNER JOIN ${TABLE_ALBUMS} al ON tr.albumId = al.id
+        INNER JOIN ${TABLE_ARTISTS} ar ON al.artistId = ar.id
+        INNER JOIN ${TABLE_ALBUM_ART} aa ON tr.albumArtHash = aa.hash
+        ORDER BY ar.sortableName, al.sortableName, tr.trackNo
     `);
     readonly getAllExtendedTracks = this.db.prepare(`
         SELECT tr.*, aa.hash, aa.mimeType
@@ -275,12 +290,20 @@ export default class Database {
         s.deleteTracksNotIn_deleteTempTable.run();
     }
 
-    getAllAlbums(): DbAlbum[] {
-        return this.s.getAllAlbums.all();
+    getAllAlbums(): number[] {
+        return this.s.getAllAlbums.all().map(album => (album as DbAlbum).id);
     }
 
     getAllArtists(): DbArtist[] {
         return this.s.getAllArtists.all();
+    }
+
+    getArtistById(artistId: number): DbArtist {
+        return this.s.getArtistById.get(artistId);
+    }
+
+    getAlbumById(albumId: number): DbAlbum {
+        return this.s.getAlbumById.get(albumId);
     }
 
     getTrackArtHashByAlbumId(albumId: number): string[] {
@@ -291,14 +314,18 @@ export default class Database {
             .map(res => res.albumArtHash);
     }
 
-    getTracksByAlbumId(albumId: number): DbTrack[] {
+    getTracksByAlbumId(albumId: number): number[] {
         if (typeof albumId === "undefined")
             throw new Error("albumId must be defined");
-        return this.s.getTracksByAlbumId.all(albumId);
+        return this.s.getTracksByAlbumId.all(albumId).map(v => v.id);
     }
 
     getAllTracks(): (DbTrack & Omit<AlbumArt, "source">)[] {
         return this.s.getAllExtendedTracks.all();
+    }
+
+    getAllTrackIds(): number[] {
+        return this.s.getAllTrackIds.all().map(v => v.id);
     }
 
     getTrackById(trackId: number): DbTrack | undefined {
