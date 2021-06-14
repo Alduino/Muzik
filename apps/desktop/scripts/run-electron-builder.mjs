@@ -2,7 +2,7 @@
 
 import {platform as getPlatform} from "os";
 import {join} from "path";
-import {spawn} from "child_process";
+import {exec} from "child_process";
 import {renameSync, existsSync, readdirSync} from "fs";
 
 const platform = getPlatform();
@@ -42,4 +42,4 @@ for (const file of directory) {
 }
 
 console.log("Running", args.join(" "));
-spawn(args[0], args.slice(1), {stdio: "inherit"});
+exec(args.join(" "));
