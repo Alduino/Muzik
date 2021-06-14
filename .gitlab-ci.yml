@@ -15,8 +15,14 @@ linux-build:
         key: "$CI_COMMIT_REF_SLUG"
         paths:
             - .pnpm-store
+    artifacts:
+        when: on_success
+        expire_in: 1 week
+        paths:
+            - "apps/desktop/dist/[Mm]uzik-*"
     rules:
         - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+        - if: $CI_COMMIT_TAG
 
 windows-build:
     stage: build
@@ -33,11 +39,20 @@ windows-build:
         key: "$CI_COMMIT_REF_SLUG"
         paths:
             - .pnpm-store
+    artifacts:
+        when: on_success
+        expire_in: 1 week
+        paths:
+            - "apps/desktop/dist/[Mm]uzik-*"
     tags:
         - windows
+    rules:
+        - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+        - if: $CI_COMMIT_TAG
 
 lint:
     image: ianwalter/pnpm
     stage: test
     script:
+        - pnpm i -w
         - pnpm run lint
