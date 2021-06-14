@@ -6,7 +6,7 @@
     "scripts": {
         "start": "electron-forge start",
         "package": "electron-forge package",
-        "make": "./scripts/pre-build.sh && node ./scripts/run-electron-builder.mjs",
+        "make": "node ./scripts/run-electron-builder.mjs",
         "publish": "electron-forge publish",
         "format": "prettier . --write && eslint --fix .",
         "lint": "eslint .",
