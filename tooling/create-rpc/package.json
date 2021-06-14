@@ -1,7 +1,7 @@
 {
   "name": "@muzik/create-rpc",
   "bin": {
-    "create-rpc": "dist/src/index.js"
+    "create-rpc": "bin/index.js"
   },
   "scripts": {
     "build": "tsc",

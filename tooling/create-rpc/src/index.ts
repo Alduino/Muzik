@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import {writeFile, mkdir} from "fs/promises";
 import {resolve} from "path";
 import {Command, Option} from "commander";
