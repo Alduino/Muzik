@@ -4,9 +4,10 @@ import {platform as getPlatform} from "os";
 import {resolve, dirname, join} from "path";
 import {spawn} from "child_process";
 import {renameSync, existsSync, readdirSync} from "fs";
+import {fileURLToPath} from "url";
 
 const platform = getPlatform();
-const args = [resolve(dirname(new URL(import.meta.url).pathname), "../node_modules/.bin/electron-builder"), "build"];
+const args = [resolve(dirname(fileURLToPath(import.meta.url)), "../node_modules/.bin/electron-builder"), "build"];
 
 switch (platform) {
     case "darwin":
