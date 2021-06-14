@@ -20,13 +20,19 @@ linux-build:
 
 windows-build:
     stage: build
-    script:
+    before_script:
         - $ErrorActionPreference = "Stop"
         - choco upgrade nodejs --yes --no-progress
         - choco install python3 --yes --no-progress
         - (Invoke-WebRequest 'https://get.pnpm.io/v6.7.js' -UseBasicParsing).Content | node - add --global pnpm
+        - pnpm config set store-dir .pnpm-store
+    script:
         - pnpm i
         - pnpm run r:build
+    cache:
+        key: "$CI_COMMIT_REF_SLUG"
+        paths:
+            - .pnpm-store
     tags:
         - windows
 
