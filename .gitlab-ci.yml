@@ -1,0 +1,29 @@
+stages:
+  - build
+  - test
+
+linux-build:
+    image: ianwalter/pnpm
+    stage: build
+    script:
+        - pnpm i
+        - pnpm run r:build
+    rules:
+        - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+windows-build:
+    stage: build
+    script:
+        - $ErrorActionPreference = "Stop"
+        - choco install nodejs --yes --no-progress
+        - (Invoke-WebRequest 'https://get.pnpm.io/v6.7.js' -UseBasicParsing).Content | node - add --global pnpm
+        - pnpm i
+        - pnpm run r:build
+    tags:
+        - windows
+
+lint:
+    image: ianwalter/pnpm
+    stage: test
+    script:
+        - pnpm run lint
