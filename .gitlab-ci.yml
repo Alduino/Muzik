@@ -23,6 +23,7 @@ windows-build:
     script:
         - $ErrorActionPreference = "Stop"
         - choco upgrade nodejs --yes --no-progress
+        - choco install python3 --yes --no-progress
         - (Invoke-WebRequest 'https://get.pnpm.io/v6.7.js' -UseBasicParsing).Content | node - add --global pnpm
         - pnpm i
         - pnpm run r:build
