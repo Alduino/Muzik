@@ -42,4 +42,6 @@ for (const file of directory) {
 }
 
 console.log("Running", args.join(" "));
-exec(args.join(" "));
+const cp = exec(args.join(" "));
+cp.stdout.pipe(process.stdout);
+cp.stderr.pipe(process.stderr);
