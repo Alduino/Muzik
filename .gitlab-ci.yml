@@ -5,13 +5,12 @@ stages:
   - release
 
 variables:
-    PACKAGE_VERSION: "${CI_COMMIT_TAG}"
-    PACKAGE_APPIMAGE: "Muzik-${PACKAGE_VERSION}.AppImage"
-    PACKAGE_TARGZ: "muzik-desktop-${PACKAGE_VERSION}.tar.gz"
-    PACKAGE_RPM: "muzik-desktop-${PACKAGE_VERSION}.x86_64.rpm"
-    PACKAGE_DEB: "muzik-desktop-${PACKAGE_VERSION}_amd64.deb"
-    PACKAGE_EXE: "Muzik Setup ${PACKAGE_VERSION}.exe"
-    PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/muzik-desktop/${PACKAGE_VERSION}"
+    PACKAGE_APPIMAGE: "Muzik-${CI_COMMIT_TAG}.AppImage"
+    PACKAGE_TARGZ: "muzik-desktop-${CI_COMMIT_TAG}.tar.gz"
+    PACKAGE_RPM: "muzik-desktop-${CI_COMMIT_TAG}.x86_64.rpm"
+    PACKAGE_DEB: "muzik-desktop-${CI_COMMIT_TAG}_amd64.deb"
+    PACKAGE_EXE: "Muzik Setup ${CI_COMMIT_TAG}.exe"
+    PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/muzik-desktop/${CI_COMMIT_TAG}"
 
 linux-build:
     image: node
