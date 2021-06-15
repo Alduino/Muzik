@@ -11,6 +11,7 @@ variables:
     PACKAGE_DEB: "muzik-desktop_${CI_COMMIT_TAG}_amd64.deb"
     PACKAGE_EXE: "Muzik Setup ${CI_COMMIT_TAG}.exe"
     PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/muzik-desktop/${CI_COMMIT_TAG}"
+    PACKAGE_FILENAME: "${PACKAGE_REGISTRY_URL}/muzik_${CI_COMMIT_TAG}"
 
 linux-build:
     image: node
@@ -84,11 +85,11 @@ upload:
     rules:
         - if: $CI_COMMIT_TAG
     script:
-        - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file apps/desktop/dist/${PACKAGE_APPIMAGE} ${PACKAGE_REGISTRY_URL}/${PACKAGE_APPIMAGE}'
-        - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file apps/desktop/dist/${PACKAGE_TARGZ} ${PACKAGE_REGISTRY_URL}/${PACKAGE_TARGZ}'
-        - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file apps/desktop/dist/${PACKAGE_RPM} ${PACKAGE_REGISTRY_URL}/${PACKAGE_RPM}'
-        - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file apps/desktop/dist/${PACKAGE_DEB} ${PACKAGE_REGISTRY_URL}/${PACKAGE_DEB}'
-        - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file "apps/desktop/dist/${PACKAGE_EXE}" "${PACKAGE_REGISTRY_URL}/${PACKAGE_EXE}"'
+        - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file apps/desktop/dist/${PACKAGE_APPIMAGE} "${PACKAGE_FILENAME}.appimage"'
+        - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file apps/desktop/dist/${PACKAGE_TARGZ} "${PACKAGE_FILENAME}.tar.gz"'
+        - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file apps/desktop/dist/${PACKAGE_RPM} "${PACKAGE_FILENAME}.rpm"'
+        - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file apps/desktop/dist/${PACKAGE_DEB} "${PACKAGE_FILENAME}.deb"'
+        - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file "apps/desktop/dist/${PACKAGE_EXE}" "${PACKAGE_FILENAME}.exe"'
 
 release:
     image: registry.gitlab.com/gitlab-org/release-cli:latest
@@ -105,12 +106,12 @@ release:
         assets:
             links:
                 - name: "Windows (exe)"
-                  url: "${PACKAGE_REGISTRY_URL}/${PACKAGE_EXE}"
+                  url: "${PACKAGE_FILENAME}.exe"
                 - name: "Generic Linux (AppImage)"
-                  url: "${PACKAGE_REGISTRY_URL}/${PACKAGE_DEB}"
+                  url: "${PACKAGE_FILENAME}.appimage"
                 - name: "Generic Linux (tar.gz)"
-                  url: "${PACKAGE_REGISTRY_URL}/${PACKAGE_APPIMAGE}"
+                  url: "${PACKAGE_FILENAME}.tar.gz"
                 - name: "Ubuntu x64 (deb)"
-                  url: "${PACKAGE_REGISTRY_URL}/${PACKAGE_TARGZ}"
+                  url: "${PACKAGE_FILENAME}.deb"
                 - name: "Fedora x86_64 (rpm)"
-                  url: "${PACKAGE_REGISTRY_URL}/${PACKAGE_RPM}"
+                  url: "${PACKAGE_FILENAME}.rpm"
