@@ -34,8 +34,8 @@ linux-build:
             - "apps/desktop/dist/${PACKAGE_TARGZ}"
             - "apps/desktop/dist/${PACKAGE_RPM}"
             - "apps/desktop/dist/${PACKAGE_DEB}"
-#    rules:
-#        - if: $CI_COMMIT_TAG
+    rules:
+        - if: $CI_COMMIT_TAG
 
 windows-build:
     stage: build
@@ -59,21 +59,29 @@ windows-build:
             - "apps/desktop/dist/${PACKAGE_EXE}"
     tags:
         - windows
-#    rules:
-#        - if: $CI_COMMIT_TAG
+    rules:
+        - if: $CI_COMMIT_TAG
 
-lint:
-    image: ianwalter/pnpm
-    stage: test
-    script:
-        - pnpm i -w
-        - pnpm run lint
+# TODO: Make linting work without building first
+#lint:
+#    image: node
+#    stage: test
+#    before_script:
+#        - curl -f https://get.pnpm.io/v6.7.js | node - add --global pnpm@6
+#        - pnpm config set store-dir .pnpm-store
+#    script:
+#        - pnpm i
+#        - pnpm run lint
+#    cache:
+#        key: "$CI_COMMIT_REF_SLUG"
+#        paths:
+#            - .pnpm-store
 
 upload:
     stage: upload
     image: curlimages/curl:latest
-#    rules:
-#        - if: $CI_COMMIT_TAG
+    rules:
+        - if: $CI_COMMIT_TAG
     script:
         - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file apps/desktop/dist/${PACKAGE_APPIMAGE} ${PACKAGE_REGISTRY_URL}/${PACKAGE_APPIMAGE}'
         - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file apps/desktop/dist/${PACKAGE_TARGZ} ${PACKAGE_REGISTRY_URL}/${PACKAGE_TARGZ}'
@@ -86,8 +94,8 @@ release:
     stage: release
     script:
         - echo "Creating release for $CI_TAG_NAME"
-#    rules:
-#        - if: $CI_COMMIT_TAG
+    rules:
+        - if: $CI_COMMIT_TAG
     release:
         name: "Muzik v$CI_TAG_NAME"
         description: "$CI_COMMIT_DESCRIPTION"
