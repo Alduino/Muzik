@@ -8,7 +8,7 @@ variables:
     PACKAGE_APPIMAGE: "Muzik-${CI_COMMIT_TAG}.AppImage"
     PACKAGE_TARGZ: "muzik-desktop-${CI_COMMIT_TAG}.tar.gz"
     PACKAGE_RPM: "muzik-desktop-${CI_COMMIT_TAG}.x86_64.rpm"
-    PACKAGE_DEB: "muzik-desktop-${CI_COMMIT_TAG}_amd64.deb"
+    PACKAGE_DEB: "muzik-desktop_${CI_COMMIT_TAG}_amd64.deb"
     PACKAGE_EXE: "Muzik Setup ${CI_COMMIT_TAG}.exe"
     PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/muzik-desktop/${CI_COMMIT_TAG}"
 
@@ -16,6 +16,7 @@ linux-build:
     image: node
     stage: build
     before_script:
+        - apt install rpm
         - curl -f https://get.pnpm.io/v6.7.js | node - add --global pnpm@6
         - pnpm config set store-dir .pnpm-store
     script:
