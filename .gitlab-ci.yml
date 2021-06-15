@@ -88,7 +88,7 @@ upload:
         - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file apps/desktop/dist/${PACKAGE_TARGZ} ${PACKAGE_REGISTRY_URL}/${PACKAGE_TARGZ}'
         - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file apps/desktop/dist/${PACKAGE_RPM} ${PACKAGE_REGISTRY_URL}/${PACKAGE_RPM}'
         - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file apps/desktop/dist/${PACKAGE_DEB} ${PACKAGE_REGISTRY_URL}/${PACKAGE_DEB}'
-        - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file apps/desktop/dist/${PACKAGE_EXE} ${PACKAGE_REGISTRY_URL}/${PACKAGE_EXE}'
+        - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file "apps/desktop/dist/${PACKAGE_EXE}" "${PACKAGE_REGISTRY_URL}/${PACKAGE_EXE}"'
 
 release:
     image: registry.gitlab.com/gitlab-org/release-cli:latest
