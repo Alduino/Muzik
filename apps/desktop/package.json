@@ -1,6 +1,6 @@
 {
     "name": "muzik-desktop",
-    "version": "1.0.0",
+    "version": "0.0.2-releasetest",
     "description": "My Electron application description",
     "main": ".webpack/main/index.js",
     "scripts": {
