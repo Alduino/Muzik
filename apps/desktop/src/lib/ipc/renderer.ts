@@ -15,6 +15,5 @@ declare global {
 export const {handle, invoke} = listen(
     () => new AbortController(),
     window.electron.ipcSend,
-    window.electron.ipcOn,
-    window.electron.ipcOff
+    window.electron.ipcOn
 );

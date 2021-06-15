@@ -9,7 +9,7 @@ export interface UseRpcOptions {
     refetchMultiplier: number;
 }
 
-export interface UseRpcResult<Response, Request> {
+export interface UseRpcResult<Response> {
     data?: Response;
     error?: Error;
 }
@@ -22,7 +22,7 @@ interface UseRpc {
      */ <Response>(
         name: IpcName<Response> | null,
         opts: UseRpcOptions
-    ): UseRpcResult<Response, never>;
+    ): UseRpcResult<Response>;
 
     /**
      * Sends an RPC request to the specified event.
@@ -33,7 +33,7 @@ interface UseRpc {
         name: IpcName<Response, Request> | null,
         req: Request,
         opts: UseRpcOptions
-    ): UseRpcResult<Response, Request>;
+    ): UseRpcResult<Response>;
 }
 
 function isRpcOptions(value: unknown): value is UseRpcOptions {
@@ -62,7 +62,7 @@ const useRpc = (<Response, Request>(
         setError
     });
 
-    return useMemo<UseRpcResult<Response, Request>>(() => ({data, error}), [
+    return useMemo<UseRpcResult<Response>>(() => ({data, error}), [
         data,
         error
     ]);

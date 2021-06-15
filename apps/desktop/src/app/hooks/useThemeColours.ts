@@ -1,6 +1,20 @@
 import {useColorModeValue} from "@chakra-ui/react";
 
-export default function useThemeColours() {
+interface ThemeColours {
+    border: string;
+    text: string;
+    invertTheme: {filter?: string};
+    invertThemeReverse: {filter?: string};
+    translucentHoverBg: string;
+    translucentActiveBg: string;
+    backgroundL0: string;
+    backgroundL1: string;
+    backgroundL2: string;
+    backgroundL3: string;
+    active: string;
+}
+
+export default function useThemeColours(): ThemeColours {
     const text = useColorModeValue("gray.900", "white");
 
     const backgroundL0 = useColorModeValue("white", "black");

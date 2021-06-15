@@ -150,7 +150,7 @@ export default class MigrationManager {
     /**
      * Runs migrations to get to the latest version
      */
-    migrate() {
+    migrate(): void {
         const last = this.getLatestMigration();
         const {lastName} = this.migrations.migrateUp(this.db, last);
         if (lastName) this.setLatestMigration(lastName);
@@ -160,7 +160,7 @@ export default class MigrationManager {
      * Reverts migrations, leaving `target` as the last migration
      * @param target - Name of target migration, empty to revert all migrations
      */
-    revert(target?: string) {
+    revert(target?: string): void {
         const latest = this.getLatestMigration();
         this.migrations.migrateDown(this.db, latest, target);
     }

@@ -1,7 +1,6 @@
 import {log} from "../../node/logger";
 import {
     EventMessage,
-    eventName,
     EventType,
     IpcName,
     MESSAGE_COMMUNICATION,
@@ -139,8 +138,7 @@ export type InvokeHandler = <TResponse, TRequest = never, TProgress = never>(
 function listenImpl(
     abortControllerConstructor: () => AbortController,
     sendFn: SendFunction,
-    listenFn: ListenFunction,
-    unlistenFn: ListenFunction
+    listenFn: ListenFunction
 ): HandleHandler {
     const listeners = new Map<string, HandlerFn>();
 
@@ -212,8 +210,7 @@ function listenImpl(
 
 function sendImpl(
     sendFn: SendFunction,
-    listenFn: ListenFunction,
-    unlistenFn: ListenFunction
+    listenFn: ListenFunction
 ): InvokeHandler {
     const cache = new Map<string, unknown>();
 
@@ -301,21 +298,14 @@ export interface ListenResult {
  * @param abortControllerConstructor - Return an AbortController instance, used to create proxy AbortSignal in `handle`
  * @param sendFn - IPC `send` function
  * @param listenFn - IPC `on` function
- * @param unlistenFn - IPC `off` function
  */
 export default function listen(
     abortControllerConstructor: () => AbortController,
     sendFn: SendFunction,
-    listenFn: ListenFunction,
-    unlistenFn: ListenFunction
+    listenFn: ListenFunction
 ): ListenResult {
-    const handle = listenImpl(
-        abortControllerConstructor,
-        sendFn,
-        listenFn,
-        unlistenFn
-    );
-    const invoke = sendImpl(sendFn, listenFn, unlistenFn);
+    const handle = listenImpl(abortControllerConstructor, sendFn, listenFn);
+    const invoke = sendImpl(sendFn, listenFn);
 
     return {
         handle,

@@ -104,7 +104,7 @@ export async function parseFile(path: string): Promise<Playlist> {
         ...trackPaths,
         ...getDirectives(directives, "EXTINF")
             .filter(v => v.track)
-            .map(el => el.track!.path)
+            .map(el => (el.track as Track).path)
     ];
 
     return {

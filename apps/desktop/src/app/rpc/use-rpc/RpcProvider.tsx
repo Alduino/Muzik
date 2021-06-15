@@ -29,8 +29,6 @@ declare function requestIdleCallback(
     options?: RequestIdleOptions
 ): IdleCallbackHandle;
 
-declare function cancelIdleCallback(handle: IdleCallbackHandle): void;
-
 export interface GlobalRpcOptions {
     /**
      * The minimum amount of milliseconds between refreshes

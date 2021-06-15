@@ -56,8 +56,8 @@ export const Track = chakra((props: TrackProps) => {
     const currentSongId = useAppSelector(v => v.queue.nowPlaying);
     const isCurrent = currentSongId === props.trackId;
 
-    const {data: track, error: trackError} = useTrack(props.trackId);
-    const {data: names, error: namesError} = useNames(props.trackId);
+    const {data: track} = useTrack(props.trackId);
+    const {data: names} = useNames(props.trackId);
 
     const albumArt = useAlbumArt(props.trackId);
 

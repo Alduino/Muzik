@@ -68,7 +68,7 @@ export default function useDraggable({
         [resize, offset]
     );
 
-    const handleDragEnd = useCallback<DragEventHandler<HTMLElement>>(e => {
+    const handleDragEnd = useCallback<DragEventHandler<HTMLElement>>(() => {
         /* noop */
     }, []);
 

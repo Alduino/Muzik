@@ -1,7 +1,7 @@
 import {useEffect} from "react";
 import {useImpCutValue} from "./cutValue";
 
-export function useShortStale<T>(value: T, edge: boolean, staleTime = 300) {
+export function useShortStale<T>(value: T, edge: boolean, staleTime = 300): T {
     const [result, cut] = useImpCutValue(value);
 
     useEffect(() => {

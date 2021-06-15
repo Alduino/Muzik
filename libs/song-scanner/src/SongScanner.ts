@@ -1,17 +1,17 @@
-import Emittery from "emittery";
+import {createHash} from "crypto";
+import {readdir, readFile, stat} from "fs/promises";
+import {basename, dirname, join, resolve} from "path";
 import Database, {Album, AlbumArt, Artist, Track} from "@muzik/database";
+import {watch} from "chokidar";
+import Emittery from "emittery";
+import {fromFile as getFileMime} from "file-type";
 import {
     IAudioMetadata,
     parseFile as getFileMetadata,
     selectCover
 } from "music-metadata";
-import {fromFile as getFileMime} from "file-type";
-import {basename, dirname, join, resolve} from "path";
-import {readdir, readFile, stat} from "fs/promises";
-import {readdirIterator} from "readdir-enhanced";
 import {normalizeSync as normalise} from "normalize-diacritics";
-import {createHash} from "crypto";
-import {watch} from "chokidar";
+import {readdirIterator} from "readdir-enhanced";
 import {log} from "./logger";
 
 type SearchName = string | ((v: string) => boolean);

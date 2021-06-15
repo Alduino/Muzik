@@ -12,8 +12,7 @@ export function registerWC(id: string, wc: WebContents): void {
     const obj = listen(
         () => new AbortController(),
         wc.send.bind(wc),
-        ipcMain.on.bind(ipcMain),
-        ipcMain.off.bind(ipcMain)
+        ipcMain.on.bind(ipcMain)
     );
 
     // add obj to list of existing

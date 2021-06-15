@@ -1,5 +1,5 @@
-import {Migration} from "../migration-manager";
 import {Database} from "better-sqlite3";
+import {Migration} from "../migration-manager";
 
 class UpStatements {
     readonly createAlbumArtTable = this.db.prepare(`

@@ -220,7 +220,7 @@ export default class Database {
         return this.sVal;
     }
 
-    initialise() {
+    initialise(): void {
         const migrationManager = new MigrationManager(this.db, migrations);
         migrationManager.migrate();
         this.sVal = new Statements(this.db);

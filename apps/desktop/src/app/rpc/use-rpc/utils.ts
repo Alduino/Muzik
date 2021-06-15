@@ -1,7 +1,7 @@
 import {IpcName} from "../../../lib/ipc/common";
 import {UseRpcResult} from "./useRpc";
 
-type Result<T> = UseRpcResult<T, Error>;
+type Result<T> = UseRpcResult<T>;
 
 export type NameResult<NameType> = NameType extends IpcName<
     infer TResponse,

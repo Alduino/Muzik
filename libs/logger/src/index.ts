@@ -62,6 +62,8 @@ class LoggerImpl implements Logger {
     constructor(private name: string) {}
 }
 
+// TODO remove isApp
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function createLogger(name: string, isApp = false): Logger {
     return new LoggerImpl(name);
 }

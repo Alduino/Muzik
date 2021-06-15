@@ -8,7 +8,7 @@ import {store} from "./configuration";
 import {log} from "./logger";
 
 let db: Database | null = null;
-let songScanner: SongScanner | null = null;
+const songScanner: SongScanner | null = null;
 
 export async function initialise(): Promise<void> {
     if (db) throwError(ErrorCode.databaseAlreadyInitialised);
@@ -38,8 +38,6 @@ export async function importMusic(
     scanner.addDirectory(path);
     scanner.beginWatching();
     await scanner.fullSync(progress);
-
-    songScanner = scanner;
 }
 
 export async function getAlbumArtByHash(
@@ -88,6 +86,9 @@ export async function getAllTracks(): Promise<number[]> {
     return db.getAllTrackIds();
 }
 
-export function getNamesByTrackId(trackId: number) {
+export function getNamesByTrackId(
+    trackId: number
+): {[key in "track" | "album" | "artist"]: string} &
+    {[key in `${"track" | "album" | "artist"}Sortable`]: string} {
     return db.getNamesByTrackId(trackId);
 }
