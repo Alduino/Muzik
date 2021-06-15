@@ -11,7 +11,6 @@ variables:
     PACKAGE_DEB: "muzik-desktop_${CI_COMMIT_TAG}_amd64.deb"
     PACKAGE_EXE: "Muzik Setup ${CI_COMMIT_TAG}.exe"
     PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/muzik-desktop/${CI_COMMIT_TAG}"
-    PACKAGE_FILENAME: "${PACKAGE_REGISTRY_URL}/muzik_${CI_COMMIT_TAG}"
 
 linux-build:
     image: node
@@ -84,6 +83,8 @@ upload:
     image: curlimages/curl:latest
     rules:
         - if: $CI_COMMIT_TAG
+    variables:
+        PACKAGE_FILENAME: "${PACKAGE_REGISTRY_URL}/muzik_${CI_COMMIT_TAG}"
     script:
         - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file apps/desktop/dist/${PACKAGE_APPIMAGE} "${PACKAGE_FILENAME}.appimage"'
         - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file apps/desktop/dist/${PACKAGE_TARGZ} "${PACKAGE_FILENAME}.tar.gz"'
@@ -98,6 +99,8 @@ release:
         - echo "Creating release for $CI_TAG_NAME"
     rules:
         - if: $CI_COMMIT_TAG
+    variables:
+        PACKAGE_FILENAME: "${PACKAGE_REGISTRY_URL}/muzik_${CI_COMMIT_TAG}"
     release:
         name: "Muzik v$CI_COMMIT_TAG"
         description: "$CI_COMMIT_DESCRIPTION"
