@@ -35,7 +35,6 @@ importers:
       '@emotion/styled': ^11
       '@fontsource/lato': ^4.2.2
       '@fontsource/montserrat': ^4.2.2
-      '@marshallofsound/webpack-asset-relocator-loader': ^0.5.0
       '@muzik/create-rpc': workspace:^1.0.0
       '@muzik/database': workspace:*
       '@muzik/logger': workspace:*
@@ -44,6 +43,7 @@ importers:
       '@redux-devtools/dock-monitor': ^1.4.0
       '@redux-devtools/log-monitor': ^2.3.0
       '@reduxjs/toolkit': ^1.5.1
+      '@timfish/webpack-asset-relocator-loader': ^0.1.0
       '@types/react': ^17.0.3
       '@types/react-dom': ^17.0.3
       '@types/react-virtualized-auto-sizer': ^1.0.0
@@ -96,6 +96,7 @@ importers:
       '@redux-devtools/dock-monitor': 1.4.0_51cc6f7564500523103b5583642dd182
       '@redux-devtools/log-monitor': 2.3.0_51cc6f7564500523103b5583642dd182
       '@reduxjs/toolkit': 1.5.1
+      '@timfish/webpack-asset-relocator-loader': 0.1.0
       async-mutex: 0.3.1
       base64-js: 1.5.1
       electron-store: 7.0.2
@@ -127,7 +128,6 @@ importers:
       '@electron-forge/maker-squirrel': 6.0.0-beta.54
       '@electron-forge/maker-zip': 6.0.0-beta.54
       '@electron-forge/plugin-webpack': 6.0.0-beta.54
-      '@marshallofsound/webpack-asset-relocator-loader': 0.5.0
       '@muzik/create-rpc': link:../../tooling/create-rpc
       '@muzik/database': link:../../libs/database
       '@muzik/logger': link:../../libs/logger
@@ -1762,12 +1762,6 @@ packages:
       cross-spawn: 7.0.3
     dev: true
 
-  /@marshallofsound/webpack-asset-relocator-loader/0.5.0:
-    resolution: {integrity: sha512-X50R97SiDNTpOckiplghBo63Vo8GxSsr98s3VTwEu3qyVr+TY4I91KRtKelEj2OAfgMnkTymw89+psFVq8aB1g==}
-    dependencies:
-      sourcemap-codec: 1.4.8
-    dev: true
-
   /@nodelib/fs.scandir/2.1.4:
     resolution: {integrity: sha512-33g3pMJk3bg5nXbL/+CY6I2eJDzZAni49PfJnL5fghPTggPvBd/pFNSgJsdAgWptuFu7qq/ERvOYFlhvsLTCKA==}
     engines: {node: '>= 8'}
@@ -1991,6 +1985,12 @@ packages:
     dependencies:
       defer-to-connect: 2.0.1
     dev: true
+
+  /@timfish/webpack-asset-relocator-loader/0.1.0:
+    resolution: {integrity: sha512-Z0tYkI3NSngJOGULCL8Fv+npy7k0JSQ7nWcfCEA70OJKMHRbP+OBKPUJVD2qRgfnDcmZuV99SzynKrRLot0faA==}
+    dependencies:
+      '@vercel/webpack-asset-relocator-loader': 1.4.1
+    dev: false
 
   /@tokenizer/token/0.1.1:
     resolution: {integrity: sha512-XO6INPbZCxdprl+9qa/AAbFFOMzzwqYxpjPgLICrMD6C2FCw6qfJOPcBk6JqqPLSaZ/Qx87qn4rpPmPMwaAK6w==}
@@ -2439,6 +2439,10 @@ packages:
       '@typescript-eslint/types': 4.20.0
       eslint-visitor-keys: 2.0.0
     dev: true
+
+  /@vercel/webpack-asset-relocator-loader/1.4.1:
+    resolution: {integrity: sha512-p0P5sSfzhZ0HkNgvtOKs62cOZCK6avE28A8fEIE5vpKkhPXOlcXFtbUmIOqH3jYC4CjLOqwTU48cx3ewkGKQ9g==}
+    dev: false
 
   /@webassemblyjs/ast/1.9.0:
     resolution: {integrity: sha512-C6wW5L+b7ogSDVqymbkkvuW9kruN//YisMED04xzeBBqjHa2FYnmvOlS6Xj68xWQRgWvI9cIglsjFowH/RJyEA==}
@@ -9437,6 +9441,7 @@ packages:
 
   /sourcemap-codec/1.4.8:
     resolution: {integrity: sha512-9NykojV5Uih4lgo5So5dtw+f0JgJX30KCNI8gwhz2J9A15wD0Ml6tjHKwf6fTSa6fAdVBdZeNOs9eJ71qCk8vA==}
+    dev: false
 
   /spdx-correct/3.1.1:
     resolution: {integrity: sha512-cOYcUWwhCuHCXi49RhFRCyJEK3iPj1Ziz9DpViV3tbZOwXD49QzIN3MpOLJNxh2qwq2lJJZaKMVw9qNi4jTC0w==}
