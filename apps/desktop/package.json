@@ -10,7 +10,8 @@
         "publish": "electron-forge publish",
         "format": "prettier . --write && eslint --fix .",
         "lint": "eslint .",
-        "build": "pnpm run package && pnpm run make"
+        "build": "pnpm run package && pnpm run make",
+        "postinstall": "electron-builder install-app-deps"
     },
     "keywords": [],
     "author": {
