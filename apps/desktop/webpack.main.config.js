@@ -1,5 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const {resolve} = require("path");
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const rules = require("./webpack.rules");
 
 module.exports = {
     /**
@@ -10,7 +12,7 @@ module.exports = {
     target: "electron-main",
     // Put your normal webpack config below here
     module: {
-        rules: require("./webpack.rules")
+        rules: rules.main
     },
     resolve: {
         extensions: [".js", ".ts", ".jsx", ".tsx", ".css", ".json"],
