@@ -26,10 +26,6 @@ linux-build:
     script:
         - pnpm i
         - pnpm run r:build
-    cache:
-        key: "$CI_COMMIT_REF_SLUG"
-        paths:
-            - .pnpm-store
     artifacts:
         when: on_success
         expire_in: 1 hour
@@ -52,10 +48,6 @@ windows-build:
     script:
         - pnpm i
         - pnpm run r:build
-    cache:
-        key: "$CI_COMMIT_REF_SLUG"
-        paths:
-            - .pnpm-store
     artifacts:
         when: on_success
         expire_in: 1 hour
