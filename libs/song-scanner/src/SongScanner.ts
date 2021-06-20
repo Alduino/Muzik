@@ -129,6 +129,15 @@ export default class SongScanner extends Emittery {
         this.listenedDirectories.add(dir);
     }
 
+    // note: does not sync, run fullSync after.
+    removeDirectory(dir: string): void {
+        this.listenedDirectories.delete(dir);
+    }
+
+    getListenedDirectories(): ReadonlySet<string> {
+        return this.listenedDirectories;
+    }
+
     async fullSync(progressCb?: (percent: number) => void): Promise<void> {
         const musicFiles = new Set<string>();
 

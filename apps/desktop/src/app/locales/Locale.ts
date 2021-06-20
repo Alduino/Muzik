@@ -23,6 +23,7 @@ export default interface Locale extends ResourceLanguage {
             albums: string;
             songs: string;
             queue: string;
+            settings: string;
         };
         queueRoute: {
             nowPlaying: string;
@@ -31,6 +32,11 @@ export default interface Locale extends ResourceLanguage {
             nothingPlaying: string;
             emptyQueue: string;
             loading: string;
+        };
+        settingsRoute: {
+            musicDirectories: string;
+            removeDirectory: string;
+            selectDirectory: string;
         };
         sidebarGroups: {
             routes: string;

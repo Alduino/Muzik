@@ -18,7 +18,10 @@ import handleGetAllTrackIds from "../lib/rpc/get-all-track-ids/node";
 import handleGetArtist from "../lib/rpc/get-artist/node";
 import handleGetNames from "../lib/rpc/get-names/node";
 import handleGetSong from "../lib/rpc/get-song/node";
+import handleGetSourceDirectories from "../lib/rpc/get-source-directories/node";
 import handleOpenFileDirectory from "../lib/rpc/open-file-directory/node";
+import handleSelectDirectory from "../lib/rpc/select-directory/node";
+import handleSetSourceDirectories from "../lib/rpc/set-source-directories/node";
 import {store} from "./configuration";
 import {
     getAlbumArtByHash,
@@ -33,7 +36,8 @@ import {
     getTrackArtHashByAlbumId,
     getTracksByAlbumId,
     importMusic,
-    initialise as initialiseDatabase
+    initialise as initialiseDatabase,
+    updateSongDirectories
 } from "./database";
 import {log} from "./logger";
 
@@ -136,16 +140,6 @@ handle<void, MusicImportRequest, number>(
     }
 );
 
-handle(EVENT_SELECT_MUSIC_IMPORT_PATH, async () => {
-    const result = await dialog.showOpenDialog({
-        properties: ["openDirectory"]
-    });
-
-    if (result.canceled || result.filePaths.length !== 1) return false;
-    store.set("musicStore", result.filePaths[0]);
-    return true;
-});
-
 handleGetAlbumList(getAllAlbums);
 
 handleGetArtist(async ({artistId}) => getArtistById(artistId));
@@ -224,4 +218,24 @@ handle(EVENT_REDUX_DEV_TOOLS_ENABLED, () => {
     const envVar = process.env.DISABLE_REDUX_DEVTOOLS;
     if (!envVar) return true;
     return envVar === "0" || envVar === "false" || envVar === "no";
+});
+
+handleGetSourceDirectories(async () => store.get("musicStore") ?? []);
+
+handleSelectDirectory(async () => {
+    const result = await dialog.showOpenDialog({
+        properties: ["openDirectory"]
+    });
+
+    return {
+        path:
+            result.canceled || result.filePaths.length !== 1
+                ? null
+                : result.filePaths[0]
+    };
+});
+
+handleSetSourceDirectories(async ({paths}) => {
+    store.set("musicStore", paths);
+    await updateSongDirectories(paths);
 });

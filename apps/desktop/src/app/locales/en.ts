@@ -22,7 +22,8 @@ export const en: Locale = {
         routes: {
             albums: "Albums",
             songs: "Songs",
-            queue: "Queue"
+            queue: "Queue",
+            settings: "Settings"
         },
         queueRoute: {
             nowPlaying: "Now playing",
@@ -31,6 +32,11 @@ export const en: Locale = {
             emptyQueue: "Your queue is empty",
             nothingPlaying: "Nothing is playing right now",
             loading: "Loading..."
+        },
+        settingsRoute: {
+            musicDirectories: "Source Directories",
+            removeDirectory: "Remove",
+            selectDirectory: "Select a new directory"
         },
         sidebarGroups: {
             routes: "Routes",

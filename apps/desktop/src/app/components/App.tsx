@@ -16,8 +16,8 @@ import useThemeColours from "../hooks/useThemeColours";
 import {GlobalRoute} from "../reducers/routing";
 import {useAppSelector} from "../store-hooks";
 import {AlbumListing} from "./AlbumListing";
-import {MusicStorePicker} from "./MusicStorePicker";
 import {QueueListing} from "./QueueListing";
+import {Settings} from "./Settings";
 import {SongListing} from "./SongListing";
 import {ErrorLabel} from "./lib/ErrorLabel";
 import {FilledSidebar} from "./lib/FilledSidebar";
@@ -74,8 +74,6 @@ const LoadedApp: FC = () => {
     const route = useAppSelector(state => state.routing.globalRoute);
 
     switch (route) {
-        case GlobalRoute.musicStorePicker:
-            return <MusicStorePicker />;
         case GlobalRoute.albumListing:
             return (
                 <PageContainer>
@@ -92,6 +90,12 @@ const LoadedApp: FC = () => {
             return (
                 <PageContainer>
                     <QueueListing />
+                </PageContainer>
+            );
+        case GlobalRoute.settings:
+            return (
+                <PageContainer>
+                    <Settings />
                 </PageContainer>
             );
         default:

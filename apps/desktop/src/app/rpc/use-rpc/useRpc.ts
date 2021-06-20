@@ -1,4 +1,4 @@
-import {useMemo, useState} from "react";
+import {useCallback, useMemo, useState} from "react";
 import {IpcName} from "../../../lib/ipc/common";
 import {useIntervalHandler} from "./RpcProvider";
 
@@ -12,6 +12,18 @@ export interface UseRpcOptions {
 export interface UseRpcResult<Response> {
     data?: Response;
     error?: Error;
+
+    /**
+     * Requests the data again
+     */
+    invalidate(): void;
+
+    /**
+     * Changes the data to a new value, and invalidates
+     * @param data Data to use until request is complete
+     * @param invalidate Trigger a new request after mutation. Default true.
+     */
+    mutate(data: Response, invalidate?: boolean): void;
 }
 
 interface UseRpc {
@@ -56,16 +68,24 @@ const useRpc = (<Response, Request>(
     const [data, setData] = useState<Response | undefined>();
     const [error, setError] = useState<Error | undefined>();
 
-    useIntervalHandler(name, req, {
+    const {invalidate} = useIntervalHandler(name, req, {
         refetchMultiplier,
         setData,
         setError
     });
 
-    return useMemo<UseRpcResult<Response>>(() => ({data, error}), [
-        data,
-        error
-    ]);
+    const mutate = useCallback(
+        (data: Response, doInvalidate = true) => {
+            setData(data);
+            if (doInvalidate) invalidate();
+        },
+        [setData, invalidate]
+    );
+
+    return useMemo<UseRpcResult<Response>>(
+        () => ({data, error, invalidate, mutate}),
+        [data, error, invalidate, mutate]
+    );
 }) as UseRpc;
 
 export default useRpc;

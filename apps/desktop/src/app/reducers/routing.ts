@@ -1,11 +1,11 @@
 import {createSlice, PayloadAction} from "@reduxjs/toolkit";
 
 export enum GlobalRoute {
+    settings,
     artistListing,
     albumListing,
     songListing,
-    queueListing,
-    musicStorePicker
+    queueListing
 }
 
 export const slice = createSlice({

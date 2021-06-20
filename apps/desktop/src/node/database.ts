@@ -8,7 +8,7 @@ import {store} from "./configuration";
 import {log} from "./logger";
 
 let db: Database | null = null;
-const songScanner: SongScanner | null = null;
+let songScanner: SongScanner | null = null;
 
 export async function initialise(): Promise<void> {
     if (db) throwError(ErrorCode.databaseAlreadyInitialised);
@@ -20,13 +20,12 @@ export async function initialise(): Promise<void> {
 
 export async function importMusic(
     progress: (percent: number) => void,
-    path: string = store.get("musicStore")
+    paths: string[] = store.get("musicStore") ?? []
 ): Promise<void> {
     if (!db) throwError(ErrorCode.databaseNotInitialised);
-    if (path === null) throwError(ErrorCode.musicStoreNotPicked);
 
     // TODO query renderer process to check mime type
-    const scanner = new SongScanner(db, {
+    songScanner = new SongScanner(db, {
         async supportsMimeType(type) {
             return supportsMimeType(type);
         },
@@ -35,9 +34,31 @@ export async function importMusic(
         }
     });
 
-    scanner.addDirectory(path);
-    scanner.beginWatching();
-    await scanner.fullSync(progress);
+    for (const path of paths) {
+        songScanner.addDirectory(path);
+    }
+
+    songScanner.beginWatching();
+    await songScanner.fullSync(progress);
+}
+
+export async function updateSongDirectories(
+    directories: string[],
+    progress?: (percent: number) => void
+): Promise<void> {
+    const existingDirectories = songScanner.getListenedDirectories();
+
+    for (const directory of directories) {
+        if (!existingDirectories.has(directory))
+            songScanner.addDirectory(directory);
+    }
+
+    for (const existingDirectory of existingDirectories) {
+        if (!directories.includes(existingDirectory))
+            songScanner.removeDirectory(existingDirectories);
+    }
+
+    await songScanner.fullSync(progress);
 }
 
 export async function getAlbumArtByHash(

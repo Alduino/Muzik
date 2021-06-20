@@ -4,10 +4,12 @@ import React, {
     MutableRefObject,
     PropsWithChildren,
     ReactElement,
+    useCallback,
     useContext,
     useEffect,
     useMemo,
-    useRef
+    useRef,
+    useState
 } from "react";
 import {IpcName} from "../../../lib/ipc/common";
 import {invoke} from "../../../lib/ipc/renderer";
@@ -45,6 +47,8 @@ interface IntervalHandler {
     readonly dataSetters: Set<(v: unknown) => void>;
     readonly errorSetters: Set<(v: Error) => void>;
 
+    invalidate(): void;
+
     lastValue?: unknown;
     lastError?: Error;
     isEnabled: boolean;
@@ -62,7 +66,6 @@ function createIntervalHandlerKey<Request>(
 interface Context {
     intervalHandlers: Map<IntervalHandlerKey, IntervalHandler>;
     resultCache: Map<IntervalHandlerKey, unknown>;
-    lastRefreshTime: MutableRefObject<number>;
     config: GlobalRpcOptions;
 }
 
@@ -77,9 +80,6 @@ const RpcContext = createContext<Context>({
     get resultCache() {
         return throwNotSetup();
     },
-    get lastRefreshTime() {
-        return throwNotSetup();
-    },
     get config() {
         return throwNotSetup();
     }
@@ -91,8 +91,6 @@ export const RpcConfigurator = ({
     instantCallThreshold,
     children
 }: PropsWithChildren<GlobalRpcOptions>): ReactElement => {
-    const lastRefreshTime = useRef(-Infinity);
-
     const intervalHandlers = useMemo<Map<IntervalHandlerKey, IntervalHandler>>(
         () => new Map(),
         []
@@ -115,10 +113,9 @@ export const RpcConfigurator = ({
         () => ({
             intervalHandlers,
             resultCache,
-            lastRefreshTime,
             config: configObject
         }),
-        [intervalHandlers, resultCache, lastRefreshTime, configObject]
+        [intervalHandlers, resultCache, configObject]
     );
 
     return (
@@ -183,6 +180,21 @@ class IntervalHandlerImpl<Response, Request> implements IntervalHandler {
             });
         }, this.refetchMultiplier * 1000);
     }
+
+    invalidate() {
+        this.callback();
+    }
+}
+
+export interface UseIntervalHandlerResult {
+    /**
+     * Forces a request to be sent off
+     */
+    invalidate(): void;
+}
+
+function noop() {
+    /* noop */
 }
 
 /**
@@ -198,10 +210,13 @@ export function useIntervalHandler<Response, Request>(
     ipcName: IpcName<Response, Request> | null,
     req: Request,
     {refetchMultiplier, setData, setError}: UseIntervalHandlerOpts<Response>
-): void {
-    const {intervalHandlers, resultCache, lastRefreshTime} = useContext(
-        RpcContext
-    );
+): UseIntervalHandlerResult {
+    const {intervalHandlers, resultCache} = useContext(RpcContext);
+    const invalidateRef = useRef(noop);
+
+    const invalidate = useCallback(() => {
+        invalidateRef.current();
+    }, [invalidateRef]);
 
     useEffect(() => {
         if (ipcName === null) {
@@ -233,6 +248,8 @@ export function useIntervalHandler<Response, Request>(
         handler.dataSetters.add(setData);
         handler.errorSetters.add(setError);
 
+        invalidateRef.current = () => handler.invalidate();
+
         if (handler.lastValue) setData(handler.lastValue as Response);
         if (handler.lastError) setError(handler.lastError);
 
@@ -251,10 +268,17 @@ export function useIntervalHandler<Response, Request>(
         };
     }, [
         intervalHandlers,
-        lastRefreshTime,
         req,
         refetchMultiplier,
         setData,
-        setError
+        setError,
+        invalidateRef
     ]);
+
+    return useMemo(
+        () => ({
+            invalidate
+        }),
+        [invalidate]
+    );
 }
