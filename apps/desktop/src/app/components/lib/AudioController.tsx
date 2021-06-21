@@ -100,17 +100,26 @@ class AudioPlayer {
     }
 
     async loadBuffers(front: string | null, back: string | null) {
-        if (front !== this.frontUrl) {
+        const frontPromise =
+            front && front !== this.frontUrl ? this.loadBuffer(front) : null;
+        const backPromise =
+            back && back !== this.backUrl ? this.loadBuffer(back) : null;
+
+        if (frontPromise) {
+            this.frontBuffer = await frontPromise;
             this.frontUrl = front;
-            this.frontBuffer = null;
-            this.frontBuffer = front && (await this.loadBuffer(front));
             if (this.playAutomatically) this.play();
+        } else if (!front) {
+            this.frontBuffer = null;
+            this.frontUrl = null;
         }
 
-        if (back !== this.backUrl) {
+        if (backPromise) {
+            this.backBuffer = await backPromise;
             this.backUrl = back;
+        } else if (!back) {
             this.backBuffer = null;
-            this.backBuffer = back && (await this.loadBuffer(back));
+            this.backUrl = null;
         }
     }
 
@@ -285,19 +294,15 @@ export const AudioController: FC = () => {
 
     useEffect(() => {
         player.playAutomatically = isPlaying;
+
+        if (isPlaying) player.play();
+        else player.pause();
     }, [player, isPlaying]);
 
     useEffect(() => {
         if (isCurrentTimeFromAudio) return;
         player.seek(currentTime);
     }, [currentTime, isCurrentTimeFromAudio]);
-
-    useEffect(() => {
-        // called whenever isPlaying changes or currentSongId changes
-        // currentSongId is needed because audio reloads when it changes
-        if (isPlaying) player.play();
-        else player.pause();
-    }, [isPlaying, currentSongId]);
 
     useEffect(() => {
         player.ended.add(handleComplete);
