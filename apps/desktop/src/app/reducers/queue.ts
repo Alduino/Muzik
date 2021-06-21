@@ -187,7 +187,7 @@ export const slice = createSlice({
                 state.previousSongs.push(state.nowPlaying);
             state.nowPlaying = getAndRemoveNextSong(state);
             state.isPlaying = state.nowPlaying !== null;
-            state._currentTimeWasFromAudio = false;
+            state._currentTimeWasFromAudio = true;
             state.currentTime = 0;
         },
         resume(state) {
