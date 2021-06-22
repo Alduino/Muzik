@@ -1,6 +1,7 @@
 h2,
 p,
-img {
+img,
+div {
     user-select: none;
 }
 

@@ -7,7 +7,6 @@ import {
     EVENT_DATABASE_INIT,
     EVENT_MUSIC_IMPORT,
     EVENT_REDUX_DEV_TOOLS_ENABLED,
-    EVENT_SELECT_MUSIC_IMPORT_PATH,
     MusicImportRequest
 } from "../lib/ipc-constants";
 import {handle} from "../lib/ipc/main";
@@ -16,6 +15,8 @@ import handleGetExtendedAlbum from "../lib/rpc/extended-album/node";
 import handleGetAlbumTrackIds from "../lib/rpc/get-album-track-ids/node";
 import handleGetAllTrackIds from "../lib/rpc/get-all-track-ids/node";
 import handleGetArtist from "../lib/rpc/get-artist/node";
+import handleGetFirstArtistLettersByAlbumIds from "../lib/rpc/get-first-artist-letters-by-album-ids/node";
+import handleGetFirstArtistLettersByTrackIds from "../lib/rpc/get-first-artist-letters-by-track-ids/node";
 import handleGetNames from "../lib/rpc/get-names/node";
 import handleGetSong from "../lib/rpc/get-song/node";
 import handleGetSourceDirectories from "../lib/rpc/get-source-directories/node";
@@ -31,6 +32,8 @@ import {
     getAllArtists,
     getAllTracks,
     getArtistById,
+    getFirstArtistLettersByAlbumIds,
+    getFirstArtistLettersByTrackIds,
     getNamesByTrackId,
     getSongById,
     getTrackArtHashByAlbumId,
@@ -176,6 +179,7 @@ handleGetAlbumTrackIds(async ({albumId}) => {
 
 handleGetSong(async ({songId}) => {
     const song = await getSongById(songId);
+    if (!song) throw new Error(`There is no song with the id ${songId}`);
     const trackArt = await getAlbumArtInfoByHash(song.albumArtHash);
 
     return {
@@ -196,6 +200,14 @@ handleGetAllTrackIds(async () => {
 
 handleGetNames(async ({trackId}) => {
     return getNamesByTrackId(trackId);
+});
+
+handleGetFirstArtistLettersByTrackIds(async ({trackIds}) => {
+    return getFirstArtistLettersByTrackIds(trackIds);
+});
+
+handleGetFirstArtistLettersByAlbumIds(async ({albumIds}) => {
+    return getFirstArtistLettersByAlbumIds(albumIds);
 });
 
 handle(EVENT_CLIPBOARD_WRITE, arg => {
