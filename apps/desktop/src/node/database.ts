@@ -55,7 +55,7 @@ export async function updateSongDirectories(
 
     for (const existingDirectory of existingDirectories) {
         if (!directories.includes(existingDirectory))
-            songScanner.removeDirectory(existingDirectories);
+            songScanner.removeDirectory(existingDirectory);
     }
 
     await songScanner.fullSync(progress);
@@ -112,4 +112,8 @@ export function getNamesByTrackId(
 ): {[key in "track" | "album" | "artist"]: string} &
     {[key in `${"track" | "album" | "artist"}Sortable`]: string} {
     return db.getNamesByTrackId(trackId);
+}
+
+export function getFirstArtistLettersByTrackIds(trackIds: number[]): string[] {
+    return db.getFirstArtistLettersByTrackIds(trackIds);
 }

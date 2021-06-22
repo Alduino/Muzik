@@ -32,6 +32,26 @@ class DeleteTracksNotInStatements {
     constructor(private db: Sqlite3) {}
 }
 
+class GetFirstArtistLettersStatements {
+    readonly deleteTempTable = this.db.prepare(
+        `DROP TABLE firstSongLettersTemp`
+    );
+
+    readonly insertToTempTable = this.db.prepare<number>(
+        `INSERT INTO firstSongLettersTemp (id) VALUES (?)`
+    );
+    readonly getByTrackId = this.db.prepare(`
+        SELECT SUBSTRING(ar.sortableName, 1, 1) AS firstLetter
+        FROM ${TABLE_TRACKS} tr
+        INNER JOIN ${TABLE_ALBUMS} al ON tr.albumId = al.id
+        INNER JOIN ${TABLE_ARTISTS} ar ON al.artistId = ar.id
+        WHERE tr.id IN (SELECT id FROM firstSongLettersTemp)
+        ORDER BY ar.sortableName
+    `);
+
+    constructor(private db: Sqlite3) {}
+}
+
 class Statements {
     readonly deleteTracksWhereAudioSrcPathLike = this.db.prepare<string>(
         `DELETE FROM ${TABLE_TRACKS} WHERE audioSrcPath LIKE ?`
@@ -199,6 +219,11 @@ class Statements {
         WHERE hash = ?
         LIMIT 1
     `);
+    readonly getFirstSongLetters_createTempTable = this.db.prepare(`
+        CREATE TEMPORARY TABLE firstSongLettersTemp (
+            id INTEGER
+        )
+    `);
     readonly vacuum = this.db.prepare("VACUUM");
     readonly beginTransaction = this.db.prepare("BEGIN");
     readonly commitTransaction = this.db.prepare("COMMIT");
@@ -358,6 +383,15 @@ export default class Database {
         if (typeof hash === "undefined")
             throw new Error("hash must be defined");
         return this.s.getAlbumArtInfoByHash.get(hash);
+    }
+
+    getFirstArtistLettersByTrackIds(trackIds: number[]): string[] {
+        this.s.getFirstSongLetters_createTempTable.run();
+        const s = new GetFirstArtistLettersStatements(this.db);
+        for (const item of trackIds) s.insertToTempTable.run(item);
+        const result = s.getByTrackId.all().map(el => el.firstLetter);
+        s.deleteTempTable.run();
+        return result;
     }
 
     async inTransaction(cb: () => Promise<void>): Promise<void> {
