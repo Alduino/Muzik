@@ -192,20 +192,17 @@ export default class SongScanner extends Emittery {
         const trackName = metadata.common.title;
         if (!trackName)
             SongScanner.throwTrackError(path, "Track does not have a title");
-        const trackNameSortable =
-            metadata.common.titlesort || SongScanner.normaliseName(trackName);
+        const trackNameSortable = SongScanner.normaliseName(trackName);
 
         const albumName = metadata.common.album;
         if (!albumName)
             SongScanner.throwTrackError(path, "Track does not have an album");
-        const albumNameSortable =
-            metadata.common.albumsort || SongScanner.normaliseName(albumName);
+        const albumNameSortable = SongScanner.normaliseName(albumName);
 
         const artistName = metadata.common.artist;
         if (!artistName)
             SongScanner.throwTrackError(path, "Track does not have an artist");
-        const artistNameSortable =
-            metadata.common.artistsort || SongScanner.normaliseName(artistName);
+        const artistNameSortable = SongScanner.normaliseName(artistName);
 
         const releaseDateUnix = metadata.common.date
             ? Date.parse(metadata.common.date)
