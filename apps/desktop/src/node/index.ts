@@ -15,6 +15,7 @@ import handleGetExtendedAlbum from "../lib/rpc/extended-album/node";
 import handleGetAlbumTrackIds from "../lib/rpc/get-album-track-ids/node";
 import handleGetAllTrackIds from "../lib/rpc/get-all-track-ids/node";
 import handleGetArtist from "../lib/rpc/get-artist/node";
+import handleGetFirstArtistLettersByAlbumIds from "../lib/rpc/get-first-artist-letters-by-album-ids/node";
 import handleGetFirstArtistLettersByTrackIds from "../lib/rpc/get-first-artist-letters-by-track-ids/node";
 import handleGetNames from "../lib/rpc/get-names/node";
 import handleGetSong from "../lib/rpc/get-song/node";
@@ -31,6 +32,7 @@ import {
     getAllArtists,
     getAllTracks,
     getArtistById,
+    getFirstArtistLettersByAlbumIds,
     getFirstArtistLettersByTrackIds,
     getNamesByTrackId,
     getSongById,
@@ -202,6 +204,10 @@ handleGetNames(async ({trackId}) => {
 
 handleGetFirstArtistLettersByTrackIds(async ({trackIds}) => {
     return getFirstArtistLettersByTrackIds(trackIds);
+});
+
+handleGetFirstArtistLettersByAlbumIds(async ({albumIds}) => {
+    return getFirstArtistLettersByAlbumIds(albumIds);
 });
 
 handle(EVENT_CLIPBOARD_WRITE, arg => {

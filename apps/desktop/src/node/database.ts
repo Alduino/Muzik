@@ -117,3 +117,7 @@ export function getNamesByTrackId(
 export function getFirstArtistLettersByTrackIds(trackIds: number[]): string[] {
     return db.getFirstArtistLettersByTrackIds(trackIds);
 }
+
+export function getFirstArtistLettersByAlbumIds(trackIds: number[]): string[] {
+    return db.getFirstArtistLettersByAlbumIds(trackIds);
+}

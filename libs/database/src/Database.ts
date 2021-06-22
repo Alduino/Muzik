@@ -48,6 +48,13 @@ class GetFirstArtistLettersStatements {
         WHERE tr.id IN (SELECT id FROM firstSongLettersTemp)
         ORDER BY ar.sortableName
     `);
+    readonly getByAlbumId = this.db.prepare(`
+        SELECT SUBSTRING(ar.sortableName, 1, 1) AS firstLetter
+        FROM ${TABLE_ALBUMS} al
+        INNER JOIN ${TABLE_ARTISTS} ar ON al.artistId = ar.id
+        WHERE al.id IN (SELECT id FROM firstSongLettersTemp)
+        ORDER BY ar.sortableName
+    `);
 
     constructor(private db: Sqlite3) {}
 }
@@ -390,6 +397,15 @@ export default class Database {
         const s = new GetFirstArtistLettersStatements(this.db);
         for (const item of trackIds) s.insertToTempTable.run(item);
         const result = s.getByTrackId.all().map(el => el.firstLetter);
+        s.deleteTempTable.run();
+        return result;
+    }
+
+    getFirstArtistLettersByAlbumIds(trackIds: number[]): string[] {
+        this.s.getFirstSongLetters_createTempTable.run();
+        const s = new GetFirstArtistLettersStatements(this.db);
+        for (const item of trackIds) s.insertToTempTable.run(item);
+        const result = s.getByAlbumId.all().map(el => el.firstLetter);
         s.deleteTempTable.run();
         return result;
     }

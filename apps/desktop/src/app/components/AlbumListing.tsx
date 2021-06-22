@@ -2,6 +2,7 @@ import {
     Box,
     chakra,
     Divider,
+    Flex,
     Heading,
     HStack,
     Skeleton,
@@ -13,11 +14,13 @@ import React, {
     FC,
     MutableRefObject,
     useEffect,
+    useMemo,
     useRef
 } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
 import {FixedSizeList} from "react-window";
 import defaultAlbumArt from "../assets/default-album-art.svg";
+import useLetterCounts from "../hooks/useLetterCounts";
 import useThemeColours from "../hooks/useThemeColours";
 import {selectAlbum} from "../reducers/albumListingRoute";
 import {
@@ -30,19 +33,26 @@ import {
 } from "../reducers/queue";
 import {useAlbumIds, useArtist, useExtendedAlbum, useTrack} from "../rpc";
 import useAlbumTrackIds from "../rpc/useAlbumTrackIds";
+import useFirstArtistLettersByAlbumIds from "../rpc/useFirstArtistLettersByAlbumIds";
 import {useAppDispatch, useAppSelector} from "../store-hooks";
 import {VisualiserIcon} from "./lib/AudioController";
 import {ContextMenu, MenuItem, useContextMenu} from "./lib/ContextMenu";
 import {ErrorText} from "./lib/ErrorText";
 import {FadeOverflow} from "./lib/FadeOverflow";
 import {PlayButtonAlbumArt} from "./lib/PlayButtonAlbumArt";
+import {ScrollBarAlphabetViewer} from "./lib/ScrollBarAlphabetViewer";
 import {SongList} from "./lib/SongList";
 import {TransText} from "./lib/TransText";
 
 const ContainerImpl: FC<{className?: string}> = props => (
-    <Box className={props.className} height="fill">
+    <Flex
+        justifyContent="stretch"
+        direction="row"
+        className={props.className}
+        height="fill"
+    >
         {props.children}
-    </Box>
+    </Flex>
 );
 ContainerImpl.displayName = "Container";
 
@@ -203,6 +213,8 @@ const AlbumList: FC<AlbumListProps> = ({albums, playingAlbum, ...props}) => (
     </AutoSizer>
 );
 
+const emptyArray = [] as const;
+
 export const AlbumListing: FC = () => {
     const colours = useThemeColours();
     const selectedAlbum = useAppSelector(
@@ -220,6 +232,21 @@ export const AlbumListing: FC = () => {
         data: selectedAlbumTracks,
         error: selectedAlbumTracksError
     } = useAlbumTrackIds(selectedAlbum);
+
+    const {
+        data: firstArtistLetters,
+        error: firstArtistLettersError
+    } = useFirstArtistLettersByAlbumIds(albums?.albumIds);
+
+    const firstArtistLettersWithoutNumbers = useMemo(
+        () =>
+            (firstArtistLetters ?? emptyArray).map((el: string) =>
+                /^\d$/.test(el) ? "#" : el
+            ),
+        [firstArtistLetters]
+    );
+
+    const letterCounts = useLetterCounts(firstArtistLettersWithoutNumbers);
 
     const playingAlbumId = playingTrack?.albumId;
 
@@ -240,6 +267,8 @@ export const AlbumListing: FC = () => {
         return <ErrorText error={playingTrackError} />;
     } else if (selectedAlbumTracksError) {
         return <ErrorText error={selectedAlbumTracksError} />;
+    } else if (firstArtistLettersError) {
+        return <ErrorText error={firstArtistLettersError} />;
     }
 
     return (
@@ -251,17 +280,20 @@ export const AlbumListing: FC = () => {
             height="100%"
         >
             <Container flexGrow={1}>
-                {!albums ? (
-                    Array.from({length: 4}, (_, i) => (
-                        <Skeleton key={i} width="full" mx={4} mt={4} />
-                    ))
-                ) : (
-                    <AlbumList
-                        albums={albums.albumIds}
-                        playingAlbum={playingAlbumId}
-                        listRef={albumListRef}
-                    />
-                )}
+                <Box flexGrow={1}>
+                    {!albums ? (
+                        Array.from({length: 4}, (_, i) => (
+                            <Skeleton key={i} width="full" mx={4} mt={4} />
+                        ))
+                    ) : (
+                        <AlbumList
+                            albums={albums.albumIds}
+                            playingAlbum={playingAlbumId}
+                            listRef={albumListRef}
+                        />
+                    )}
+                </Box>
+                <ScrollBarAlphabetViewer letterCounts={letterCounts} />
             </Container>
 
             {!selectedAlbum && <Divider orientation="vertical" />}
