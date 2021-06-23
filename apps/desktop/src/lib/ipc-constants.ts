@@ -27,6 +27,7 @@ export interface AppStateValue {
     songs: number[];
     route: number;
     albumArtIsLarge: boolean;
+    volume: number;
 }
 
 export interface MusicImportRequest {

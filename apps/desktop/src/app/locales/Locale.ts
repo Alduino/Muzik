@@ -7,6 +7,7 @@ export default interface Locale extends ResourceLanguage {
             playing: string;
         };
         queueControls: {
+            volume: string;
             toggleShuffle: string;
             switchRepeatMode: string;
             addToQueue: string;
