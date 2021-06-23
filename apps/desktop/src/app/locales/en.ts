@@ -7,6 +7,7 @@ export const en: Locale = {
             playing: "Muzik ({{artist}} - {{track}})"
         },
         queueControls: {
+            volume: "Volume",
             toggleShuffle: "Toggle shuffle",
             switchRepeatMode: "Switch repeat mode",
             addToQueue: "Add to queue",

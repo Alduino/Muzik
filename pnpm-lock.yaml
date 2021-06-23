@@ -79,6 +79,7 @@ importers:
       react-dom: ^17.0.2
       react-i18next: ^11.8.12
       react-icons: ^4.2.0
+      react-laag: ^2.0.3
       react-redux: ^7.2.3
       react-spinners: ^0.10.6
       react-virtualized-auto-sizer: ^1.0.5
@@ -118,6 +119,7 @@ importers:
       react-dom: 17.0.2_react@17.0.2
       react-i18next: 11.8.12_i18next@20.1.0+react@17.0.2
       react-icons: 4.2.0_react@17.0.2
+      react-laag: 2.0.3_react-dom@17.0.2+react@17.0.2
       react-redux: 7.2.3_react-dom@17.0.2+react@17.0.2
       react-spinners: 0.10.6_react-dom@17.0.2+react@17.0.2
       react-virtualized-auto-sizer: 1.0.5_react-dom@17.0.2+react@17.0.2
@@ -8600,6 +8602,17 @@ packages:
       react-base16-styling: 0.8.0
     dev: false
 
+  /react-laag/2.0.3_react-dom@17.0.2+react@17.0.2:
+    resolution: {integrity: sha512-f3LYHu6kOU+Ii63/ZkzLDobGLf2Q4EYjIA/TUHmaQmBv5use09ClPy5tEgXazkTnp/PC1Sivb+wr0+q8mv9ITQ==}
+    peerDependencies:
+      react: ^16.0.0 || ^17.0.0
+      react-dom: ^16.0.0 || ^17.0.0
+    dependencies:
+      react: 17.0.2
+      react-dom: 17.0.2_react@17.0.2
+      tiny-warning: 1.0.3
+    dev: false
+
   /react-redux/7.2.3_react-dom@17.0.2+react@17.0.2:
     resolution: {integrity: sha512-ZhAmQ1lrK+Pyi0ZXNMUZuYxYAZd59wFuVDGUt536kSGdD0ya9Q7BfsE95E3TsFLE3kOSFp5m6G5qbatE+Ic1+w==}
     peerDependencies:
@@ -9983,6 +9996,10 @@ packages:
 
   /tiny-invariant/1.1.0:
     resolution: {integrity: sha512-ytxQvrb1cPc9WBEI/HSeYYoGD0kWnGEOR8RY6KomWLBVhqz0RgTwVO9dLrGz7dC+nN9llyI7OKAgRq8Vq4ZBSw==}
+    dev: false
+
+  /tiny-warning/1.0.3:
+    resolution: {integrity: sha512-lBN9zLN/oAf68o3zNXYrdCt1kP8WsiGW8Oo2ka41b2IM5JL/S1CTyX1rW0mb/zSuJun0ZUrDxx4sqvYS2FWzPA==}
     dev: false
 
   /tinycolor2/1.4.2:

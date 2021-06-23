@@ -5,22 +5,43 @@ import {
     Flex,
     Heading,
     HStack,
+    Icon,
     IconButton,
     Link,
+    ScaleFade,
     Slider,
     SliderFilledTrack,
     SliderThumb,
     SliderTrack,
-    Text
+    Text,
+    useBoolean,
+    useDisclosure,
+    useOutsideClick,
+    useToken
 } from "@chakra-ui/react";
-import React, {FC, useCallback, useState} from "react";
+import React, {
+    FC,
+    ReactElement,
+    useCallback,
+    useMemo,
+    useRef,
+    useState
+} from "react";
 import {useTranslation} from "react-i18next";
 import {BiChevronDown} from "react-icons/bi";
 import {GrFastForward, GrPause, GrPlay, GrRewind} from "react-icons/gr";
+import {
+    ImVolumeHigh,
+    ImVolumeLow,
+    ImVolumeMedium,
+    ImVolumeMute2
+} from "react-icons/im";
 import {RiRepeat2Line, RiRepeatOneLine, RiShuffleLine} from "react-icons/ri";
+import {Arrow, useLayer} from "react-laag";
 import useAlbumArt from "../../hooks/useAlbumArt";
 import useThemeColours from "../../hooks/useThemeColours";
 import {selectAlbum} from "../../reducers/albumListingRoute";
+import {setVolume} from "../../reducers/media";
 import {
     beginQueue,
     RepeatMode,
@@ -147,6 +168,123 @@ const SongTracker: FC<SongTrackerProps> = props => {
     );
 };
 
+const VolumeButton = (): ReactElement => {
+    const {t} = useTranslation("app");
+
+    const dispatch = useAppDispatch();
+    const volume = useAppSelector(state => state.media.volume);
+
+    const colours = useThemeColours();
+    const backgroundValue = useToken("colors", colours.backgroundL3);
+
+    const boxRef = useRef<HTMLDivElement>();
+
+    const {isOpen, onOpen, onClose} = useDisclosure();
+    const [sliderFocused, setSliderFocused] = useBoolean();
+
+    useOutsideClick({
+        ref: boxRef,
+        handler: onClose
+    });
+
+    const {renderLayer, triggerProps, layerProps, arrowProps} = useLayer({
+        isOpen,
+        placement: "bottom-center"
+    });
+
+    const handleSliderLeave = useCallback(() => {
+        onClose();
+    }, [onClose]);
+
+    const {handleSliderEnter, handleButtonLeave} = useMemo(() => {
+        let timeout: NodeJS.Timeout;
+
+        function handleSliderEnter() {
+            clearTimeout(timeout);
+        }
+
+        function handleButtonLeave() {
+            timeout = setTimeout(() => onClose(), 200);
+        }
+
+        return {handleSliderEnter, handleButtonLeave};
+    }, [onClose]);
+
+    const handleVolumeChange = useCallback(
+        (vol: number) => {
+            dispatch(setVolume(vol));
+        },
+        [dispatch]
+    );
+
+    const handleToggleMute = () => dispatch(setVolume(-volume));
+
+    const volumeIcon =
+        volume <= 0
+            ? ImVolumeMute2
+            : volume < 0.5
+            ? ImVolumeLow
+            : volume < 1
+            ? ImVolumeMedium
+            : ImVolumeHigh;
+    return (
+        <>
+            <IconButton
+                {...triggerProps}
+                onClick={handleToggleMute}
+                onMouseEnter={onOpen}
+                onMouseLeave={handleButtonLeave}
+                isRound={true}
+                variant="ghost"
+                aria-label={t("queueControls.volume")}
+                icon={<Icon as={volumeIcon} />}
+            />
+            {renderLayer(
+                <ScaleFade {...layerProps} initialScale={0.9} in={isOpen}>
+                    <Box
+                        ref={boxRef}
+                        onMouseEnter={handleSliderEnter}
+                        onMouseLeave={
+                            sliderFocused ? undefined : handleSliderLeave
+                        }
+                        p={4}
+                        pt={5}
+                        borderRadius="md"
+                        shadow="md"
+                        bg={colours.backgroundL3}
+                        style={{
+                            pointerEvents: isOpen ? "auto" : "none"
+                        }}
+                    >
+                        <Slider
+                            onChange={handleVolumeChange}
+                            aria-label={t("queueControls.volume")}
+                            value={Math.abs(volume)}
+                            step={0.02}
+                            min={0}
+                            max={1}
+                            orientation="vertical"
+                            minHeight="20"
+                            onFocus={setSliderFocused.on}
+                            onBlur={setSliderFocused.off}
+                        >
+                            <SliderTrack>
+                                <SliderFilledTrack />
+                            </SliderTrack>
+                            <SliderThumb />
+                        </Slider>
+
+                        <Arrow
+                            {...arrowProps}
+                            backgroundColor={backgroundValue}
+                        />
+                    </Box>
+                </ScaleFade>
+            )}
+        </>
+    );
+};
+
 const QueueButtons: FC = () => {
     const dispatch = useAppDispatch();
     const isShuffled = useAppSelector(state => state.queue.shuffled);
@@ -165,6 +303,7 @@ const QueueButtons: FC = () => {
 
     return (
         <HStack>
+            <VolumeButton />
             <ActiveDotContainer isActive={isShuffled} gap={-2}>
                 <IconButton
                     {...iconButtonProps}
