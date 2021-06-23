@@ -1,7 +1,7 @@
 {
     "name": "muzik-desktop",
-    "version": "0.0.6-releasetest",
-    "description": "My Electron application description",
+    "version": "0.1.0",
+    "description": "Offline music player",
     "main": ".webpack/main/index.js",
     "scripts": {
         "start": "electron-forge start",
