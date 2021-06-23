@@ -1,4 +1,5 @@
 import {chakra} from "@chakra-ui/react";
+import {Mutex} from "async-mutex";
 import React, {
     createContext,
     FC,
@@ -24,7 +25,90 @@ import {useNames, useTrack} from "../../rpc";
 import {useAppDispatch, useAppSelector} from "../../store-hooks";
 import {mediaSessionHandler} from "../../utils/media-session";
 
+// Wraps the AudioPlayerImplementation with exclusive access
 class AudioPlayer {
+    private readonly impl: AudioPlayerImplementation;
+    private readonly mutex = new Mutex();
+
+    constructor(
+        ctx: AudioContext,
+        connect: (buffer: AudioBufferSourceNode) => void
+    ) {
+        this.impl = new AudioPlayerImplementation(ctx, connect);
+    }
+
+    get ended() {
+        return this.impl.ended;
+    }
+
+    get continueAutomatically() {
+        return this.impl.continueAutomatically;
+    }
+
+    set continueAutomatically(v) {
+        this.impl.continueAutomatically = v;
+    }
+
+    get playAutomatically() {
+        return this.impl.playAutomatically;
+    }
+
+    set playAutomatically(v) {
+        this.impl.playAutomatically = v;
+    }
+
+    loadBuffers(front: string | null, back: string | null) {
+        return this.mutex.runExclusive(() =>
+            this.impl.loadBuffers(front, back)
+        );
+    }
+
+    /**
+     * Swaps the front buffer to be the back buffer, and the back buffer to be
+     * the front buffer.
+     */
+    swapBuffers() {
+        return this.mutex.runExclusive(() => this.impl.swapBuffers());
+    }
+
+    /**
+     * Starts playing the front buffer
+     */
+    play() {
+        return this.mutex.runExclusive(() => this.impl.play());
+    }
+
+    /**
+     * Pauses the audio
+     */
+    pause() {
+        return this.mutex.runExclusive(() => this.impl.pause());
+    }
+
+    /**
+     * Stops the audio
+     */
+    stop() {
+        return this.mutex.runExclusive(() => this.impl.stop());
+    }
+
+    /**
+     * Seeks to the specified time in seconds
+     */
+    seek(time: number) {
+        return this.mutex.runExclusive(() => this.impl.seek(time));
+    }
+
+    getTime() {
+        return this.impl.getTime();
+    }
+
+    hasFrontBuffer() {
+        return this.impl.hasFrontBuffer();
+    }
+}
+
+class AudioPlayerImplementation {
     constructor(
         private readonly ctx: AudioContext,
         private readonly connect: (buffer: AudioBufferSourceNode) => void
