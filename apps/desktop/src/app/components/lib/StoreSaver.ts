@@ -4,6 +4,7 @@ import {
     EVENT_APP_STATE_SET
 } from "../../../lib/ipc-constants";
 import {invoke} from "../../../lib/ipc/renderer";
+import {setVolume} from "../../reducers/media";
 import {
     playAllNext,
     queueSongs,
@@ -25,6 +26,7 @@ export const StoreSaver: FC = () => {
     const albumArtIsLarge = useAppSelector(
         state => state.routing.albumArtIsLarge
     );
+    const volume = useAppSelector(state => state.media.volume);
 
     const [loaded, setLoaded] = useState(false);
 
@@ -39,6 +41,7 @@ export const StoreSaver: FC = () => {
             dispatch(queueSongs(state.songs || []));
             dispatch(setGlobalRoute(state.route || 0));
             dispatch(setAlbumArtSize(state.albumArtIsLarge));
+            dispatch(setVolume(state.volume ?? 1));
         });
     }, []);
 
@@ -51,9 +54,18 @@ export const StoreSaver: FC = () => {
             upNext,
             songs,
             route,
-            albumArtIsLarge
+            albumArtIsLarge,
+            volume
         });
-    }, [loaded, shuffled, nowPlaying, repeatMode, route, albumArtIsLarge]);
+    }, [
+        loaded,
+        shuffled,
+        nowPlaying,
+        repeatMode,
+        route,
+        albumArtIsLarge,
+        volume
+    ]);
 
     return null;
 };
