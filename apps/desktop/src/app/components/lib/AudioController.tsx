@@ -207,6 +207,8 @@ interface ControllerContextValue {
 const ControllerContext = createContext<ControllerContextValue | null>(null);
 
 export const AudioControllerProvider: FC = ({children}) => {
+    const volume = useAppSelector(state => state.media.volume);
+
     const audioCtx = useMemo(() => new AudioContext(), []);
 
     const analyser = useMemo(() => {
@@ -216,10 +218,16 @@ export const AudioControllerProvider: FC = ({children}) => {
         return analyser;
     }, []);
 
+    const gainNode = useMemo(() => {
+        const node = audioCtx.createGain();
+        node.connect(audioCtx.destination);
+        return node;
+    }, [audioCtx]);
+
     const connectBufferSource = useCallback(
         bs => {
             bs.connect(analyser);
-            bs.connect(audioCtx.destination);
+            bs.connect(gainNode);
         },
         [analyser]
     );
@@ -237,6 +245,11 @@ export const AudioControllerProvider: FC = ({children}) => {
         }),
         [audioCtx, analyser]
     );
+
+    useEffect(() => {
+        // gives the value a sharp curve
+        gainNode.gain.value = (Math.pow(10, volume) - 1) / 9;
+    }, [volume]);
 
     return (
         <ControllerContext.Provider value={controllerCtx}>
