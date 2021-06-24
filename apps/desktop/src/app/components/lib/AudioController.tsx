@@ -7,6 +7,7 @@ import React, {
     useContext,
     useEffect,
     useMemo,
+    useRef,
     useState
 } from "react";
 import setPlayState from "../../../lib/rpc/set-play-state/app";
@@ -426,11 +427,10 @@ export const MediaSessionController: FC = () => {
     const playingTrackId = useAppSelector(state => state.queue.nowPlaying);
     const isPlaying = useAppSelector(state => state.queue.isPlaying);
     const currentTime = useAppSelector(state => state.queue.currentTime);
-    const currentTimeFromAudio = useAppSelector(
-        state => state.queue._currentTimeWasFromAudio
-    );
 
     const dispatch = useAppDispatch();
+
+    const lastStateSendCurrentTime = useRef(-100);
 
     const {data: track} = useTrack(playingTrackId);
     const {data: names} = useNames(playingTrackId);
@@ -475,6 +475,11 @@ export const MediaSessionController: FC = () => {
                 trackId: false
             });
         } else if (isPlaying) {
+            // only update every 2 seconds
+            if (Math.abs(currentTime - lastStateSendCurrentTime.current) < 2)
+                return;
+            lastStateSendCurrentTime.current = currentTime;
+
             setPlayState({
                 trackId: playingTrackId,
                 state: "Playing",
@@ -486,7 +491,7 @@ export const MediaSessionController: FC = () => {
                 state: "Paused"
             });
         }
-    }, [playingTrackId, isPlaying, currentTimeFromAudio]);
+    }, [playingTrackId, isPlaying, currentTime, lastStateSendCurrentTime]);
 
     useEffect(() => {
         function handleEnded() {
