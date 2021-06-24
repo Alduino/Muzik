@@ -1,4 +1,5 @@
 import {
+    Box,
     Button,
     Center,
     Divider,
@@ -208,7 +209,7 @@ const DiscordRichPresenceConfiguration = (): ReactElement => {
     }
 
     return (
-        <Stack>
+        <Stack spacing={4}>
             <SettingsControl
                 label="settingsRoute.discordIntegration.enable"
                 help="settingsRoute.discordIntegration.enableInfo"
@@ -253,7 +254,7 @@ const SettingsSection = ({
     headingKey,
     children
 }: PropsWithChildren<{headingKey: string}>): ReactElement => (
-    <Flex direction="column" maxW="24rem">
+    <Flex display="inline-flex" direction="column" maxW="24rem" mb={4}>
         <Heading as={TransText} size="sm" mb={2} k={headingKey} />
         {children}
         <Divider mt={4} />
@@ -262,13 +263,13 @@ const SettingsSection = ({
 
 export const Settings = (): ReactElement => {
     return (
-        <SimpleGrid minWidth="24rem" p={4} spacingY={4} spacingX={8}>
+        <Box p={4} height="100%" sx={{columnWidth: "24rem"}}>
             <SettingsSection headingKey="settingsRoute.musicDirectories">
                 <DirectorySelector />
             </SettingsSection>
             <SettingsSection headingKey="settingsRoute.discordIntegrationLabel">
                 <DiscordRichPresenceConfiguration />
             </SettingsSection>
-        </SimpleGrid>
+        </Box>
     );
 };
