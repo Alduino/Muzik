@@ -261,7 +261,8 @@ handleSetPlayState(updateRichPresence);
 handleGetDiscordRichPresenceConfiguration(async () => {
     return (
         store.get("integrations.discordRichPresence") ?? {
-            isEnabled: true
+            isEnabled: true,
+            displayWhenPaused: false
         }
     );
 });

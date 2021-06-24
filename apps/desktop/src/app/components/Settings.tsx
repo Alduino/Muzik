@@ -42,6 +42,7 @@ interface SettingsControlProps {
     label: string;
     help: string;
     id?: string;
+    isDisabled?: boolean;
 
     children(props: SettingsControlChildProps): ReactElement;
 }
@@ -50,6 +51,7 @@ const SettingsControl = ({
     label,
     help,
     id,
+    isDisabled,
     children: Children
 }: SettingsControlProps): ReactElement => {
     const {t} = useTranslation("app");
@@ -63,6 +65,7 @@ const SettingsControl = ({
             templateColumns="auto 1fr"
             alignItems="center"
             gap={2}
+            isDisabled={isDisabled}
         >
             <FormLabel gridRow="1" gridColumn="1" m={0}>
                 {t(label)}
@@ -172,15 +175,26 @@ const DiscordRichPresenceConfiguration = (): ReactElement => {
         mutate
     } = useDiscordRichPresenceConfiguration();
 
-    const handleSwitchChange = useCallback(
-        async (isEnabled: boolean) => {
-            await setDiscordRichPresenceConfiguration({
-                ...configuration,
-                isEnabled
-            });
-            mutate({...configuration, isEnabled});
+    const handleUpdate = useCallback(
+        async (newConfig: typeof configuration) => {
+            await setDiscordRichPresenceConfiguration(newConfig);
+            mutate(newConfig);
         },
         [mutate]
+    );
+
+    const handleEnabledChanged = useCallback(
+        (isEnabled: boolean) => {
+            return handleUpdate({...configuration, isEnabled});
+        },
+        [configuration, handleUpdate]
+    );
+
+    const handleDisplayWhenPausedChanged = useCallback(
+        (displayWhenPaused: boolean) => {
+            return handleUpdate({...configuration, displayWhenPaused});
+        },
+        [configuration, handleUpdate]
     );
 
     if (error) {
@@ -194,20 +208,44 @@ const DiscordRichPresenceConfiguration = (): ReactElement => {
     }
 
     return (
-        <SettingsControl
-            label="settingsRoute.discordIntegration.enable"
-            help="settingsRoute.discordIntegration.enableInfo"
-            id="discord-rp"
-        >
-            {({style}) => (
-                <Switch
-                    id="discord-rp"
-                    isChecked={configuration.isEnabled}
-                    onChange={e => handleSwitchChange(e.currentTarget.checked)}
-                    style={style}
-                />
-            )}
-        </SettingsControl>
+        <Stack>
+            <SettingsControl
+                label="settingsRoute.discordIntegration.enable"
+                help="settingsRoute.discordIntegration.enableInfo"
+                id="discord-rp"
+            >
+                {({style}) => (
+                    <Switch
+                        id="discord-rp"
+                        isChecked={configuration.isEnabled}
+                        onChange={e =>
+                            handleEnabledChanged(e.currentTarget.checked)
+                        }
+                        style={style}
+                    />
+                )}
+            </SettingsControl>
+            <SettingsControl
+                label="settingsRoute.discordIntegration.displayWhenPaused"
+                help="settingsRoute.discordIntegration.displayWhenPausedInfo"
+                id="discord-rp-paused"
+                isDisabled={!configuration.isEnabled}
+            >
+                {({style}) => (
+                    <Switch
+                        id="discord-rp-paused"
+                        isChecked={configuration.displayWhenPaused}
+                        isDisabled={!configuration.isEnabled}
+                        onChange={e =>
+                            handleDisplayWhenPausedChanged(
+                                e.currentTarget.checked
+                            )
+                        }
+                        style={style}
+                    />
+                )}
+            </SettingsControl>
+        </Stack>
     );
 };
 

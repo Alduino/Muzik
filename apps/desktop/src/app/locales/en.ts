@@ -46,7 +46,10 @@ export const en: Locale = {
             discordIntegration: {
                 enable: "Enable",
                 enableInfo:
-                    "Shows what song is playing on your Discord profile."
+                    "Shows what song is playing on your Discord profile.",
+                displayWhenPaused: "Display when paused",
+                displayWhenPausedInfo:
+                    "Show what song is playing if it is paused."
             }
         },
         sidebarGroups: {

@@ -24,6 +24,7 @@ import {
     skipToPrevious
 } from "../../reducers/queue";
 import {useNames, useTrack} from "../../rpc";
+import useDiscordRichPresenceConfiguration from "../../rpc/useDiscordRichPresenceConfiguration";
 import {useAppDispatch, useAppSelector} from "../../store-hooks";
 import {mediaSessionHandler} from "../../utils/media-session";
 
@@ -434,6 +435,7 @@ export const MediaSessionController: FC = () => {
 
     const {data: track} = useTrack(playingTrackId);
     const {data: names} = useNames(playingTrackId);
+    const {data: discordConfig} = useDiscordRichPresenceConfiguration();
 
     const silentAudio = useMemo(() => new Audio(silenceAudioFile), []);
 
@@ -470,11 +472,7 @@ export const MediaSessionController: FC = () => {
     }, [playingTrackId, isPlaying]);
 
     useEffect(() => {
-        if (playingTrackId === null) {
-            setPlayState({
-                trackId: false
-            });
-        } else if (isPlaying) {
+        if (isPlaying) {
             // only update every 2 seconds
             if (Math.abs(currentTime - lastStateSendCurrentTime.current) < 2)
                 return;
@@ -485,13 +483,26 @@ export const MediaSessionController: FC = () => {
                 state: "Playing",
                 startedAt: Math.floor(Date.now() / 1000 - currentTime)
             });
+        } else if (
+            playingTrackId === null ||
+            !discordConfig?.displayWhenPaused
+        ) {
+            setPlayState({
+                trackId: false
+            });
         } else {
             setPlayState({
                 trackId: playingTrackId,
                 state: "Paused"
             });
         }
-    }, [playingTrackId, isPlaying, currentTime, lastStateSendCurrentTime]);
+    }, [
+        playingTrackId,
+        isPlaying,
+        currentTime,
+        lastStateSendCurrentTime,
+        discordConfig?.displayWhenPaused
+    ]);
 
     useEffect(() => {
         function handleEnded() {

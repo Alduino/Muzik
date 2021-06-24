@@ -46,6 +46,8 @@ export default interface Locale extends ResourceLanguage {
             discordIntegration: {
                 enable: string;
                 enableInfo: string;
+                displayWhenPaused: string;
+                displayWhenPausedInfo: string;
             };
         };
         sidebarGroups: {
