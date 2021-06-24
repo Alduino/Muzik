@@ -1,4 +1,3 @@
-import createDiscordRpClient from "discord-rich-presence";
 import {app, clipboard, dialog, protocol, shell} from "electron";
 import {
     EVENT_APP_STATE_GET,
@@ -45,8 +44,7 @@ import {
     updateSongDirectories
 } from "./database";
 import {log} from "./logger";
-
-const rpClient = createDiscordRpClient("857531285495742464");
+import updateRichPresence from "./updateRichPresence";
 
 protocol.registerSchemesAsPrivileged([
     {
@@ -256,23 +254,4 @@ handleSetSourceDirectories(async ({paths}) => {
     await updateSongDirectories(paths);
 });
 
-handleSetPlayState(async req => {
-    if (req.trackId === false) {
-        rpClient.updatePresence({});
-        return;
-    }
-
-    const track = await getSongById(req.trackId);
-    const names = getNamesByTrackId(req.trackId);
-    const allTracks = await getTracksByAlbumId(track.albumId);
-
-    rpClient.updatePresence({
-        details: `${names.artist} - ${names.track}`,
-        state: req.state,
-        startTimestamp: req.startedAt,
-        largeImageKey: "icon",
-        partySize: track.trackNo,
-        partyMax:
-            allTracks.length >= track.trackNo ? allTracks.length : undefined
-    });
-});
+handleSetPlayState(updateRichPresence);
