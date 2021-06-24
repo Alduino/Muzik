@@ -1,13 +1,11 @@
 import {
     Box,
     Center,
-    chakra,
     Circle,
     Flex,
     Grid,
     Text,
     useColorModeValue,
-    useToken,
     VStack
 } from "@chakra-ui/react";
 import React, {FC} from "react";
@@ -22,23 +20,6 @@ import {SongListing} from "./SongListing";
 import {ErrorLabel} from "./lib/ErrorLabel";
 import {FilledSidebar} from "./lib/FilledSidebar";
 import {MediaControls, SongDisplay} from "./lib/MediaControls";
-
-const CornerClip = chakra((props: {className?: string}) => {
-    const colours = useThemeColours();
-    const radius = useToken("radii", "md");
-    const bg = useToken("colors", colours.backgroundL1);
-
-    return (
-        <Box
-            className={props.className}
-            borderRadius={radius}
-            boxShadow={`-${radius} -${radius} 0 0 ${bg}`}
-            width={`calc(${radius} * 2)`}
-            height={`calc(${radius} * 2)`}
-            pointerEvents="none"
-        />
-    );
-});
 
 const PageContainer: FC = props => {
     const colours = useThemeColours();
@@ -58,6 +39,8 @@ const PageContainer: FC = props => {
                 width="100%"
                 height="100%"
                 overflow="auto"
+                boxShadow="inner"
+                borderTopLeftRadius="md"
                 className="custom-scroll"
             >
                 {props.children}
@@ -65,7 +48,6 @@ const PageContainer: FC = props => {
             <SongDisplay gridArea="nowpl" />
             <MediaControls gridArea="mctrl" />
             <FilledSidebar gridArea="nav" />
-            <CornerClip gridArea="route" zIndex={10} />
         </Grid>
     );
 };
