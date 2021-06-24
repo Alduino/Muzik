@@ -16,6 +16,10 @@ export const en: Locale = {
             playAlbum: "Play album",
             playAll: "Play all"
         },
+        discord: {
+            playing: "Playing",
+            paused: "Paused"
+        },
         utils: {
             copyFilePath: "Copy file path",
             openContainingFolder: "Open containing folder"

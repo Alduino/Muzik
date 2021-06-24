@@ -16,6 +16,10 @@ export default interface Locale extends ResourceLanguage {
             playAlbum: string;
             playAll: string;
         };
+        discord: {
+            playing: string;
+            paused: string;
+        };
         utils: {
             copyFilePath: string;
             openContainingFolder: string;

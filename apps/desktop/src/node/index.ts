@@ -1,3 +1,4 @@
+import createDiscordRpClient from "discord-rich-presence";
 import {app, clipboard, dialog, protocol, shell} from "electron";
 import {
     EVENT_APP_STATE_GET,
@@ -22,6 +23,7 @@ import handleGetSong from "../lib/rpc/get-song/node";
 import handleGetSourceDirectories from "../lib/rpc/get-source-directories/node";
 import handleOpenFileDirectory from "../lib/rpc/open-file-directory/node";
 import handleSelectDirectory from "../lib/rpc/select-directory/node";
+import handleSetPlayState from "../lib/rpc/set-play-state/node";
 import handleSetSourceDirectories from "../lib/rpc/set-source-directories/node";
 import {store} from "./configuration";
 import {
@@ -43,6 +45,8 @@ import {
     updateSongDirectories
 } from "./database";
 import {log} from "./logger";
+
+const rpClient = createDiscordRpClient("857531285495742464");
 
 protocol.registerSchemesAsPrivileged([
     {
@@ -250,4 +254,25 @@ handleSelectDirectory(async () => {
 handleSetSourceDirectories(async ({paths}) => {
     store.set("musicStore", paths);
     await updateSongDirectories(paths);
+});
+
+handleSetPlayState(async req => {
+    if (req.trackId === false) {
+        rpClient.updatePresence({});
+        return;
+    }
+
+    const track = await getSongById(req.trackId);
+    const names = getNamesByTrackId(req.trackId);
+    const allTracks = await getTracksByAlbumId(track.albumId);
+
+    rpClient.updatePresence({
+        details: `${names.artist} - ${names.track}`,
+        state: req.state,
+        startTimestamp: req.startedAt,
+        largeImageKey: "icon",
+        partySize: track.trackNo,
+        partyMax:
+            allTracks.length >= track.trackNo ? allTracks.length : undefined
+    });
 });

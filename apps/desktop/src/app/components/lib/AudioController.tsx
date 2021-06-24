@@ -9,6 +9,7 @@ import React, {
     useMemo,
     useState
 } from "react";
+import setPlayState from "../../../lib/rpc/set-play-state/app";
 import defaultAlbumArt from "../../assets/default-album-art.svg";
 import silenceAudioFile from "../../assets/silence.mp3";
 import {
@@ -424,6 +425,7 @@ export const AudioController: FC = () => {
 export const MediaSessionController: FC = () => {
     const playingTrackId = useAppSelector(state => state.queue.nowPlaying);
     const isPlaying = useAppSelector(state => state.queue.isPlaying);
+    const currentTime = useAppSelector(state => state.queue.currentTime);
 
     const dispatch = useAppDispatch();
 
@@ -461,6 +463,25 @@ export const MediaSessionController: FC = () => {
             navigator.mediaSession.playbackState = "playing";
         } else {
             navigator.mediaSession.playbackState = "paused";
+        }
+    }, [playingTrackId, isPlaying]);
+
+    useEffect(() => {
+        if (playingTrackId === null) {
+            setPlayState({
+                trackId: false
+            });
+        } else if (isPlaying) {
+            setPlayState({
+                trackId: playingTrackId,
+                state: "Playing",
+                startedAt: Math.floor(Date.now() / 1000 - currentTime)
+            });
+        } else {
+            setPlayState({
+                trackId: playingTrackId,
+                state: "Paused"
+            });
         }
     }, [playingTrackId, isPlaying]);
 

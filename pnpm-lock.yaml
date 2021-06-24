@@ -44,6 +44,7 @@ importers:
       '@redux-devtools/log-monitor': ^2.3.0
       '@reduxjs/toolkit': ^1.5.1
       '@timfish/webpack-asset-relocator-loader': ^0.1.0
+      '@types/discord-rich-presence': ^0.0.0
       '@types/react': ^17.0.3
       '@types/react-dom': ^17.0.3
       '@types/react-virtualized-auto-sizer': ^1.0.0
@@ -56,6 +57,7 @@ importers:
       async-mutex: ^0.3.1
       base64-js: ^1.5.1
       css-loader: ^4.3.0
+      discord-rich-presence: ^0.0.8
       electron: 12.0.2
       electron-builder: ^22.11.7
       electron-rebuild: ^2.3.5
@@ -102,6 +104,7 @@ importers:
       '@timfish/webpack-asset-relocator-loader': 0.1.0
       async-mutex: 0.3.1
       base64-js: 1.5.1
+      discord-rich-presence: 0.0.8
       electron-store: 7.0.2
       eventemitter3: 4.0.7
       execa: 5.0.0
@@ -137,6 +140,7 @@ importers:
       '@muzik/database': link:../../libs/database
       '@muzik/logger': link:../../libs/logger
       '@muzik/song-scanner': link:../../libs/song-scanner
+      '@types/discord-rich-presence': 0.0.0
       '@types/react': 17.0.3
       '@types/react-dom': 17.0.3
       '@types/react-virtualized-auto-sizer': 1.0.0
@@ -2040,6 +2044,12 @@ packages:
   /@types/debug/4.1.5:
     resolution: {integrity: sha512-Q1y515GcOdTHgagaVFhHnIFQ38ygs/kmxdNpvpou+raI9UO3YZcHDngBSYKQklcKlvA7iuQlmIKbzvmxcOE9CQ==}
 
+  /@types/discord-rich-presence/0.0.0:
+    resolution: {integrity: sha512-lOQBfiJXgxl1xkQ5Wmn7HsbFhH97+GCh0/NqVIY4E0GZEIcZZmcbPuxopwuFbOo004AxUkBMLsk22ntpsm/Xfw==}
+    dependencies:
+      '@types/node': 15.12.4
+    dev: true
+
   /@types/estree/0.0.39:
     resolution: {integrity: sha512-EYNwp3bU+98cpU4lAWYYL7Zz+2gryWH1qbdDTidVd6hkiR6weksdbMadyXKXNPEkQFhXM+hVO9ZygomHXp+AIw==}
     dev: false
@@ -2138,6 +2148,10 @@ packages:
 
   /@types/node/15.12.3:
     resolution: {integrity: sha512-SNt65CPCXvGNDZ3bvk1TQ0Qxoe3y1RKH88+wZ2Uf05dduBCqqFQ76ADP9pbT+Cpvj60SkRppMCh2Zo8tDixqjQ==}
+    dev: true
+
+  /@types/node/15.12.4:
+    resolution: {integrity: sha512-zrNj1+yqYF4WskCMOHwN+w9iuD12+dGm0rQ35HLl9/Ouuq52cEtd0CH9qMgrdNmi5ejC1/V7vKEXYubB+65DkA==}
     dev: true
 
   /@types/parse-json/4.0.0:
@@ -4233,6 +4247,15 @@ packages:
     dependencies:
       path-type: 4.0.0
     dev: true
+
+  /discord-rich-presence/0.0.8:
+    resolution: {integrity: sha512-IpVMPjv15C9UvppxvrrGdv6bzQHOW1P1vLoMH15HvdJwGJ3dBd2bnrJ63Uy36YRUfrAMxGLiwUDHncvC8AuPaQ==}
+    dependencies:
+      discord-rpc: github.com/discordjs/rpc/6f83d8d812c87cb7ae22064acd132600407d7d05
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+    dev: false
 
   /dmg-builder/22.11.7:
     resolution: {integrity: sha512-+I+XfP2DODHB6PwFANgpH/WMzzCA5r5XoMvbFCIYjQjJpXlO0XnqQaamzFl2vh/Wz/Qt0d0lJMgRy8gKR3MGdQ==}
@@ -7417,12 +7440,10 @@ packages:
 
   /node-addon-api/1.7.2:
     resolution: {integrity: sha512-ibPK3iA+vaY1eEjESkQkM0BbCqFOaZMiXRTtdB0u7b4djtY6JnsjvPdUHVMg6xQt3B8fpTTWHI9A+ADjM9frzg==}
-    dev: true
 
   /node-fetch/2.6.1:
     resolution: {integrity: sha512-V4aYg89jEoVRxRb2fJdAg8FHvI7cEyYdVAh94HH0UIK8oJxUfkjlDQN9RbMx+bEjP7+ggMiFRprSti032Oipxw==}
     engines: {node: 4.x || >=6.0.0}
-    dev: true
 
   /node-gyp/7.1.2:
     resolution: {integrity: sha512-CbpcIo7C3eMu3dL1c3d0xw449fHIGALIJsRP4DDPHpyiW8vcriNY7ubh9TE4zEKfSxscY7PjeFnshE7h75ynjQ==}
@@ -10683,6 +10704,19 @@ packages:
       async-limiter: 1.0.1
     dev: true
 
+  /ws/7.5.0:
+    resolution: {integrity: sha512-6ezXvzOZupqKj4jUqbQ9tXuJNo+BR2gU8fFRk3XCP3e0G6WT414u5ELe6Y0vtp7kmSJ3F7YWObSNr1ESsgi4vw==}
+    engines: {node: '>=8.3.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: ^5.0.2
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+    dev: false
+
   /xdg-basedir/4.0.0:
     resolution: {integrity: sha512-PSNhEJDejZYV7h50BohL09Er9VaIefr2LMAf3OEmpCkjOi34eYyQYAXUTjEQtZJTKcF0E2UKTh+osDLsgNim9Q==}
     engines: {node: '>=8'}
@@ -10837,3 +10871,28 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
     dev: true
+
+  github.com/devsnek/node-register-scheme/e7cc9a63a1f512565da44cb57316d9fb10750e17:
+    resolution: {tarball: https://codeload.github.com/devsnek/node-register-scheme/tar.gz/e7cc9a63a1f512565da44cb57316d9fb10750e17}
+    name: register-scheme
+    version: 0.0.2
+    requiresBuild: true
+    dependencies:
+      bindings: 1.5.0
+      node-addon-api: 1.7.2
+    dev: false
+    optional: true
+
+  github.com/discordjs/rpc/6f83d8d812c87cb7ae22064acd132600407d7d05:
+    resolution: {tarball: https://codeload.github.com/discordjs/rpc/tar.gz/6f83d8d812c87cb7ae22064acd132600407d7d05}
+    name: discord-rpc
+    version: 4.0.1
+    dependencies:
+      node-fetch: 2.6.1
+      ws: 7.5.0
+    optionalDependencies:
+      register-scheme: github.com/devsnek/node-register-scheme/e7cc9a63a1f512565da44cb57316d9fb10750e17
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+    dev: false
