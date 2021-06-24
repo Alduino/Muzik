@@ -15,7 +15,7 @@ export default async function updateRichPresence(req: Request): Promise<void> {
     const allTracks = await getTracksByAlbumId(track.albumId);
 
     rpClient.updatePresence({
-        details: `${names.artist} - ${names.track}`,
+        details: `${names.track} - ${names.artist}`,
         state: req.state,
         startTimestamp: req.startedAt,
         largeImageKey: "icon",
