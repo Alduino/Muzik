@@ -1,7 +1,6 @@
 import {Box, Flex} from "@chakra-ui/react";
 import React, {FC, useMemo} from "react";
 import useLetterCounts from "../hooks/useLetterCounts";
-import useThemeColours from "../hooks/useThemeColours";
 import useAllTrackIds from "../rpc/useAllTrackIds";
 import useFirstArtistLettersByTrackIds from "../rpc/useFirstArtistLettersByTrackIds";
 import {ErrorText} from "./lib/ErrorText";
@@ -11,7 +10,6 @@ import {SongList} from "./lib/SongList";
 const emptyArray = [] as const;
 
 export const SongListing: FC = () => {
-    const colours = useThemeColours();
     const {data: tracks, error} = useAllTrackIds();
     const {
         data: firstLetters,
@@ -35,12 +33,7 @@ export const SongListing: FC = () => {
     }
 
     return (
-        <Flex
-            justifyContent="stretch"
-            direction="row"
-            height="100%"
-            bg={colours.backgroundL2}
-        >
+        <Flex justifyContent="stretch" direction="row" height="100%">
             <Box flexGrow={1}>
                 {tracks && <SongList songIds={tracks.trackIds} />}
             </Box>

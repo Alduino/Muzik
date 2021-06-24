@@ -216,7 +216,6 @@ const AlbumList: FC<AlbumListProps> = ({albums, playingAlbum, ...props}) => (
 const emptyArray = [] as const;
 
 export const AlbumListing: FC = () => {
-    const colours = useThemeColours();
     const selectedAlbum = useAppSelector(
         v => v.albumListingRoute.selectedAlbum
     );
@@ -272,13 +271,7 @@ export const AlbumListing: FC = () => {
     }
 
     return (
-        <HStack
-            justify="start"
-            align="stretch"
-            spacing={0}
-            background={colours.backgroundL2}
-            height="100%"
-        >
+        <HStack justify="start" align="stretch" spacing={0} height="100%">
             <Container flexGrow={1}>
                 <Box flexGrow={1}>
                     {!albums ? (
