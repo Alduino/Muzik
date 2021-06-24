@@ -42,6 +42,11 @@ export default interface Locale extends ResourceLanguage {
             musicDirectories: string;
             removeDirectory: string;
             selectDirectory: string;
+            discordIntegrationLabel: string;
+            discordIntegration: {
+                enable: string;
+                enableInfo: string;
+            };
         };
         sidebarGroups: {
             routes: string;

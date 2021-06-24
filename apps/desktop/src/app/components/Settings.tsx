@@ -1,27 +1,85 @@
 import {
     Button,
     Center,
+    Divider,
+    Flex,
+    FormControl,
+    FormHelperText,
+    FormLabel,
+    Grid,
     Heading,
     HStack,
     Icon,
     IconButton,
+    SimpleGrid,
     Spinner,
     Stack,
+    Switch,
     Text
 } from "@chakra-ui/react";
-import React, {ReactElement, useCallback} from "react";
+import React, {
+    CSSProperties,
+    PropsWithChildren,
+    ReactElement,
+    useCallback
+} from "react";
 import {useTranslation} from "react-i18next";
 import {AiFillFolderAdd} from "react-icons/ai";
 import {MdDelete} from "react-icons/md";
 import selectDirectory from "../../lib/rpc/select-directory/app";
+import setDiscordRichPresenceConfiguration from "../../lib/rpc/set-discord-rich-presence-configuration/app";
 import setSourceDirectories from "../../lib/rpc/set-source-directories/app";
+import useDiscordRichPresenceConfiguration from "../rpc/useDiscordRichPresenceConfiguration";
 import useSourceDirectories from "../rpc/useSourceDirectories";
 import {ErrorText} from "./lib/ErrorText";
 import {TransText} from "./lib/TransText";
 
+interface SettingsControlChildProps {
+    style: CSSProperties;
+}
+
+interface SettingsControlProps {
+    label: string;
+    help: string;
+    id?: string;
+
+    children(props: SettingsControlChildProps): ReactElement;
+}
+
+const SettingsControl = ({
+    label,
+    help,
+    id,
+    children: Children
+}: SettingsControlProps): ReactElement => {
+    const {t} = useTranslation("app");
+
+    return (
+        <Grid
+            as={FormControl}
+            id={id}
+            display="grid"
+            templateRows="auto auto"
+            templateColumns="auto 1fr"
+            alignItems="center"
+            gap={2}
+        >
+            <FormLabel gridRow="1" gridColumn="1" m={0}>
+                {t(label)}
+            </FormLabel>
+            <Children style={{gridColumn: 2, gridRow: 1}} />
+            <FormHelperText m={0} gridRow="2" gridColumn="1/3">
+                {t(help)}
+            </FormHelperText>
+        </Grid>
+    );
+};
+
 interface DirectorySelectorListProps {
     directories: string[];
+
     onDelete(index: number): void;
+
     onAdd(): void;
 }
 
@@ -107,18 +165,72 @@ const DirectorySelector = (): ReactElement => {
     );
 };
 
-export const Settings = (): ReactElement => {
-    //const invoker = useAsyncCallback(invokeMusicPathSelector);
+const DiscordRichPresenceConfiguration = (): ReactElement => {
+    const {
+        data: configuration,
+        error,
+        mutate
+    } = useDiscordRichPresenceConfiguration();
+
+    const handleSwitchChange = useCallback(
+        async (isEnabled: boolean) => {
+            await setDiscordRichPresenceConfiguration({
+                ...configuration,
+                isEnabled
+            });
+            mutate({...configuration, isEnabled});
+        },
+        [mutate]
+    );
+
+    if (error) {
+        return <ErrorText error={error} />;
+    } else if (!configuration) {
+        return (
+            <Center>
+                <Spinner />
+            </Center>
+        );
+    }
 
     return (
-        <Stack p={4} w="24rem">
-            <Heading
-                size="sm"
-                as={TransText}
-                k="settingsRoute.musicDirectories"
-            />
+        <SettingsControl
+            label="settingsRoute.discordIntegration.enable"
+            help="settingsRoute.discordIntegration.enableInfo"
+            id="discord-rp"
+        >
+            {({style}) => (
+                <Switch
+                    id="discord-rp"
+                    isChecked={configuration.isEnabled}
+                    onChange={e => handleSwitchChange(e.currentTarget.checked)}
+                    style={style}
+                />
+            )}
+        </SettingsControl>
+    );
+};
 
-            <DirectorySelector />
-        </Stack>
+const SettingsSection = ({
+    headingKey,
+    children
+}: PropsWithChildren<{headingKey: string}>): ReactElement => (
+    <Flex direction="column" maxW="24rem">
+        <Heading as={TransText} size="sm" mb={2} k={headingKey} />
+        {children}
+        <Divider mt={4} />
+    </Flex>
+);
+
+export const Settings = (): ReactElement => {
+    return (
+        <SimpleGrid minWidth="24rem" p={4} spacingY={4} spacingX={8}>
+            <SettingsSection headingKey="settingsRoute.musicDirectories">
+                <DirectorySelector />
+            </SettingsSection>
+            <SettingsSection headingKey="settingsRoute.discordIntegrationLabel">
+                <DiscordRichPresenceConfiguration />
+            </SettingsSection>
+        </SimpleGrid>
     );
 };

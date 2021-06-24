@@ -41,7 +41,13 @@ export const en: Locale = {
         settingsRoute: {
             musicDirectories: "Source Directories",
             removeDirectory: "Remove",
-            selectDirectory: "Select a new directory"
+            selectDirectory: "Select a new directory",
+            discordIntegrationLabel: "Discord Integration",
+            discordIntegration: {
+                enable: "Enable",
+                enableInfo:
+                    "Shows what song is playing on your Discord profile."
+            }
         },
         sidebarGroups: {
             routes: "Routes",
