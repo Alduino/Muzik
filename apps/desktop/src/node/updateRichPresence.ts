@@ -31,7 +31,7 @@ export default async function updateRichPresence(
     const names = getNamesByTrackId(req.trackId);
 
     rpClient.updatePresence({
-        details: `${names.track} - ${names.artist}`,
+        details: `${names.track} by ${names.artist}`,
         state: req.state,
         startTimestamp: req.startedAt,
         largeImageKey: "icon"
