@@ -56,6 +56,14 @@ export default interface Locale extends ResourceLanguage {
                 positionTop: string;
                 positionBottom: string;
             };
+            themeLabel: string;
+            theme: {
+                colourMode: string;
+                colourModeInfo: string;
+                colourModeLight: string;
+                colourModeDark: string;
+                colourModeSystem: string;
+            };
         };
         sidebarGroups: {
             routes: string;

@@ -432,7 +432,7 @@ const MediaControlsImpl: FC = () => {
             p={4}
             pl={0}
             spacing={4}
-            background={colours.backgroundL1}
+            background={colours.backgroundL0}
             color={colours.text}
         >
             <Divider orientation="vertical" />
@@ -478,7 +478,7 @@ const SongDisplayImpl: FC = () => {
             overflow="hidden"
             color={colours.text}
             p={4}
-            backgroundColor={colours.backgroundL1}
+            backgroundColor={colours.backgroundL0}
         >
             <SongInfo
                 position="absolute"

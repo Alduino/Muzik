@@ -17,7 +17,8 @@ import {
     Spinner,
     Stack,
     Switch,
-    Text
+    Text,
+    Select
 } from "@chakra-ui/react";
 import React, {
     CSSProperties,
@@ -32,9 +33,11 @@ import selectDirectory from "../../lib/rpc/select-directory/app";
 import setDiscordRichPresenceConfiguration from "../../lib/rpc/set-discord-rich-presence-configuration/app";
 import setMediaBarConfiguration from "../../lib/rpc/set-media-bar-configuration/app";
 import setSourceDirectories from "../../lib/rpc/set-source-directories/app";
+import setThemeConfiguration from "../../lib/rpc/set-theme-configuration/app";
 import useDiscordRichPresenceConfiguration from "../rpc/useDiscordRichPresenceConfiguration";
 import useMediaBarConfiguration from "../rpc/useMediaBarConfiguration";
 import useSourceDirectories from "../rpc/useSourceDirectories";
+import useThemeConfiguration from "../rpc/useThemeConfiguration";
 import {ErrorText} from "./lib/ErrorText";
 import {TransText} from "./lib/TransText";
 
@@ -310,6 +313,69 @@ const MediaBarConfiguration = (): ReactElement => {
     );
 };
 
+const ThemeConfiguration = (): ReactElement => {
+    const {t} = useTranslation("app");
+
+    const {data: configuration, error, mutate} = useThemeConfiguration();
+
+    const handleUpdate = useCallback(
+        async (newConfig: typeof configuration) => {
+            await setThemeConfiguration(newConfig);
+            mutate(newConfig);
+        },
+        [mutate]
+    );
+
+    const handleColourModeChanged = useCallback(
+        (colourMode: "light" | "dark" | "system") => {
+            return handleUpdate({...configuration, colourMode});
+        },
+        [configuration, handleUpdate]
+    );
+
+    if (error) {
+        return <ErrorText error={error} />;
+    } else if (!configuration) {
+        return (
+            <Center>
+                <Spinner />
+            </Center>
+        );
+    }
+
+    return (
+        <Stack spacing={4}>
+            <SettingsControl
+                label="settingsRoute.theme.colourMode"
+                help="settingsRoute.theme.colourModeInfo"
+            >
+                {props => (
+                    <Select
+                        {...props}
+                        value={configuration.colourMode}
+                        onChange={e =>
+                            handleColourModeChanged(
+                                e.currentTarget
+                                    .value as typeof configuration.colourMode
+                            )
+                        }
+                    >
+                        <option value="light">
+                            {t("settingsRoute.theme.colourModeLight")}
+                        </option>
+                        <option value="dark">
+                            {t("settingsRoute.theme.colourModeDark")}
+                        </option>
+                        <option value="system">
+                            {t("settingsRoute.theme.colourModeSystem")}
+                        </option>
+                    </Select>
+                )}
+            </SettingsControl>
+        </Stack>
+    );
+};
+
 const SettingsSection = ({
     headingKey,
     children
@@ -332,6 +398,9 @@ export const Settings = (): ReactElement => {
             </SettingsSection>
             <SettingsSection headingKey="settingsRoute.mediaBarLabel">
                 <MediaBarConfiguration />
+            </SettingsSection>
+            <SettingsSection headingKey="settingsRoute.themeLabel">
+                <ThemeConfiguration />
             </SettingsSection>
         </Box>
     );

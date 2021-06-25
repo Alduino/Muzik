@@ -218,7 +218,7 @@ export const ContextMenu = forwardRef(function ContextMenu(
                     <VStack
                         ref={ref}
                         align="stretch"
-                        background={colours.backgroundL1}
+                        background={colours.backgroundL2}
                         shadow="md"
                         borderRadius="md"
                         w="16rem"
