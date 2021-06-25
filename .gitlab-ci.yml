@@ -92,7 +92,7 @@ release:
         - 'echo "Creating release for $CI_COMMIT_TAG: $CI_COMMIT_DESCRIPTION"'
         - echo "Files will be served from $PACKAGE_FILENAME.{exe,appimage,tar.gz,deb,rpm}"
         - |
-            release-cli create --name "Muzik v$CI_COMMIT_TAG" --description "$CI_COMMIT_DESCRIPTION" --tag-name $CI_COMMIT_TAG \
+            release-cli create --name "Muzik v$CI_COMMIT_TAG" --description release-notes.md --tag-name $CI_COMMIT_TAG \
                 --assets-link "{\"name\":\"Windows (.exe)\",\"url\":\"$PACKAGE_FILENAME.exe\"}" \
                 --assets-link "{\"name\":\"Generic Linux (.appimage)\",\"url\":\"$PACKAGE_FILENAME.appimage\"}" \
                 --assets-link "{\"name\":\"Generic Linux (.tar.gz)\",\"url\":\"$PACKAGE_FILENAME.tar.gz\"}" \
