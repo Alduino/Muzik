@@ -22,7 +22,6 @@ linux-build:
         - apt update -y
         - apt install rpm -y
         - curl -f https://get.pnpm.io/v6.7.js | node - add --global pnpm@6
-        - pnpm config set store-dir .pnpm-store
     script:
         - pnpm i
         - pnpm run r:build
@@ -44,7 +43,6 @@ windows-build:
         - choco upgrade nodejs --yes --no-progress
         - choco install python3 --yes --no-progress
         - (Invoke-WebRequest 'https://get.pnpm.io/v6.7.js' -UseBasicParsing).Content | node - add --global pnpm
-        - pnpm config set store-dir .pnpm-store
     script:
         - pnpm i
         - pnpm run r:build
