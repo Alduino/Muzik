@@ -1,12 +1,15 @@
-import {extendTheme} from "@chakra-ui/react";
+import {extendTheme, ThemeOverride} from "@chakra-ui/react";
 import "@fontsource/montserrat";
 import "@fontsource/lato";
 
-const theme = extendTheme({
-    fonts: {
-        heading: "Montserrat",
-        body: "Lato"
-    }
-});
+const createTheme = (ex: ThemeOverride): ReturnType<typeof extendTheme> =>
+    extendTheme({
+        fonts: {
+            ...ex.fonts,
+            heading: "Montserrat",
+            body: "Lato"
+        },
+        ...ex
+    });
 
-export default theme;
+export default createTheme;

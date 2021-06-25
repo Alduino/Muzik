@@ -18,7 +18,7 @@ export default function useThemeColours(): ThemeColours {
     const text = useColorModeValue("gray.900", "white");
 
     const backgroundL0 = useColorModeValue("white", "black");
-    const backgroundL1 = useColorModeValue("white", "gray.900");
+    const backgroundL1 = useColorModeValue("gray.50", "gray.900");
     const backgroundL2 = useColorModeValue("gray.100", "gray.800");
     const backgroundL3 = useColorModeValue("gray.200", "gray.700");
 

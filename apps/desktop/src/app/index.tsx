@@ -1,4 +1,3 @@
-import {ColorModeScript} from "@chakra-ui/react";
 import React from "react";
 import {render} from "react-dom";
 import {I18nextProvider} from "react-i18next";
@@ -17,7 +16,6 @@ initialiseMuzik();
     const rootElement = document.getElementById("main");
     render(
         <>
-            <ColorModeScript initialColorMode="system" />
             <I18nextProvider i18n={i18n}>
                 <Root />
             </I18nextProvider>

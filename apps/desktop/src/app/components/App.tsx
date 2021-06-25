@@ -65,7 +65,7 @@ const PageContainer: FC = props => {
             <Box
                 {...borderRadiusProp}
                 as="main"
-                bg={colours.backgroundL2}
+                bg={colours.backgroundL1}
                 gridArea="route"
                 width="100%"
                 height="100%"

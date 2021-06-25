@@ -16,7 +16,7 @@ export const Sidebar = chakra((props: SidebarProps) => {
         <VStack
             spacing={0}
             align="stretch"
-            backgroundColor={colours.backgroundL1}
+            backgroundColor={colours.backgroundL0}
             className={props.className}
         >
             {props.children}

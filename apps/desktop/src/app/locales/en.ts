@@ -57,6 +57,15 @@ export const en: Locale = {
                 positionInfo: "Select where the media bar should be placed",
                 positionTop: "Top",
                 positionBottom: "Bottom"
+            },
+            themeLabel: "Theme",
+            theme: {
+                colourMode: "Colour mode",
+                colourModeInfo:
+                    "Select the light or dark theme, or use System to synchronise with your computer",
+                colourModeLight: "Light",
+                colourModeDark: "Dark",
+                colourModeSystem: "System"
             }
         },
         sidebarGroups: {

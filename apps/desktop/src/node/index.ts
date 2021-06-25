@@ -22,12 +22,14 @@ import handleGetMediaBarConfiguration from "../lib/rpc/get-media-bar-configurati
 import handleGetNames from "../lib/rpc/get-names/node";
 import handleGetSong from "../lib/rpc/get-song/node";
 import handleGetSourceDirectories from "../lib/rpc/get-source-directories/node";
+import handleGetThemeConfiguration from "../lib/rpc/get-theme-configuration/node";
 import handleOpenFileDirectory from "../lib/rpc/open-file-directory/node";
 import handleSelectDirectory from "../lib/rpc/select-directory/node";
 import handleSetDiscordRichPresenceConfiguration from "../lib/rpc/set-discord-rich-presence-configuration/node";
 import handleSetMediaBarConfiguration from "../lib/rpc/set-media-bar-configuration/node";
 import handleSetPlayState from "../lib/rpc/set-play-state/node";
 import handleSetSourceDirectories from "../lib/rpc/set-source-directories/node";
+import handleSetThemeConfiguration from "../lib/rpc/set-theme-configuration/node";
 import {store} from "./configuration";
 import {
     getAlbumArtByHash,
@@ -285,3 +287,12 @@ handleGetMediaBarConfiguration(async () => {
 handleSetMediaBarConfiguration(async req => {
     store.set("mediaBarConfiguration", req);
 });
+
+handleGetThemeConfiguration(
+    async () =>
+        store.get("themeConfiguration") ?? {
+            colourMode: "system"
+        }
+);
+
+handleSetThemeConfiguration(async req => store.set("themeConfiguration", req));
