@@ -4,6 +4,7 @@ import {
     Circle,
     Flex,
     Grid,
+    Spinner,
     Text,
     useColorModeValue,
     VStack
@@ -12,27 +13,57 @@ import React, {FC} from "react";
 import {PuffLoader} from "react-spinners";
 import useThemeColours from "../hooks/useThemeColours";
 import {GlobalRoute} from "../reducers/routing";
+import useMediaBarConfiguration from "../rpc/useMediaBarConfiguration";
 import {useAppSelector} from "../store-hooks";
 import {AlbumListing} from "./AlbumListing";
 import {QueueListing} from "./QueueListing";
 import {Settings} from "./Settings";
 import {SongListing} from "./SongListing";
 import {ErrorLabel} from "./lib/ErrorLabel";
+import {ErrorText} from "./lib/ErrorText";
 import {FilledSidebar} from "./lib/FilledSidebar";
 import {MediaControls, SongDisplay} from "./lib/MediaControls";
 
 const PageContainer: FC = props => {
     const colours = useThemeColours();
+    const {
+        data: mediaBarConfig,
+        error: mediaBarConfigError
+    } = useMediaBarConfiguration();
+
+    if (mediaBarConfigError) {
+        return <ErrorText error={mediaBarConfigError} />;
+    } else if (!mediaBarConfig) {
+        return (
+            <Center>
+                <Spinner />
+            </Center>
+        );
+    }
+
+    const templateAreas =
+        mediaBarConfig.position === "top"
+            ? '"nowpl mctrl" "nav route"'
+            : '"nav route" "nowpl mctrl"';
+    const templateRows =
+        mediaBarConfig.position === "top"
+            ? "6rem minmax(0, 1fr)"
+            : "minmax(0, 1fr) 6rem";
+    const borderRadiusProp =
+        mediaBarConfig.position === "top"
+            ? {borderTopLeftRadius: "md"}
+            : {borderBottomLeftRadius: "md"};
 
     return (
         <Grid
-            templateAreas={`"nowpl mctrl" "nav route"`}
+            templateAreas={templateAreas}
             templateColumns="16rem minmax(0, 1fr)"
-            templateRows="6rem minmax(0, 1fr)"
+            templateRows={templateRows}
             width="100vw"
             height="100vh"
         >
             <Box
+                {...borderRadiusProp}
                 as="main"
                 bg={colours.backgroundL2}
                 gridArea="route"
@@ -40,7 +71,6 @@ const PageContainer: FC = props => {
                 height="100%"
                 overflow="auto"
                 boxShadow="inner"
-                borderTopLeftRadius="md"
                 className="custom-scroll"
             >
                 {props.children}

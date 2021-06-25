@@ -18,12 +18,14 @@ import handleGetArtist from "../lib/rpc/get-artist/node";
 import handleGetDiscordRichPresenceConfiguration from "../lib/rpc/get-discord-rich-presence-configuration/node";
 import handleGetFirstArtistLettersByAlbumIds from "../lib/rpc/get-first-artist-letters-by-album-ids/node";
 import handleGetFirstArtistLettersByTrackIds from "../lib/rpc/get-first-artist-letters-by-track-ids/node";
+import handleGetMediaBarConfiguration from "../lib/rpc/get-media-bar-configuration/node";
 import handleGetNames from "../lib/rpc/get-names/node";
 import handleGetSong from "../lib/rpc/get-song/node";
 import handleGetSourceDirectories from "../lib/rpc/get-source-directories/node";
 import handleOpenFileDirectory from "../lib/rpc/open-file-directory/node";
 import handleSelectDirectory from "../lib/rpc/select-directory/node";
 import handleSetDiscordRichPresenceConfiguration from "../lib/rpc/set-discord-rich-presence-configuration/node";
+import handleSetMediaBarConfiguration from "../lib/rpc/set-media-bar-configuration/node";
 import handleSetPlayState from "../lib/rpc/set-play-state/node";
 import handleSetSourceDirectories from "../lib/rpc/set-source-directories/node";
 import {store} from "./configuration";
@@ -270,4 +272,16 @@ handleGetDiscordRichPresenceConfiguration(async () => {
 handleSetDiscordRichPresenceConfiguration(async req => {
     store.set("integrations.discordRichPresence", req);
     await updateRichPresence();
+});
+
+handleGetMediaBarConfiguration(async () => {
+    return (
+        store.get("mediaBarConfiguration") ?? {
+            position: "top"
+        }
+    );
+});
+
+handleSetMediaBarConfiguration(async req => {
+    store.set("mediaBarConfiguration", req);
 });

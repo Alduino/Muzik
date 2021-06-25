@@ -50,6 +50,13 @@ export const en: Locale = {
                 displayWhenPaused: "Display when paused",
                 displayWhenPausedInfo:
                     "Show what song is playing if it is paused."
+            },
+            mediaBarLabel: "Media bar",
+            mediaBar: {
+                position: "Position",
+                positionInfo: "Select where the media bar should be placed",
+                positionTop: "Top",
+                positionBottom: "Bottom"
             }
         },
         sidebarGroups: {
