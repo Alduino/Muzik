@@ -335,7 +335,7 @@ export const AudioControllerProvider: FC = ({children}) => {
 
     useEffect(() => {
         // gives the value a sharp curve
-        gainNode.gain.value = (Math.pow(10, volume) - 1) / 9;
+        gainNode.gain.value = (Math.pow(10, Math.max(volume, 0)) - 1) / 9;
     }, [volume]);
 
     return (
