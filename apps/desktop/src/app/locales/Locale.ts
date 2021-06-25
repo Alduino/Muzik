@@ -49,6 +49,13 @@ export default interface Locale extends ResourceLanguage {
                 displayWhenPaused: string;
                 displayWhenPausedInfo: string;
             };
+            mediaBarLabel: string;
+            mediaBar: {
+                position: string;
+                positionInfo: string;
+                positionTop: string;
+                positionBottom: string;
+            };
         };
         sidebarGroups: {
             routes: string;

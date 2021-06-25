@@ -28,7 +28,7 @@ import React, {
     useState
 } from "react";
 import {useTranslation} from "react-i18next";
-import {BiChevronDown} from "react-icons/bi";
+import {BiChevronDown, BiChevronUp} from "react-icons/bi";
 import {GrFastForward, GrPause, GrPlay, GrRewind} from "react-icons/gr";
 import {
     ImVolumeHigh,
@@ -59,6 +59,7 @@ import {
     setGlobalRoute
 } from "../../reducers/routing";
 import {useNames, useTrack} from "../../rpc";
+import useMediaBarConfiguration from "../../rpc/useMediaBarConfiguration";
 import {useAppDispatch, useAppSelector} from "../../store-hooks";
 import {formatDuration} from "../../utils/formatDuration";
 import {ActiveDotContainer} from "./ActiveDot";
@@ -177,6 +178,9 @@ const VolumeButton = (): ReactElement => {
     const colours = useThemeColours();
     const backgroundValue = useToken("colors", colours.backgroundL3);
 
+    const {data: mediaBarConfig} = useMediaBarConfiguration();
+    const isMediaBarOnTop = mediaBarConfig?.position !== "bottom";
+
     const boxRef = useRef<HTMLDivElement>();
 
     const {isOpen, onOpen, onClose} = useDisclosure();
@@ -189,7 +193,7 @@ const VolumeButton = (): ReactElement => {
 
     const {renderLayer, triggerProps, layerProps, arrowProps} = useLayer({
         isOpen,
-        placement: "bottom-center"
+        placement: isMediaBarOnTop ? "bottom-center" : "top-center"
     });
 
     const handleSliderLeave = useCallback(() => {
@@ -461,6 +465,9 @@ const SongDisplayImpl: FC = () => {
 
     const albumArt = useAlbumArt(currentTrackId);
 
+    const {data: mediaBarConfig} = useMediaBarConfiguration();
+    const isMediaBarOnTop = mediaBarConfig?.position !== "bottom";
+
     const handleAlbumArtExpand = useCallback(() => {
         dispatch(setAlbumArtSize(true));
     }, [dispatch]);
@@ -490,15 +497,15 @@ const SongDisplayImpl: FC = () => {
                 position="relative"
                 zIndex={1}
                 flexShrink={0}
-                top={albumArtIsLarge ? 16 : 0}
+                top={albumArtIsLarge ? (isMediaBarOnTop ? 16 : -16) : 0}
                 opacity={albumArtIsLarge ? 0 : 1}
                 {...albumArt}
             >
                 <Flex p={2} direction="column" height="full" alignItems="start">
-                    <Box flexGrow={1} />
+                    {isMediaBarOnTop && <Box flexGrow={1} />}
                     <IconButton
                         aria-label="Expand"
-                        as={BiChevronDown}
+                        as={isMediaBarOnTop ? BiChevronDown : BiChevronUp}
                         size="sm"
                         bg="black"
                         color="white"

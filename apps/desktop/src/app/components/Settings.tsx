@@ -12,7 +12,8 @@ import {
     HStack,
     Icon,
     IconButton,
-    SimpleGrid,
+    RadioGroup,
+    Radio,
     Spinner,
     Stack,
     Switch,
@@ -29,8 +30,10 @@ import {AiFillFolderAdd} from "react-icons/ai";
 import {MdDelete} from "react-icons/md";
 import selectDirectory from "../../lib/rpc/select-directory/app";
 import setDiscordRichPresenceConfiguration from "../../lib/rpc/set-discord-rich-presence-configuration/app";
+import setMediaBarConfiguration from "../../lib/rpc/set-media-bar-configuration/app";
 import setSourceDirectories from "../../lib/rpc/set-source-directories/app";
 import useDiscordRichPresenceConfiguration from "../rpc/useDiscordRichPresenceConfiguration";
+import useMediaBarConfiguration from "../rpc/useMediaBarConfiguration";
 import useSourceDirectories from "../rpc/useSourceDirectories";
 import {ErrorText} from "./lib/ErrorText";
 import {TransText} from "./lib/TransText";
@@ -250,6 +253,63 @@ const DiscordRichPresenceConfiguration = (): ReactElement => {
     );
 };
 
+const MediaBarConfiguration = (): ReactElement => {
+    const {t} = useTranslation("app");
+
+    const {data: configuration, error, mutate} = useMediaBarConfiguration();
+
+    const handleUpdate = useCallback(
+        async (newConfig: typeof configuration) => {
+            await setMediaBarConfiguration(newConfig);
+            mutate(newConfig);
+        },
+        [mutate]
+    );
+
+    const handlePositionChanged = useCallback(
+        (position: "top" | "bottom") => {
+            return handleUpdate({...configuration, position});
+        },
+        [configuration, handleUpdate]
+    );
+
+    if (error) {
+        return <ErrorText error={error} />;
+    } else if (!configuration) {
+        return (
+            <Center>
+                <Spinner />
+            </Center>
+        );
+    }
+
+    return (
+        <Stack spacing={4}>
+            <SettingsControl
+                label="settingsRoute.mediaBar.position"
+                help="settingsRoute.mediaBar.positionInfo"
+            >
+                {props => (
+                    <RadioGroup
+                        {...props}
+                        onChange={handlePositionChanged}
+                        value={configuration.position}
+                    >
+                        <Stack direction="row">
+                            <Radio value="top">
+                                {t("settingsRoute.mediaBar.positionTop")}
+                            </Radio>
+                            <Radio value="bottom">
+                                {t("settingsRoute.mediaBar.positionBottom")}
+                            </Radio>
+                        </Stack>
+                    </RadioGroup>
+                )}
+            </SettingsControl>
+        </Stack>
+    );
+};
+
 const SettingsSection = ({
     headingKey,
     children
@@ -269,6 +329,9 @@ export const Settings = (): ReactElement => {
             </SettingsSection>
             <SettingsSection headingKey="settingsRoute.discordIntegrationLabel">
                 <DiscordRichPresenceConfiguration />
+            </SettingsSection>
+            <SettingsSection headingKey="settingsRoute.mediaBarLabel">
+                <MediaBarConfiguration />
             </SettingsSection>
         </Box>
     );
