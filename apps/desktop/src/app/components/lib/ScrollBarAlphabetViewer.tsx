@@ -64,11 +64,16 @@ export const ScrollBarAlphabetViewer = ({
     }, [includedLetters, totalCount]);
 
     return (
-        <Box ref={containerElement} w={10} bg="#171923" position="relative">
+        <Box
+            ref={containerElement}
+            w={10}
+            bg={colours.backgroundL1}
+            position="relative"
+        >
             {includedLetters.map((letter: string) => (
                 <Center
                     key={letter}
-                    color="white"
+                    color={colours.text}
                     borderColor={colours.backgroundL3}
                     borderStyle="solid"
                     style={{
