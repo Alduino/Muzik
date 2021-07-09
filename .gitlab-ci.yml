@@ -25,6 +25,7 @@ linux-build:
     script:
         - pnpm i
         - pnpm run r:build
+        - ls apps/desktop/dist
     artifacts:
         when: on_success
         expire_in: 1 hour
@@ -46,6 +47,7 @@ windows-build:
     script:
         - pnpm i
         - pnpm run r:build
+        - ls apps/desktop/dist
     artifacts:
         when: on_success
         expire_in: 1 hour
