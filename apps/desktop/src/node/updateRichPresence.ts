@@ -12,11 +12,11 @@ export default async function updateRichPresence(
 ): Promise<void> {
     if (!req) return;
 
-    const config = store.get(
-        "integrations.discordRichPresence"
-    ) as RichPresenceConfiguration;
+    const config = store.get("integrations.discordRichPresence") as
+        | RichPresenceConfiguration
+        | undefined;
 
-    if (!config.isEnabled) {
+    if (!config?.isEnabled) {
         rpClient.updatePresence({});
         return;
     }
