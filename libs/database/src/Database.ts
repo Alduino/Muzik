@@ -1,3 +1,4 @@
+import {mkdir} from "fs/promises";
 import {join} from "path";
 import Sqlite3Db, {Database as Sqlite3} from "better-sqlite3";
 import MigrationManager from "./migration-manager";
@@ -239,12 +240,12 @@ class Statements {
 }
 
 export default class Database {
-    private readonly db: Sqlite3;
+    private readonly dbDir: string;
+    private dbVal: Sqlite3 | null = null;
     private sVal: Statements | null = null;
 
     constructor(dbDir: string) {
-        const filePath = join(dbDir, "database.sqlite");
-        this.db = new Sqlite3Db(filePath);
+        this.dbDir = dbDir;
     }
 
     private get s() {
@@ -252,7 +253,16 @@ export default class Database {
         return this.sVal;
     }
 
-    initialise(): void {
+    private get db() {
+        if (this.dbVal === null) throw new Error("Database is not initialised");
+        return this.dbVal;
+    }
+
+    async initialise(): Promise<void> {
+        await mkdir(this.dbDir, {recursive: true});
+        const filePath = join(this.dbDir, "database.sqlite");
+        this.dbVal = new Sqlite3Db(filePath);
+
         const migrationManager = new MigrationManager(this.db, migrations);
         migrationManager.migrate();
         this.sVal = new Statements(this.db);
