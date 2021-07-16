@@ -1,10 +1,18 @@
 import {ChakraProvider, ColorModeScript, useColorMode} from "@chakra-ui/react";
-import React, {FC, ReactElement, ReactNode, useEffect, useMemo} from "react";
+import React, {
+    FC,
+    ReactElement,
+    ReactNode,
+    useEffect,
+    useMemo,
+    useState
+} from "react";
 import {useAsync} from "react-async-hook";
 import {Provider as ReduxProvider} from "react-redux";
 import {EVENT_REDUX_DEV_TOOLS_ENABLED} from "../lib/ipc-constants";
 import {invoke} from "../lib/ipc/renderer";
 import getThemeConfiguration from "../lib/rpc/get-theme-configuration/app";
+import handleSetNativeColourMode from "../lib/rpc/set-native-colour-mode/app";
 import {DevTools} from "./DevTools";
 import {App} from "./components/App";
 import {
@@ -31,25 +39,31 @@ function WhenInitialised({children}: {children: ReactNode}) {
     return <>{children}</>;
 }
 
-function ColourModeController(): ReactElement {
-    const {data: themeConfig} = useThemeConfiguration();
+function ColourModeController(): null {
+    const [nativeColourMode, setNativeColourMode] = useState<string>();
     const {setColorMode} = useColorMode();
 
     useEffect(() => {
-        if (themeConfig) {
-            setColorMode(themeConfig.colourMode);
-        }
-    }, [themeConfig?.colourMode]);
+        handleSetNativeColourMode(async req => {
+            setNativeColourMode(req);
+        });
+    }, [setNativeColourMode]);
+
+    useEffect(() => {
+        if (!nativeColourMode) return;
+        setColorMode(nativeColourMode);
+    }, [nativeColourMode]);
 
     return null;
 }
 
-export const Root: FC = () => {
-    const devToolsEnabled = useAsync(getDevToolsEnabled, []);
-    const {
-        result: initialThemeConfig,
-        error: initialThemeConfigError
-    } = useAsync(getThemeConfiguration, []);
+function ChakraProviderWrapper({
+    children
+}: {
+    children: ReactNode;
+}): ReactElement {
+    const {data: themeConfig} = useThemeConfiguration();
+    const {result: initialThemeConfig} = useAsync(getThemeConfiguration, []);
 
     const theme = useMemo(
         () =>
@@ -59,12 +73,26 @@ export const Root: FC = () => {
                         initialThemeConfig?.colourMode === "system"
                             ? "dark"
                             : initialThemeConfig?.colourMode ?? "dark",
-                    useSystemColorMode:
-                        initialThemeConfig?.colourMode === "system"
+                    useSystemColorMode: themeConfig?.colourMode === "system"
                 }
             }),
-        [initialThemeConfig?.colourMode]
+        [initialThemeConfig?.colourMode, themeConfig?.colourMode]
     );
+
+    return (
+        <ChakraProvider theme={theme}>
+            <ColourModeController />
+            {children}
+        </ChakraProvider>
+    );
+}
+
+export const Root: FC = () => {
+    const devToolsEnabled = useAsync(getDevToolsEnabled, []);
+    const {
+        result: initialThemeConfig,
+        error: initialThemeConfigError
+    } = useAsync(getThemeConfiguration, []);
 
     if (initialThemeConfigError) {
         return (
@@ -84,8 +112,7 @@ export const Root: FC = () => {
         <ReduxProvider store={store}>
             <ColorModeScript initialColorMode={initialThemeConfig.colourMode} />
             <RpcConfigurator refreshInterval={1000} instantCallThreshold={100}>
-                <ChakraProvider theme={theme}>
-                    <ColourModeController />
+                <ChakraProviderWrapper>
                     <AudioControllerProvider>
                         <WhenInitialised>
                             <AudioController />
@@ -99,7 +126,7 @@ export const Root: FC = () => {
                             </CustomScrollProvider>
                         </ContextMenuProvider>
                     </AudioControllerProvider>
-                </ChakraProvider>
+                </ChakraProviderWrapper>
             </RpcConfigurator>
             {devToolsEnabled.result &&
                 process.env.NODE_ENV === "development" && <DevTools />}

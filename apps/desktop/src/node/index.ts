@@ -1,4 +1,4 @@
-import {app, clipboard, dialog, protocol, shell} from "electron";
+import {app, clipboard, dialog, nativeTheme, protocol, shell} from "electron";
 import {
     EVENT_APP_STATE_GET,
     EVENT_APP_STATE_SET,
@@ -27,6 +27,7 @@ import handleOpenFileDirectory from "../lib/rpc/open-file-directory/node";
 import handleSelectDirectory from "../lib/rpc/select-directory/node";
 import handleSetDiscordRichPresenceConfiguration from "../lib/rpc/set-discord-rich-presence-configuration/node";
 import handleSetMediaBarConfiguration from "../lib/rpc/set-media-bar-configuration/node";
+import setNativeColourMode from "../lib/rpc/set-native-colour-mode/node";
 import handleSetPlayState from "../lib/rpc/set-play-state/node";
 import handleSetSourceDirectories from "../lib/rpc/set-source-directories/node";
 import handleSetThemeConfiguration from "../lib/rpc/set-theme-configuration/node";
@@ -50,6 +51,7 @@ import {
     updateSongDirectories
 } from "./database";
 import {log} from "./logger";
+import updateColourMode from "./updateColourMode";
 import updateRichPresence from "./updateRichPresence";
 
 protocol.registerSchemesAsPrivileged([
@@ -295,4 +297,21 @@ handleGetThemeConfiguration(
         }
 );
 
-handleSetThemeConfiguration(async req => store.set("themeConfiguration", req));
+handleSetThemeConfiguration(async req => {
+    store.set("themeConfiguration", req);
+    updateColourMode();
+});
+
+let lastWasDarkTheme: boolean | null = null;
+
+function updateColourTheme() {
+    if (nativeTheme.shouldUseDarkColors === lastWasDarkTheme) return;
+    lastWasDarkTheme = nativeTheme.shouldUseDarkColors;
+    setNativeColourMode(nativeTheme.shouldUseDarkColors ? "dark" : "light");
+}
+
+nativeTheme.on("updated", updateColourTheme);
+
+setInterval(updateColourTheme, 1000);
+
+updateColourMode();
