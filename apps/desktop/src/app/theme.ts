@@ -1,13 +1,12 @@
 import {extendTheme, ThemeOverride} from "@chakra-ui/react";
-import "@fontsource/montserrat";
-import "@fontsource/lato";
+import "@fontsource/inter/variable.css";
 
 const createTheme = (ex: ThemeOverride): ReturnType<typeof extendTheme> =>
     extendTheme({
         fonts: {
             ...ex.fonts,
-            heading: "Montserrat",
-            body: "Lato"
+            heading: "InterVariable",
+            body: "InterVariable"
         },
         ...ex
     });

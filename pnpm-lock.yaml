@@ -33,8 +33,7 @@ importers:
       '@electron-forge/plugin-webpack': ^6.0.0-beta.54
       '@emotion/react': ^11
       '@emotion/styled': ^11
-      '@fontsource/lato': ^4.2.2
-      '@fontsource/montserrat': ^4.2.2
+      '@fontsource/inter': ^4.5.0
       '@muzik/create-rpc': workspace:^1.0.0
       '@muzik/database': workspace:*
       '@muzik/logger': workspace:*
@@ -95,8 +94,7 @@ importers:
       '@chakra-ui/react': 1.4.2_91d4b9ed41b15fbe03118aac6e7e01cf
       '@emotion/react': 11.1.5_@types+react@17.0.3+react@17.0.2
       '@emotion/styled': 11.1.5_a74314bbc21a27607eb4b82774331d24
-      '@fontsource/lato': 4.2.2
-      '@fontsource/montserrat': 4.2.2
+      '@fontsource/inter': 4.5.0
       '@redux-devtools/core': 3.9.0_react-redux@7.2.3+react@17.0.2
       '@redux-devtools/dock-monitor': 1.4.0_51cc6f7564500523103b5583642dd182
       '@redux-devtools/log-monitor': 2.3.0_51cc6f7564500523103b5583642dd182
@@ -1743,12 +1741,8 @@ packages:
     dev: false
     optional: true
 
-  /@fontsource/lato/4.2.2:
-    resolution: {integrity: sha512-ZE5WvqZQZinXpH8MaEiM9klDsUOfCHVQJ/tZKpNVQhi8mHt9WqPCROu500oI5jC3s6jaJuWsM7LfJ1zyEeW+XA==}
-    dev: false
-
-  /@fontsource/montserrat/4.2.2:
-    resolution: {integrity: sha512-HnlV9Xim2mYa56Bz/UIO5r26Rq/DJWlYdMWTql+TE6n3yYMe8YV6dTwPzTbkr35IsyDq6cWy0rPert9MWyA2yA==}
+  /@fontsource/inter/4.5.0:
+    resolution: {integrity: sha512-2efK8Ru0LkuOYrEpiHPlV02YkTdIKGbezlxVNeA8/3c+tNt7P2aQPuiYYkVy7N4GA5LWSUVcLL/91MpCIjinOw==}
     dev: false
 
   /@jsdevtools/file-path-filter/3.0.2:
@@ -10704,8 +10698,8 @@ packages:
       async-limiter: 1.0.1
     dev: true
 
-  /ws/7.5.0:
-    resolution: {integrity: sha512-6ezXvzOZupqKj4jUqbQ9tXuJNo+BR2gU8fFRk3XCP3e0G6WT414u5ELe6Y0vtp7kmSJ3F7YWObSNr1ESsgi4vw==}
+  /ws/7.5.3:
+    resolution: {integrity: sha512-kQ/dHIzuLrS6Je9+uv81ueZomEwH0qVYstcAQ4/Z93K8zeko9gtAbttJWzoC5ukqXY1PpoouV3+VSOqEAFt5wg==}
     engines: {node: '>=8.3.0'}
     peerDependencies:
       bufferutil: ^4.0.1
@@ -10889,7 +10883,7 @@ packages:
     version: 4.0.1
     dependencies:
       node-fetch: 2.6.1
-      ws: 7.5.0
+      ws: 7.5.3
     optionalDependencies:
       register-scheme: github.com/devsnek/node-register-scheme/e7cc9a63a1f512565da44cb57316d9fb10750e17
     transitivePeerDependencies:
