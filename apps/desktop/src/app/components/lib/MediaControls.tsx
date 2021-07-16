@@ -16,7 +16,6 @@ import {
     Text,
     useBoolean,
     useDisclosure,
-    useOutsideClick,
     useToken
 } from "@chakra-ui/react";
 import React, {
@@ -186,11 +185,6 @@ const VolumeButton = (): ReactElement => {
     const {isOpen, onOpen, onClose} = useDisclosure();
     const [sliderFocused, setSliderFocused] = useBoolean();
 
-    useOutsideClick({
-        ref: boxRef,
-        handler: onClose
-    });
-
     const {renderLayer, triggerProps, layerProps, arrowProps} = useLayer({
         isOpen,
         placement: isMediaBarOnTop ? "bottom-center" : "top-center"
@@ -220,6 +214,11 @@ const VolumeButton = (): ReactElement => {
         },
         [dispatch]
     );
+
+    const handleSliderBlur = useCallback(() => {
+        setSliderFocused.off();
+        onClose();
+    }, [setSliderFocused, onClose]);
 
     const handleToggleMute = () => dispatch(setVolume(-volume));
 
@@ -270,7 +269,7 @@ const VolumeButton = (): ReactElement => {
                             orientation="vertical"
                             minHeight="20"
                             onFocus={setSliderFocused.on}
-                            onBlur={setSliderFocused.off}
+                            onBlur={handleSliderBlur}
                         >
                             <SliderTrack>
                                 <SliderFilledTrack />
