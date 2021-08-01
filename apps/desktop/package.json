@@ -1,6 +1,6 @@
 {
     "name": "muzik-desktop",
-    "version": "0.2.0",
+    "version": "0.2.0-releasetest",
     "description": "Offline music player",
     "main": ".webpack/main/index.js",
     "scripts": {
