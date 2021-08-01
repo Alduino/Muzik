@@ -26,7 +26,10 @@ jobs:
         uses: pnpm/action-setup@v2
         with:
           version: 6
-          run_install: true
 
-      - name: Build
-        run: pnpm r:build
+      - name: Install & Build
+        env:
+          DEBUG: electron-builder
+        run: |
+          pnpm i
+          pnpm r:build

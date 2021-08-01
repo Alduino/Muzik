@@ -11,7 +11,7 @@
         "format": "prettier . --write && eslint --fix .",
         "lint": "eslint .",
         "build": "pnpm run package && pnpm run make",
-        "postinstall": "electron-rebuild --module-dir ../../libs/database"
+        "postinstall": "electron-builder install-app-deps"
     },
     "keywords": [],
     "author": {
@@ -73,7 +73,6 @@
         "css-loader": "^4.3.0",
         "electron": "12.0.2",
         "electron-builder": "^22.11.7",
-        "electron-rebuild": "^2.3.5",
         "file-loader": "^6.2.0",
         "fork-ts-checker-webpack-plugin": "^5.2.1",
         "node-loader": "^1.0.3",
