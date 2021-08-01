@@ -30,6 +30,4 @@ jobs:
       - name: Install & Build
         env:
           DEBUG: electron-builder
-        run: |
-          pnpm i
-          pnpm r:build
+        run: pnpm i && pnpm r:build
