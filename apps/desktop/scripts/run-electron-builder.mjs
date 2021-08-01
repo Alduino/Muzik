@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 
 import {platform as getPlatform} from "os";
-import {join, resolve} from "path";
+import {dirname, join, resolve} from "path";
 import {exec} from "child_process";
+import {fileURLToPath} from "url";
 import {existsSync, readdirSync, readFileSync, renameSync} from "fs";
 
-const {version} = JSON.parse(readFileSync(resolve(__dirname, "../package.json"), "utf8"));
+const {version} = JSON.parse(readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "../package.json"), "utf8"));
 
 const platform = getPlatform();
 const args = ["pnpx", "electron-builder", "build"];
