@@ -28,6 +28,4 @@ jobs:
           version: 6
 
       - name: Install & Build
-        env:
-          DEBUG: electron-builder
-        run: pnpm i --ignore-scripts && node postinstall.mjs && pnpm i && pnpm r:build
+        run: pnpm i && pnpm r:build
