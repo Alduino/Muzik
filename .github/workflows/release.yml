@@ -30,5 +30,11 @@ jobs:
         with:
           version: 6
 
-      - name: Install & Build
-        run: pnpm i && pnpm r:build
+      - name: Install
+        run: pnpm i
+
+      - name: Post-install
+        run: pnpm recursive run post-install
+
+      - name: Build
+        run: pnpm r:build
