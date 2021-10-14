@@ -1,5 +1,8 @@
 lockfileVersion: 5.3
 
+overrides:
+  app-builder-bin: ^4.1.0
+
 importers:
 
   .:
@@ -2738,8 +2741,8 @@ packages:
       normalize-path: 3.0.0
       picomatch: 2.3.0
 
-  /app-builder-bin/3.5.13:
-    resolution: {integrity: sha512-ighVe9G+bT1ENGdp9ecO1P+94vv/f+FUwaI+XkNzeg9bYF8Oi3BQ+mJuxS00UgyHs8luuOzjzC+qnAtdb43Mpg==}
+  /app-builder-bin/4.1.0:
+    resolution: {integrity: sha512-rbdMe0sIVE95cpYqMQh4IFqhTDdB8LkKlTRcbO/Y3QleRYoIePejIbX774IYomYYzZbJfJuX7pLRiGvSdIxIYA==}
     dev: true
 
   /app-builder-lib/22.11.7:
@@ -3161,7 +3164,7 @@ packages:
       '@types/debug': 4.1.7
       '@types/fs-extra': 9.0.12
       7zip-bin: 5.1.1
-      app-builder-bin: 3.5.13
+      app-builder-bin: 4.1.0
       bluebird-lst: 1.0.9
       builder-util-runtime: 8.7.7
       chalk: 4.1.2
@@ -9869,6 +9872,7 @@ packages:
   /xmlbuilder/9.0.7:
     resolution: {integrity: sha1-Ey7mPS7FVlxVfiD0wi35rKaGsQ0=}
     engines: {node: '>=4.0'}
+    requiresBuild: true
     dev: true
 
   /xtend/2.1.2:
