@@ -34,7 +34,7 @@ jobs:
         run: pnpm i
 
       - name: Post-install
-        run: pnpm recursive run post-install
+        run: pnpm recursive run post-install || pnpm recursive run post-install
 
       - name: Build
         run: pnpm r:build
