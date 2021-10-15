@@ -10,6 +10,7 @@ const {version} = JSON.parse(readFileSync(resolve(dirname(fileURLToPath(import.m
 
 const platform = getPlatform();
 const args = ["pnpx", "electron-builder", "build"];
+let isPrerelease = false;
 
 switch (platform) {
     case "darwin":
@@ -41,6 +42,11 @@ if (process.env.GITHUB_WORKFLOW?.toLowerCase() === "release") {
     if (releaseName !== `v${version}`)
         throw new Error(`app version is ${version}, expected ${releaseName.substring("v".length)}`);
 
+    if (releaseName.includes("-")) {
+        console.log("Assuming prerelease as the tag contains a dash (-)");
+        isPrerelease = true;
+    }
+
     args.push("--publish", "always");
 }
 
@@ -62,7 +68,12 @@ for (const file of directory) {
 }
 
 console.log("Running", args.join(" "));
-const cp = exec(args.join(" "));
+const cp = exec(args.join(" "), {
+    env: {
+        EP_PRE_RELEASE: isPrerelease ? "true" : ""
+    }
+});
+
 cp.stdout.pipe(process.stdout);
 cp.stderr.pipe(process.stderr);
 cp.on("exit", code => {
