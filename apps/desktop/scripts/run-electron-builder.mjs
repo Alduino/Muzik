@@ -41,7 +41,7 @@ if (process.env.GITHUB_WORKFLOW?.toLowerCase() === "release") {
     if (releaseName !== `v${version}`)
         throw new Error(`app version is ${version}, expected ${releaseName.substring("v".length)}`);
 
-    args.push("--release", "always");
+    args.push("--publish", "always");
 }
 
 if (existsSync(".webpack")) {
