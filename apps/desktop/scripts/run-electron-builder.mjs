@@ -70,6 +70,7 @@ for (const file of directory) {
 console.log("Running", args.join(" "));
 const cp = exec(args.join(" "), {
     env: {
+        ...process.env,
         EP_PRE_RELEASE: isPrerelease ? "true" : ""
     }
 });
