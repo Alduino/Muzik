@@ -65,3 +65,6 @@ console.log("Running", args.join(" "));
 const cp = exec(args.join(" "));
 cp.stdout.pipe(process.stdout);
 cp.stderr.pipe(process.stderr);
+cp.on("exit", code => {
+    if (code) process.exit(code);
+});
