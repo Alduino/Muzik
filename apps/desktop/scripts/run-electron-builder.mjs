@@ -9,7 +9,7 @@ import {existsSync, readdirSync, readFileSync, renameSync} from "fs";
 const {version} = JSON.parse(readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "../package.json"), "utf8"));
 
 const platform = getPlatform();
-const args = ["pnpx", "electron-builder", "build"];
+const args = ["pnpm", "exec", "electron-builder", "build"];
 let isPrerelease = false;
 
 switch (platform) {
