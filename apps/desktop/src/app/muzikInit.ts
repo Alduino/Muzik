@@ -1,6 +1,6 @@
 import {ErrorCode, isCode} from "../lib/error-constants";
-import {EVENT_DATABASE_INIT, EVENT_MUSIC_IMPORT} from "../lib/ipc-constants";
 import {invoke} from "../lib/ipc/renderer";
+import {EVENT_DATABASE_INIT, EVENT_MUSIC_IMPORT} from "../lib/ipc-constants";
 import {setCurrentDescription, setLoadComplete} from "./reducers/loadState";
 import store from "./store";
 
@@ -27,10 +27,12 @@ export default async function initialiseMuzik(): Promise<void> {
     console.debug("Done");
     store.dispatch(setLoadComplete());
 
-    console.debug("Running importer in the background");
-
     try {
-        await invoke(EVENT_MUSIC_IMPORT);
+        if (process.env.NODE_ENV === "production") {
+            // Really slow with a big library! (TODO: fix)
+            console.debug("Running importer in the background");
+            await invoke(EVENT_MUSIC_IMPORT);
+        }
     } catch (err) {
         if (isCode(err, ErrorCode.musicStoreNotPicked)) {
             console.debug(

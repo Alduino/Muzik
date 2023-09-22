@@ -107,6 +107,7 @@ export const FilledSidebar = chakra((props: FilledSidebarProps) => {
     const setAlbumListing = useRouteSetter(GlobalRoute.albumListing);
     const setSongListing = useRouteSetter(GlobalRoute.songListing);
     const setQueueListing = useRouteSetter(GlobalRoute.queueListing);
+    const setCinema = useRouteSetter(GlobalRoute.cinema);
     const setSettings = useRouteSetter(GlobalRoute.settings);
 
     const handlePlayAll = useCallback(async () => {
@@ -142,6 +143,12 @@ export const FilledSidebar = chakra((props: FilledSidebarProps) => {
                     onClick={setQueueListing}
                 >
                     <TransText k="routes.queue" />
+                </SidebarItem>
+                <SidebarItem
+                    isSelected={currentRoute === GlobalRoute.cinema}
+                    onClick={setCinema}
+                >
+                    <TransText k="routes.cinema" />
                 </SidebarItem>
                 <SidebarItem
                     isSelected={currentRoute === GlobalRoute.settings}

@@ -1,10 +1,10 @@
 {
     "compilerOptions": {
-        "module": "CommonJS",
-        "target": "es2015",
-        "lib": ["es2020"],
+        "module": "esnext",
+        "target": "esnext",
+        "lib": ["esnext"],
         "sourceMap": true,
-        "jsx": "react",
+        "jsx": "preserve",
         "strict": true,
         "alwaysStrict": true,
         "moduleResolution": "node",

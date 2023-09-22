@@ -424,6 +424,30 @@ export const AudioController: FC = () => {
     return null;
 };
 
+function addArtToMediaSession(
+    metadata: MediaMetadata,
+    artUri: string,
+    artMime: string
+) {
+    let url: string | undefined = undefined;
+    let cancelled = false;
+
+    (async () => {
+        const response = await fetch(artUri);
+        const blob = await response.blob();
+        if (cancelled) return;
+
+        url = URL.createObjectURL(blob);
+        metadata.artwork = [{src: url, sizes: "512x512", type: artMime}];
+        navigator.mediaSession.metadata = metadata;
+    })();
+
+    return () => {
+        cancelled = true;
+        if (url) URL.revokeObjectURL(url);
+    };
+}
+
 export const MediaSessionController: FC = () => {
     const playingTrackId = useAppSelector(state => state.queue.nowPlaying);
     const isPlaying = useAppSelector(state => state.queue.isPlaying);
@@ -448,17 +472,15 @@ export const MediaSessionController: FC = () => {
         const artUri = track.art?.url || defaultAlbumArt;
         const artMime = track.art?.mime || "image/svg";
 
-        navigator.mediaSession.metadata = new MediaMetadata({
+        const metadata = new MediaMetadata({
             title: names.track,
             album: names.album,
-            artist: names.artist,
-            artwork: [
-                {
-                    src: artUri,
-                    type: artMime
-                }
-            ]
+            artist: names.artist
         });
+
+        navigator.mediaSession.metadata = metadata;
+
+        return addArtToMediaSession(metadata, artUri, artMime);
     }, [track, names]);
 
     useEffect(() => {
@@ -577,16 +599,11 @@ export const MediaSessionController: FC = () => {
     return null;
 };
 
-export interface VisualiserIconProps {
-    bands: number;
-    gap?: number;
-    className?: string;
-}
-
-export const VisualiserIcon = chakra((props: VisualiserIconProps) => {
+export function useVisualiser(
+    bands: number,
+    update: (heights: number[]) => void
+) {
     const {audioCtx, analyser} = useContext(ControllerContext);
-
-    const [heights, setHeights] = useState<number[]>([]);
 
     useEffect(() => {
         const dataBuff = new Uint8Array(analyser.frequencyBinCount);
@@ -599,8 +616,8 @@ export const VisualiserIcon = chakra((props: VisualiserIconProps) => {
 
             analyser.getByteFrequencyData(dataBuff);
 
-            const outputValues = Array.from({length: props.bands}, () => 0);
-            const outputCounts = Array.from({length: props.bands}, () => 0);
+            const outputValues = Array.from({length: bands}, () => 0);
+            const outputCounts = Array.from({length: bands}, () => 0);
 
             for (let i = 0; i < dataBuff.length; i++) {
                 const el = dataBuff[i];
@@ -614,7 +631,7 @@ export const VisualiserIcon = chakra((props: VisualiserIconProps) => {
 
                 // make sure it doesn't go above max
                 const outIndex = Math.floor(
-                    Math.min(0.999, outIndexPercentage) * props.bands
+                    Math.min(0.999, outIndexPercentage) * bands
                 );
 
                 outputValues[outIndex] += el / 255;
@@ -625,7 +642,7 @@ export const VisualiserIcon = chakra((props: VisualiserIconProps) => {
                 (el, i) => el / (outputCounts[i] || 1)
             );
 
-            setHeights(output);
+            update(output);
         }
 
         requestAnimationFrame(draw);
@@ -633,9 +650,20 @@ export const VisualiserIcon = chakra((props: VisualiserIconProps) => {
         return () => {
             drawing = false;
         };
-    }, [audioCtx, analyser, props.bands]);
+    }, [audioCtx, analyser, bands, update]);
+}
 
+export interface VisualiserIconProps {
+    bands: number;
+    gap?: number;
+    className?: string;
+}
+
+export const VisualiserIcon = chakra((props: VisualiserIconProps) => {
     const gap = (props.gap || 0.1) * 2;
+
+    const [heights, setHeights] = useState<number[]>([]);
+    useVisualiser(props.bands, setHeights);
 
     return (
         <svg viewBox="0 0 1 1" className={props.className}>

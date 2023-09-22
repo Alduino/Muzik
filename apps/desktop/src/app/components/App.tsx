@@ -11,10 +11,16 @@ import {
 } from "@chakra-ui/react";
 import React, {FC} from "react";
 import {PuffLoader} from "react-spinners";
+import {Cinema} from "../features/cinema/Page";
 import useThemeColours from "../hooks/useThemeColours";
 import {GlobalRoute} from "../reducers/routing";
 import useMediaBarConfiguration from "../rpc/useMediaBarConfiguration";
 import {useAppSelector} from "../store-hooks";
+import {
+    DARK_THEME_CLASS,
+    LIGHT_THEME_CLASS,
+    SYSTEM_THEME_CLASS
+} from "../utils/styling/colour-scheme.css";
 import {AlbumListing} from "./AlbumListing";
 import {QueueListing} from "./QueueListing";
 import {Settings} from "./Settings";
@@ -26,10 +32,8 @@ import {MediaControls, SongDisplay} from "./lib/MediaControls";
 
 const PageContainer: FC = props => {
     const colours = useThemeColours();
-    const {
-        data: mediaBarConfig,
-        error: mediaBarConfigError
-    } = useMediaBarConfiguration();
+    const {data: mediaBarConfig, error: mediaBarConfigError} =
+        useMediaBarConfiguration();
 
     if (mediaBarConfigError) {
         return <ErrorText error={mediaBarConfigError} />;
@@ -110,6 +114,12 @@ const LoadedApp: FC = () => {
                     <Settings />
                 </PageContainer>
             );
+        case GlobalRoute.cinema:
+            return (
+                <PageContainer>
+                    <Cinema />
+                </PageContainer>
+            );
         default:
             return (
                 <PageContainer>
@@ -146,9 +156,11 @@ const LoadingApp: FC = () => {
 export const App: FC = () => {
     const isLoaded = useAppSelector(state => state.loadState.value);
     const {backgroundL0, text} = useThemeColours();
+    const themeClass = useColorModeValue(LIGHT_THEME_CLASS, DARK_THEME_CLASS);
 
     return (
         <Flex
+            className={themeClass}
             minHeight="100vh"
             direction="column"
             background={backgroundL0}

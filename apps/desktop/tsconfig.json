@@ -1,12 +1,12 @@
 {
     "compilerOptions": {
         "allowJs": true,
-        "module": "commonjs",
+        "module": "esnext",
         "skipLibCheck": true,
         "esModuleInterop": true,
         "noImplicitAny": true,
         "sourceMap": true,
-        "target": "ES2018",
+        "target": "esnext",
         "baseUrl": ".",
         "outDir": "dist",
         "moduleResolution": "node",

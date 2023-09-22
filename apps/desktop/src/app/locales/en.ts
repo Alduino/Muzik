@@ -28,6 +28,7 @@ export const en: Locale = {
             albums: "Albums",
             songs: "Songs",
             queue: "Queue",
+            cinema: "Cinema",
             settings: "Settings"
         },
         queueRoute: {

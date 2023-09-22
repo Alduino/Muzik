@@ -4,6 +4,7 @@ type SprintfArg = string | number | boolean | null;
 
 interface LogFunction {
     (context: unknown, message: string, ...args: SprintfArg[]): void;
+
     (message: string, ...args: SprintfArg[]): void;
 }
 
@@ -16,6 +17,14 @@ export interface Logger {
 }
 
 class LoggerImpl implements Logger {
+    trace = this.createLogFn("trace", 40);
+    debug = this.createLogFn("debug", 30);
+    info = this.createLogFn("info ", 20);
+    warn = this.createLogFn("warn ", 10);
+    fatal = this.createLogFn("fatal", 0);
+
+    constructor(private name: string) {}
+
     private static formatContext(context: unknown) {
         if (typeof context === "undefined") return "";
 
@@ -31,7 +40,13 @@ class LoggerImpl implements Logger {
         }
     }
 
-    private createLogFn(level: string): LogFunction {
+    private createLogFn(level: string, index: number): LogFunction {
+        if (!this.isLogLevelEnabled(index)) {
+            return () => {
+                /* noop */
+            };
+        }
+
         return (contextOrMessage: unknown | string, ...args: SprintfArg[]) => {
             const context =
                 typeof contextOrMessage === "string"
@@ -53,13 +68,15 @@ class LoggerImpl implements Logger {
         };
     }
 
-    trace = this.createLogFn("trace");
-    debug = this.createLogFn("debug");
-    info = this.createLogFn("info");
-    warn = this.createLogFn("warn");
-    fatal = this.createLogFn("fatal");
+    private isLogLevelEnabled(index: number) {
+        const logLevelEnvVar = process.env.LOG_LEVEL;
+        if (logLevelEnvVar === undefined) return true;
 
-    constructor(private name: string) {}
+        const logLevel = parseInt(logLevelEnvVar, 10);
+        if (Number.isNaN(logLevel)) return true;
+
+        return index <= logLevel;
+    }
 }
 
 // TODO remove isApp

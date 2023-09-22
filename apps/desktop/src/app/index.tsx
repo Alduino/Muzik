@@ -1,5 +1,5 @@
 import React from "react";
-import {render} from "react-dom";
+import {createRoot} from "react-dom/client";
 import {I18nextProvider} from "react-i18next";
 import {Root} from "./Root";
 import initialiseMuzik from "./muzikInit";
@@ -14,12 +14,11 @@ initialiseMuzik();
     await i18n.init(i18nConfig);
 
     const rootElement = document.getElementById("main");
-    render(
+    createRoot(rootElement).render(
         <>
             <I18nextProvider i18n={i18n}>
                 <Root />
             </I18nextProvider>
-        </>,
-        rootElement
+        </>
     );
 })();

@@ -1,5 +1,4 @@
 import {ipcMain, WebContents} from "electron";
-import AbortController from "node-abort-controller";
 import listen, {HandleHandler, InvokeHandler, ListenResult} from "./impl";
 
 const ipcObjects = new Map<string, ListenResult>();

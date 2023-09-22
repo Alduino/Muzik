@@ -1,4 +1,5 @@
 import {createHash} from "crypto";
+import {createReadStream} from "fs";
 import {readdir, readFile, stat} from "fs/promises";
 import {basename, dirname, join, resolve} from "path";
 import Database, {Album, AlbumArt, Artist, Track} from "@muzik/database";
@@ -7,7 +8,7 @@ import Emittery from "emittery";
 import {fromFile as getFileMime} from "file-type";
 import {
     IAudioMetadata,
-    parseFile as getFileMetadata,
+    parseStream as getStreamMetadata,
     selectCover
 } from "music-metadata";
 import {normalizeSync as normalise} from "normalize-diacritics";
@@ -169,15 +170,19 @@ export default class SongScanner extends Emittery {
         watcher.on("unlink", path => this.handleFileDeleted(path));
     }
 
-    private async getMetadata(
-        path: string
-    ): Promise<{
+    private async getMetadata(path: string): Promise<{
         track: Track;
         albumArt?: AlbumArt;
         album: Album;
         artist: Artist;
     }> {
-        const metadata = await getFileMetadata(path, {duration: true});
+        const fileSize = await stat(path).then(v => v.size);
+        const stream = createReadStream(path);
+        const metadata = await getStreamMetadata(
+            stream,
+            {path, size: fileSize},
+            {duration: true}
+        );
         const albumArt: MetadataAlbumArt | undefined =
             selectCover(metadata.common.picture) ||
             (await SongScanner.loadAlbumArt(path, metadata));

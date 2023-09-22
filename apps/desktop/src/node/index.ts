@@ -1,4 +1,5 @@
 import {app, clipboard, dialog, nativeTheme, protocol, shell} from "electron";
+import {handle} from "../lib/ipc/main";
 import {
     EVENT_APP_STATE_GET,
     EVENT_APP_STATE_SET,
@@ -9,7 +10,6 @@ import {
     EVENT_REDUX_DEV_TOOLS_ENABLED,
     MusicImportRequest
 } from "../lib/ipc-constants";
-import {handle} from "../lib/ipc/main";
 import handleGetAlbumList from "../lib/rpc/album-list/node";
 import handleGetExtendedAlbum from "../lib/rpc/extended-album/node";
 import handleGetAlbumTrackIds from "../lib/rpc/get-album-track-ids/node";
@@ -61,10 +61,7 @@ protocol.registerSchemesAsPrivileged([
             supportFetchAPI: true,
             secure: true
         }
-    }
-]);
-
-protocol.registerSchemesAsPrivileged([
+    },
     {
         scheme: "audio",
         privileges: {
@@ -112,10 +109,9 @@ async function getMostCommonAlbumArtHash(
         artCounts.set(art, (artCounts.get(art) ?? 0) + 1);
     }
 
-    const [artHash] = Array.from(
-        artCounts.entries()
-    ).reduce((prev, [hash, count]) =>
-        prev ? (count > prev[1] ? [hash, count] : prev) : [hash, count]
+    const [artHash] = Array.from(artCounts.entries()).reduce(
+        (prev, [hash, count]) =>
+            prev ? (count > prev[1] ? [hash, count] : prev) : [hash, count]
     );
 
     return artHash;

@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "description": "M3U file parser and generator",
   "main": "dist/index.js",
+  "module": "./dist/index.mjs",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
-    "build:watch": "tsc --watch"
+    "build": "tsup",
+    "build:watch": "tsup --watch"
   },
   "devDependencies": {
-    "typescript": "^4.3.2"
+    "tsup": "^7.2.0"
   }
 }

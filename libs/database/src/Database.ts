@@ -8,8 +8,9 @@ import AlbumArt from "./tables/AlbumArt";
 import {DbArtist} from "./tables/Artist";
 import {DbTrack} from "./tables/Track";
 
-type NamesWithSortable<T extends string> = {[key in T]: string} &
-    {[key in `${T}Sortable`]: string};
+type NamesWithSortable<T extends string> = {[key in T]: string} & {
+    [key in `${T}Sortable`]: string;
+};
 
 const TABLE_TRACKS = "tracks";
 const TABLE_ALBUM_ART = "albumArt";
@@ -30,7 +31,11 @@ class DeleteTracksNotInStatements {
         WHERE audioSrcPath NOT IN (SELECT path FROM possiblePathsTemp)
     `);
 
-    constructor(private db: Sqlite3) {}
+    constructor(private _db: Sqlite3) {}
+
+    private get db() {
+        return this._db;
+    }
 }
 
 class GetFirstArtistLettersStatements {
@@ -57,7 +62,11 @@ class GetFirstArtistLettersStatements {
         ORDER BY ar.sortableName
     `);
 
-    constructor(private db: Sqlite3) {}
+    constructor(private _db: Sqlite3) {}
+
+    private get db() {
+        return this._db;
+    }
 }
 
 class Statements {
@@ -171,7 +180,7 @@ class Statements {
     readonly getTrackArtHashByAlbumId = this.db.prepare<number>(`
         SELECT tr.albumArtHash FROM ${TABLE_ALBUMS} al
         INNER JOIN ${TABLE_TRACKS} tr ON tr.albumId = al.id
-        WHERE al.id = ?
+        WHERE al.id = ? AND tr.albumArtHash IS NOT NULL
     `);
     readonly getTracksByAlbumId = this.db.prepare<number>(`
         SELECT id FROM ${TABLE_TRACKS}
@@ -236,7 +245,11 @@ class Statements {
     readonly beginTransaction = this.db.prepare("BEGIN");
     readonly commitTransaction = this.db.prepare("COMMIT");
 
-    constructor(private db: Sqlite3) {}
+    constructor(private _db: Sqlite3) {}
+
+    private get db() {
+        return this._db;
+    }
 }
 
 export default class Database {
@@ -290,20 +303,27 @@ export default class Database {
     createOrUpdateTrack(details: NoId<DbTrack>): number {
         const dateValue = details.releaseDate?.getTime();
         this.s.upsertTrack.run({...details, releaseDate: dateValue});
-        return this.s.getTrackIdByPath.get(details.audioSrcPath)?.id;
+        return (this.s.getTrackIdByPath.get(details.audioSrcPath) as DbTrack)
+            ?.id;
     }
 
     createOrUpdateAlbum(details: NoId<DbAlbum>): number {
         this.s.upsertAlbum.run(details);
-        return this.s.getAlbumIdBySortableNameAndArtistId.get({
-            sortableName: details.sortableName,
-            artistId: details.artistId
-        })?.id;
+        return (
+            this.s.getAlbumIdBySortableNameAndArtistId.get({
+                sortableName: details.sortableName,
+                artistId: details.artistId
+            }) as DbAlbum
+        )?.id;
     }
 
     createOrUpdateArtist(details: NoId<DbArtist>): number {
         this.s.upsertArtist.run(details);
-        return this.s.getArtistIdBySortableName.get(details.sortableName)?.id;
+        return (
+            this.s.getArtistIdBySortableName.get(
+                details.sortableName
+            ) as DbArtist
+        )?.id;
     }
 
     createOrIgnoreAlbumArt(details: AlbumArt): void {
@@ -337,15 +357,15 @@ export default class Database {
     }
 
     getAllArtists(): DbArtist[] {
-        return this.s.getAllArtists.all();
+        return this.s.getAllArtists.all() as DbArtist[];
     }
 
     getArtistById(artistId: number): DbArtist {
-        return this.s.getArtistById.get(artistId);
+        return this.s.getArtistById.get(artistId) as DbArtist;
     }
 
     getAlbumById(albumId: number): DbAlbum {
-        return this.s.getAlbumById.get(albumId);
+        return this.s.getAlbumById.get(albumId) as DbAlbum;
     }
 
     getTrackArtHashByAlbumId(albumId: number): string[] {
@@ -353,27 +373,30 @@ export default class Database {
             throw new Error("albumId must be defined");
         return this.s.getTrackArtHashByAlbumId
             .all(albumId)
-            .map(res => res.albumArtHash);
+            .map(res => (res as DbTrack).albumArtHash as string);
     }
 
     getTracksByAlbumId(albumId: number): number[] {
         if (typeof albumId === "undefined")
             throw new Error("albumId must be defined");
-        return this.s.getTracksByAlbumId.all(albumId).map(v => v.id);
+        return (this.s.getTracksByAlbumId.all(albumId) as DbTrack[]).map(
+            v => v.id
+        );
     }
 
     getAllTracks(): (DbTrack & Omit<AlbumArt, "source">)[] {
-        return this.s.getAllExtendedTracks.all();
+        return this.s.getAllExtendedTracks.all() as (DbTrack &
+            Omit<AlbumArt, "source">)[];
     }
 
     getAllTrackIds(): number[] {
-        return this.s.getAllTrackIds.all().map(v => v.id);
+        return (this.s.getAllTrackIds.all() as DbTrack[]).map(v => v.id);
     }
 
     getTrackById(trackId: number): DbTrack | undefined {
         if (typeof trackId === "undefined")
             throw new Error("trackId must be defined");
-        return this.s.getTrackById.get(trackId);
+        return this.s.getTrackById.get(trackId) as DbTrack;
     }
 
     getNamesByTrackId(
@@ -381,32 +404,40 @@ export default class Database {
     ): NamesWithSortable<"track" | "album" | "artist"> {
         if (typeof trackId === "undefined")
             throw new Error("trackId must be defined");
-        return this.s.getNamesByTrackId.get(trackId);
+        return this.s.getNamesByTrackId.get(trackId) as NamesWithSortable<
+            "track" | "album" | "artist"
+        >;
     }
 
     getLastUpdatedByPath(path: string): number | undefined {
         if (typeof path === "undefined")
             throw new Error("path must be defined");
-        return this.s.getTrackLastUpdatedByPath.get(path)?.lastUpdated;
+        return (this.s.getTrackLastUpdatedByPath.get(path) as DbTrack)
+            ?.lastUpdated;
     }
 
     getAlbumArtByHash(hash: string): AlbumArt | undefined {
         if (typeof hash === "undefined")
             throw new Error("hash must be defined");
-        return this.s.getAlbumArtByHash.get(hash);
+        return this.s.getAlbumArtByHash.get(hash) as AlbumArt;
     }
 
     getAlbumArtInfoByHash(hash: string): Omit<AlbumArt, "source"> | undefined {
         if (typeof hash === "undefined")
             throw new Error("hash must be defined");
-        return this.s.getAlbumArtInfoByHash.get(hash);
+        return this.s.getAlbumArtInfoByHash.get(hash) as Omit<
+            AlbumArt,
+            "source"
+        >;
     }
 
     getFirstArtistLettersByTrackIds(trackIds: number[]): string[] {
         this.s.getFirstSongLetters_createTempTable.run();
         const s = new GetFirstArtistLettersStatements(this.db);
         for (const item of trackIds) s.insertToTempTable.run(item);
-        const result = s.getByTrackId.all().map(el => el.firstLetter);
+        const result = (s.getByTrackId.all() as {firstLetter: string}[]).map(
+            el => el.firstLetter
+        );
         s.deleteTempTable.run();
         return result;
     }
@@ -415,7 +446,9 @@ export default class Database {
         this.s.getFirstSongLetters_createTempTable.run();
         const s = new GetFirstArtistLettersStatements(this.db);
         for (const item of trackIds) s.insertToTempTable.run(item);
-        const result = s.getByAlbumId.all().map(el => el.firstLetter);
+        const result = (s.getByAlbumId.all() as {firstLetter: string}[]).map(
+            el => el.firstLetter
+        );
         s.deleteTempTable.run();
         return result;
     }

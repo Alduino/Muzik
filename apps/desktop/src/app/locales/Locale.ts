@@ -28,6 +28,7 @@ export default interface Locale extends ResourceLanguage {
             albums: string;
             songs: string;
             queue: string;
+            cinema: string;
             settings: string;
         };
         queueRoute: {

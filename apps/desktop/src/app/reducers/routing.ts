@@ -5,7 +5,8 @@ export enum GlobalRoute {
     artistListing,
     albumListing,
     songListing,
-    queueListing
+    queueListing,
+    cinema
 }
 
 export const slice = createSlice({

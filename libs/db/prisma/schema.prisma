@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../dist"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Artwork {
+  id Int @id @default(autoincrement())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // The fingerprint of the artwork, used to find duplicates
+  fingerprint String @unique
+
+  // Can be displayed while the artwork is loading
+  avgColour String
+
+  tracks  Track[]
+  sources ImageSource[]
+}
+
+model ImageSource {
+  id Int @id @default(autoincrement())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  path String @unique
+
+  // Used to pick the best image to display
+  format String
+  width  Int
+  height Int
+
+  // The artwork this image is for
+  // Null during early stages of import
+  artwork   Artwork? @relation(fields: [artworkId], references: [id])
+  artworkId Int?
+
+  // If this image source is embedded in an audio source, this is it
+  embeddedIn AudioSource?
+}
+
+model Artist {
+  id Int @id @default(autoincrement())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name         String
+  // The name of the artist, but with the leading "The" removed
+  sortableName String @unique
+
+  albums Album[]
+  tracks Track[]
+}
+
+model Album {
+  id Int @id @default(autoincrement())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  albumArtist         String
+  sortableAlbumArtist String
+
+  name         String
+  // The name of the album, but with the leading "The" removed
+  sortableName String
+
+  // Track count from track metadata (from last source)
+  trackCount Int?
+
+  tracks  Track[]
+  artists Artist[]
+
+  @@unique([sortableName, sortableAlbumArtist])
+}
+
+model Track {
+  id Int @id @default(autoincrement())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Basic check to see if a track has been imported before
+  // (Some audio sources may manually be added, and therefore have a different hash)
+  hash BigInt @unique
+
+  albums  Album[]
+  artists Artist[]
+
+  artworks Artwork[]
+
+  sources AudioSource[]
+
+  name         String
+  // The name of the track, but with the leading "The" removed
+  sortableName String
+
+  // If there are multiple sources, this data is from the first available
+  releaseYear      Int?
+  trackNumber      Int?
+  publicArtworkUrl String?
+}
+
+model AudioSource {
+  id Int @id @default(autoincrement())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  path String @unique
+
+  mimeType      String
+  bitrate       Int
+  sampleRate    Int
+  bitsPerSample Int
+
+  lyrics   Lyrics? @relation(fields: [lyricsId], references: [id])
+  lyricsId Int?
+
+  // If multiple copies of one song have different durations, they probably should be different tracks...
+  duration Float
+
+  embeddedImageSource   ImageSource? @relation(fields: [embeddedImageSourceId], references: [id])
+  embeddedImageSourceId Int?         @unique
+
+  // Null during early stages of import
+  track   Track? @relation(fields: [trackId], references: [id])
+  trackId Int?
+}
+
+model Lyrics {
+  id Int @id @default(autoincrement())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  path String @unique
+
+  // Only one of these should be set (or neither)
+  staticLyrics String?
+  timedLines   String? // JSON array of {startTimeSeconds, text}
+
+  audioSources AudioSource[]
+}
