@@ -1,0 +1,16 @@
+{
+    "name": "@muzik/vite-plugin-ftl",
+    "version": "0.0.0",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsup",
+        "watch": "tsup --watch"
+    },
+    "devDependencies": {
+        "@fluent/bundle": "^0.18.0",
+        "@types/node": "^18.17.18",
+        "tsup": "^7.2.0",
+        "vite": "^4.4.9"
+    }
+}
