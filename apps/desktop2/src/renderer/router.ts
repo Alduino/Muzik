@@ -1,18 +1,25 @@
 import {createHashRouter} from "react-router-dom";
 import {ErrorBoundary} from "./features/error-boundary";
-import {AppLayoutRoute} from "./features/layout";
-import {SongsList} from "./features/songs-list";
+import {AppLayoutRoute, AppOuterLayoutRoute} from "./features/layout";
 
 export const router = createHashRouter([
     {
         path: "/",
-        Component: AppLayoutRoute,
-        ErrorBoundary,
+        Component: AppOuterLayoutRoute,
         children: [
             {
-                path: "songs",
                 index: true,
-                Component: SongsList
+                lazy: () => import("./features/splash")
+            },
+            {
+                Component: AppLayoutRoute,
+                ErrorBoundary,
+                children: [
+                    {
+                        path: "songs",
+                        lazy: () => import("./features/songs-list")
+                    }
+                ]
             }
         ]
     }

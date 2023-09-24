@@ -8,7 +8,8 @@
         "make": "electron-forge make",
         "publish": "electron-forge publish",
         "format": "prettier . --write && eslint --fix .",
-        "lint": "eslint ."
+        "lint": "eslint .",
+        "postinstall": "electron-builder install-app-deps"
     },
     "devDependencies": {
         "@electron-forge/cli": "^6.4.2",
@@ -17,7 +18,7 @@
         "@electron-forge/maker-squirrel": "^6.4.2",
         "@electron-forge/maker-zip": "^6.4.2",
         "@electron-forge/plugin-vite": "^6.4.2",
-        "@types/node": "^20.6.3",
+        "@types/node": "^18.15.13",
         "@types/react": "^18.2.21",
         "@types/react-dom": "^18.2.7",
         "@typescript-eslint/eslint-plugin": "^4.20.0",
@@ -26,8 +27,11 @@
         "@vitejs/plugin-react-swc": "^3.3.2",
         "electron": "^25.8.1",
         "electron-devtools-installer": "^3.2.0",
+        "rollup-plugin-natives": "^0.7.8",
         "typescript": "^5.2.2",
-        "vite": "^4.4.9"
+        "vite": "^4.4.9",
+        "vite-plugin-commonjs": "^0.9.0",
+        "vite-plugin-static-copy": "^0.17.0"
     },
     "dependencies": {
         "@fluent/bundle": "^0.18.0",
@@ -35,8 +39,12 @@
         "@fluent/react": "^0.15.2",
         "@fontsource-variable/cabin": "^5.0.9",
         "@mdi/js": "^7.2.96",
+        "@muzik/db": "workspace:^",
+        "@muzik/logger": "workspace:^",
         "@muzik/vite-plugin-ftl": "workspace:^",
         "@tanstack/react-query": "^4.35.3",
+        "@tanstack/react-query-devtools": "^4.35.3",
+        "@tanstack/react-table": "^8.10.1",
         "@trpc/client": "10.38.4",
         "@trpc/react-query": "10.38.4",
         "@trpc/server": "10.38.4",
@@ -45,6 +53,8 @@
         "@vanilla-extract/dynamic": "^2.0.3",
         "@vanilla-extract/recipes": "^0.5.0",
         "clsx": "^2.0.0",
+        "electron-builder": "^24.6.4",
+        "electron-squirrel-startup": "^1.0.0",
         "electron-trpc": "^0.5.2",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",

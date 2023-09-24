@@ -1,4 +1,5 @@
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
+import {ReactQueryDevtools} from "@tanstack/react-query-devtools";
 import {ipcLink} from "electron-trpc/renderer";
 import {ReactElement, ReactNode} from "react";
 import superjson from "superjson";
@@ -20,6 +21,7 @@ export function TrpcProvider({children}: TrpcProviderProps): ReactElement {
         <trpc.Provider client={trpcClient} queryClient={queryClient}>
             <QueryClientProvider client={queryClient}>
                 {children}
+                <ReactQueryDevtools />
             </QueryClientProvider>
         </trpc.Provider>
     );

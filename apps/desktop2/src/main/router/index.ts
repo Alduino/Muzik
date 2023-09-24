@@ -1,7 +1,10 @@
-import {procedure, router} from "../trpc";
+import {router} from "../trpc";
+import {meta} from "./meta";
+import {tracks} from "./tracks";
 
 export const appRouter = router({
-    healthcheck: procedure.query(() => "OK")
+    meta,
+    tracks
 });
 
-export type AppRouter = typeof router;
+export type AppRouter = typeof appRouter;
