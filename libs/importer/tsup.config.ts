@@ -5,5 +5,5 @@ export default defineConfig({
     sourcemap: true,
     clean: true,
     format: ["esm"],
-    entry: ["src/index.ts", "src/workers/*.ts"]
+    entry: ["src/index.ts"]
 });

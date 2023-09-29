@@ -3,7 +3,7 @@ import {readFile, stat} from "fs/promises";
 import {dirname} from "path";
 import {PrismaPromise} from "@muzik/db";
 import {IAudioMetadata, IPicture, selectCover} from "music-metadata";
-import sharp, {FormatEnum, Sharp} from "sharp";
+import type {FormatEnum, Sharp} from "sharp";
 import {log} from "../logger";
 import {getContext} from "./context";
 
@@ -56,6 +56,7 @@ async function getArtworkMetadata(data: Buffer, debugPath: string) {
     let image: Sharp;
 
     try {
+        const {default: sharp} = await import("sharp");
         image = sharp(data);
     } catch (err) {
         log.warn(err, "Failed to read embedded artwork at %s", debugPath);

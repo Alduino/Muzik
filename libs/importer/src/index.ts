@@ -1,4 +1,4 @@
-import {PrismaClient} from "@muzik/db";
+import * as Prisma from "@muzik/db";
 import {discoverSources} from "./core/discover";
 import {log} from "./logger";
 import {Progress} from "./utils/Progress";
@@ -17,7 +17,7 @@ interface ImporterResult {
 export function importTracks(options: ImporterOptions): ImporterResult {
     const progress = new Progress();
 
-    const database = new PrismaClient({
+    const database = new Prisma.PrismaClient({
         datasourceUrl: `file:${options.dbPath}?connection_limit=1`
     });
 

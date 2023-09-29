@@ -3,10 +3,7 @@ import Piscina from "piscina";
 import {log} from "../logger";
 import {PipelinedQueue} from "../utils/PipelinedQueue";
 import {getContext} from "../utils/context";
-import {
-    getAverageColour,
-    prepareAverageColourData
-} from "../utils/getAverageColour";
+import {getAverageColour} from "../utils/getAverageColour";
 import {getImageBuffer} from "../utils/getImageBuffer";
 
 interface Rgb {
@@ -61,6 +58,7 @@ export async function calculateArtworkAverageColours({
 
     interface QueueContext {
         buffer: ArrayBuffer;
+        mime: string;
         prepareDurationMs: number;
     }
 
@@ -80,15 +78,14 @@ export async function calculateArtworkAverageColours({
         {
             async prepare(source) {
                 const startTime = process.hrtime.bigint();
-                const sourceBuffer = await getImageBuffer(
+                const {buffer, mime} = await getImageBuffer(
                     source.path,
                     source.embeddedIn != null
                 );
 
-                const data = await prepareAverageColourData(sourceBuffer, {});
-
                 return {
-                    buffer: data,
+                    buffer: buffer.buffer,
+                    mime,
                     prepareDurationMs:
                         Number(process.hrtime.bigint() - startTime) / 1e6
                 };
@@ -96,8 +93,8 @@ export async function calculateArtworkAverageColours({
             async process(_, context) {
                 const [{hex}, duration] = await getAverageColour(
                     context.buffer,
-                    averageColourWorkerPool,
-                    {}
+                    context.mime,
+                    averageColourWorkerPool
                 );
 
                 const rgb = hexToRgb(hex);

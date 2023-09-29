@@ -25,6 +25,32 @@ class LoggerImpl implements Logger {
 
     constructor(private name: string) {}
 
+    private static formatInnerContext(context: unknown): string {
+        if (typeof context === "undefined") return "undefined";
+        if (context === null) return "null";
+
+        if (context instanceof Error) {
+            return `Error {
+${context
+    .stack!.split("\n")
+    .map(l => "  " + l)
+    .join("\n")}
+}`;
+        } else if (Array.isArray(context)) {
+            return `[ ${context
+                .map(c => this.formatInnerContext(c))
+                .join(", ")} ]`;
+        } else if (typeof context === "object") {
+            return `{ ${Object.entries(context)
+                .map(
+                    ([key, value]) => `${key}=${this.formatInnerContext(value)}`
+                )
+                .join(", ")} }`;
+        } else {
+            return JSON.stringify(context);
+        }
+    }
+
     private static formatContext(context: unknown) {
         if (typeof context === "undefined") return "";
 
@@ -34,7 +60,10 @@ class LoggerImpl implements Logger {
             return (
                 ": " +
                 Object.entries(context as Record<string, unknown>)
-                    .map(([key, value]) => `${key}=${JSON.stringify(value)}`)
+                    .map(
+                        ([key, value]) =>
+                            `${key}=${this.formatInnerContext(value)}`
+                    )
                     .join(", ")
             );
         }

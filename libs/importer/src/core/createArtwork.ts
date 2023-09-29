@@ -46,6 +46,7 @@ export async function createArtwork(
 
     interface QueueContext {
         buffer: Buffer;
+        mime: string;
         loadDurationMs: number;
     }
 
@@ -59,11 +60,12 @@ export async function createArtwork(
         {
             async prepare({path, embedded}) {
                 const startTime = process.hrtime.bigint();
-                const buffer = await getImageBuffer(path, embedded);
+                const {buffer, mime} = await getImageBuffer(path, embedded);
                 const endTime = process.hrtime.bigint();
 
                 return {
                     buffer,
+                    mime,
                     loadDurationMs: Number(endTime - startTime) / 1e6
                 };
             },
@@ -71,7 +73,10 @@ export async function createArtwork(
                 const arrayBuffer = context.buffer.buffer;
 
                 const [fingerprint, calcMs] = await fingerprintWorkerPool.run(
-                    arrayBuffer,
+                    {
+                        arrayBuffer,
+                        mimeType: context.mime
+                    },
                     {
                         transferList: [arrayBuffer]
                     }
@@ -95,11 +100,29 @@ export async function createArtwork(
                 const {path: imageSourcePath, embeddedIn} =
                     imageSourcesById.get(imageSourceId)!;
 
-                const {fingerprint, loadDurationMs, calcDurationMs} =
-                    await queue.run({
+                const fingerprintResult = await queue
+                    .run({
                         path: imageSourcePath,
                         embedded: embeddedIn != null
-                    });
+                    })
+                    .catch(err =>
+                        err instanceof Error ? err : new Error(err)
+                    );
+
+                if (fingerprintResult instanceof Error) {
+                    log.warn(
+                        {
+                            imageSourcePath,
+                            embedded: embeddedIn !== null,
+                            error: fingerprintResult
+                        },
+                        "Failed to calculate fingerprint for image source, skipping"
+                    );
+                    return;
+                }
+
+                const {fingerprint, loadDurationMs, calcDurationMs} =
+                    fingerprintResult;
 
                 log.trace(
                     {

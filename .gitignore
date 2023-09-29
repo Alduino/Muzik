@@ -72,3 +72,5 @@ common/autoinstallers/*/.npmrc
 **/.webpack
 
 apps/desktop/.ffmpeg/
+.rsw
+target

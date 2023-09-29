@@ -6,7 +6,8 @@
         "format": "prettier . --write && eslint --fix .",
         "lint": "eslint .",
         "r:build:watch": "pnpm run build:watch --recursive --parallel --filter \\!@muzik/app-desktop",
-        "r:build": "pnpm recursive run build"
+        "r:build": "pnpm recursive run build",
+        "watch:rsw": "rsw watch"
     },
     "devDependencies": {
         "@typescript-eslint/eslint-plugin": "^6.7.0",

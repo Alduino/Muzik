@@ -5,23 +5,24 @@
     "types": "dist/index.d.ts",
     "type": "module",
     "scripts": {
-        "build": "tsup",
+        "build": "tsup && vite build",
         "watch": "tsup --watch"
     },
     "dependencies": {
         "@muzik/db": "workspace:*",
+        "@muzik/importer-native": "workspace:^",
         "@muzik/logger": "workspace:*",
-        "@node-rs/xxhash": "^1.4.2",
         "clrc": "^3.1.0",
-        "fast-average-color": "^6.4.0",
         "music-metadata": "^8.1.4",
+        "normalize-diacritics": "^2.13.2",
         "piscina": "^4.1.0",
         "readdir-enhanced": "^6.0.4",
-        "sharp": "^0.32.5",
-        "sharp-phash": "^2.1.0"
+        "sharp": "^0.32.6"
     },
     "devDependencies": {
         "@types/node": "^18.17.18",
-        "tsup": "^7.2.0"
+        "concurrently": "^8.2.1",
+        "tsup": "^7.2.0",
+        "vite": "^4.4.9"
     }
 }

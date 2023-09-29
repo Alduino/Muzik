@@ -1,20 +1,23 @@
-import FastAverageColor, {IFastAverageColorOptions} from "fast-average-color";
+import {getImageAverageColour} from "@muzik/importer-native";
+import {setupNative} from "../utils/setupNative";
+
+setupNative();
 
 interface Params {
     buffer: ArrayBuffer;
-    options: IFastAverageColorOptions;
 }
 
-export default function getAverageColour({buffer, options}: Params) {
+export default function getAverageColour({buffer}: Params) {
     const startTime = process.hrtime.bigint();
 
-    const fac = new FastAverageColor();
-    const typedArray = new Uint8Array(buffer);
+    const result = getImageAverageColour(new Uint8Array(buffer));
 
-    const result = fac.prepareResult(
-        fac.getColorFromArray4(typedArray, options)
-    );
+    const {red, green, blue} = result;
+    result.free();
+
+    const rgb = (red << 16) | (green << 8) | blue;
+    const hex = "#" + rgb.toString(16).padStart(6, "0");
 
     const durationMs = Number(process.hrtime.bigint() - startTime) / 1e6;
-    return [result, durationMs] as const;
+    return [{hex}, durationMs] as const;
 }

@@ -1,4 +1,4 @@
-import {EventEmitter} from "events";
+import {EventEmitter} from "./EventEmitter";
 
 const PREPARE_CONCURRENCY = 1;
 
@@ -28,7 +28,8 @@ export interface PipelinedQueueOptions {
  * CPU-bound processing steps are run as parallel as possible, up to the concurrency limit.
  */
 export class PipelinedQueue<Input, Context, Output> {
-    readonly #ee = new EventEmitter();
+    readonly #prepareNext = new EventEmitter();
+    readonly #processNext = new EventEmitter();
 
     readonly #prepareQueue: QueueItemContext<Input, Context>[] = [];
     readonly #processQueue: QueueItemContext<[Input, Context], Output>[] = [];
@@ -40,8 +41,8 @@ export class PipelinedQueue<Input, Context, Output> {
         private readonly handler: PipelinedQueueHandler<Input, Context, Output>,
         private readonly options: PipelinedQueueOptions
     ) {
-        this.#ee.on("prepare:next", () => this.#handlePrepareNext());
-        this.#ee.on("process:next", () => this.#handleProcessNext());
+        this.#prepareNext.listen(() => this.#handlePrepareNext());
+        this.#processNext.listen(() => this.#handleProcessNext());
     }
 
     /**
@@ -65,7 +66,7 @@ export class PipelinedQueue<Input, Context, Output> {
                 onErrored: reject
             });
 
-            this.#ee.emit("prepare:next");
+            this.#prepareNext.emit();
         });
     }
 
@@ -77,7 +78,7 @@ export class PipelinedQueue<Input, Context, Output> {
                 onErrored: reject
             });
 
-            this.#ee.emit("process:next");
+            this.#processNext.emit();
         });
     }
 
@@ -98,7 +99,7 @@ export class PipelinedQueue<Input, Context, Output> {
             item.onErrored(error);
         }
 
-        this.#ee.emit("prepare:next");
+        this.#prepareNext.emit();
     }
 
     async #handleProcessNext() {
@@ -118,6 +119,6 @@ export class PipelinedQueue<Input, Context, Output> {
             item.onErrored(error);
         }
 
-        this.#ee.emit("process:next");
+        this.#processNext.emit();
     }
 }

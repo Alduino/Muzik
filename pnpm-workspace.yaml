@@ -4,3 +4,4 @@ packages:
     - "config/*"
     - "tooling/*"
     - "libs/*"
+    - "native-libs/*/pkg"

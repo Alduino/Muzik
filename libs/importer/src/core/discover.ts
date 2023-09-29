@@ -24,10 +24,9 @@ export async function discoverSources(dirs: string[]) {
         })
     );
 
+    const path = "./workers/hashBuffer.cjs";
     const hashWorkerPool = new Piscina({
-        filename: fileURLToPath(
-            new URL("./workers/hashBuffer.js", import.meta.url)
-        ),
+        filename: fileURLToPath(new URL(path, import.meta.url)),
         maxQueue: "auto",
         idleTimeout: 500
     });
@@ -67,10 +66,9 @@ export async function discoverSources(dirs: string[]) {
         audioSourceMetadataWithIds
     );
 
+    const imageFingerprintPath = "./workers/getImageFingerprint.cjs";
     const fingerprintWorkerPool = new Piscina({
-        filename: fileURLToPath(
-            new URL("./workers/getImageFingerprint.js", import.meta.url)
-        ),
+        filename: fileURLToPath(new URL(imageFingerprintPath, import.meta.url)),
         maxQueue: "auto",
         idleTimeout: 500
     });
@@ -81,10 +79,9 @@ export async function discoverSources(dirs: string[]) {
 
     await fingerprintWorkerPool.destroy();
 
+    const avgColourPath = "./workers/getAverageColour.cjs";
     const averageColourWorkerPool = new Piscina({
-        filename: fileURLToPath(
-            new URL("./workers/getAverageColour.js", import.meta.url)
-        ),
+        filename: fileURLToPath(new URL(avgColourPath, import.meta.url)),
         maxQueue: "auto",
         idleTimeout: 500
     });
