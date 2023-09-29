@@ -1,7 +1,9 @@
 import {readdir, readFile, stat} from "fs/promises";
 import {join} from "path";
 import {prisma} from "./prisma.ts";
+import {registerCustomProtocols} from "./protocols";
 import {markInitialisationComplete} from "./router/meta/init.ts";
+import {configDb} from "./utils/config.ts";
 import {log} from "./utils/logger.ts";
 
 const PRISMA_MIGRATIONS_TABLE_CREATE_SQL = `
@@ -111,6 +113,8 @@ async function migrateDatabase() {
 }
 
 export async function initialiseMuzik() {
+    registerCustomProtocols();
+    await configDb.read();
     await migrateDatabase();
     markInitialisationComplete();
 }

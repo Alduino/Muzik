@@ -1,4 +1,5 @@
 @import "@fontsource-variable/cabin";
+@import "@fontsource/ibm-plex-mono";
 
 body {
     user-select: none;

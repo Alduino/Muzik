@@ -4,6 +4,8 @@ import {log} from "./logger";
 import {Progress} from "./utils/Progress";
 import {setContext} from "./utils/context";
 
+export type {Progress};
+
 export interface ImporterOptions {
     dbPath: string;
     directories: string[];

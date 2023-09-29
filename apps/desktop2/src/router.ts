@@ -18,6 +18,10 @@ export const router = createHashRouter([
                     {
                         path: "songs",
                         lazy: () => import("./features/songs-list")
+                    },
+                    {
+                        path: "settings",
+                        lazy: () => import("./features/settings")
                     }
                 ]
             }

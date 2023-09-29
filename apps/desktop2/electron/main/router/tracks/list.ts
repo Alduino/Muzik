@@ -2,6 +2,24 @@ import {z} from "zod";
 import {prisma} from "../../prisma.ts";
 import {procedure} from "../../trpc.ts";
 
+export interface TrackItem {
+    id: number;
+    name: string;
+    duration: number;
+    artists: {
+        id: number;
+        name: string;
+    }[];
+    album: {
+        id: number;
+        name: string;
+    } | null;
+    artwork: {
+        id: number;
+        avgColour: string;
+    } | null;
+}
+
 export const list = procedure
     .input(
         z.object({
@@ -12,18 +30,15 @@ export const list = procedure
     .query(async ({input}) => {
         const data = await prisma.track.findMany({
             take: input.limit,
-            skip: input.cursor,
+            cursor: input.cursor
+                ? {
+                      id: input.cursor
+                  }
+                : undefined,
+            skip: input.cursor ? 1 : 0,
             orderBy: {
                 sortableName: "asc"
             },
-            where:
-                input.cursor != null
-                    ? {
-                          id: {
-                              gt: input.cursor
-                          }
-                      }
-                    : undefined,
             select: {
                 id: true,
                 name: true,
@@ -45,24 +60,29 @@ export const list = procedure
                         id: true,
                         name: true
                     }
+                },
+                artworks: {
+                    take: 1,
+                    select: {
+                        id: true,
+                        avgColour: true
+                    }
                 }
             }
         });
 
-        return data.map(track => ({
-            id: track.id,
-            name: track.name,
-            duration: track.sources[0].duration,
-            artists: track.artists.map(artist => ({
-                id: artist.id,
-                name: artist.name
+        return {
+            items: data.map<TrackItem>(track => ({
+                id: track.id,
+                name: track.name,
+                duration: track.sources[0].duration,
+                artists: track.artists.map(artist => ({
+                    id: artist.id,
+                    name: artist.name
+                })),
+                album: track.albums.length > 0 ? track.albums[0] : null,
+                artwork: track.artworks.length > 0 ? track.artworks[0] : null
             })),
-            album:
-                track.albums.length > 0
-                    ? {
-                          id: track.albums[0].id,
-                          name: track.albums[0].name
-                      }
-                    : null
-        }));
+            nextCursor: data.length > 0 ? data.at(-1)!.id : null
+        };
     });

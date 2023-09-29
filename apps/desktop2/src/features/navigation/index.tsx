@@ -1,4 +1,4 @@
-import {mdiDiscPlayer} from "@mdi/js";
+import {mdiCog, mdiDiscPlayer} from "@mdi/js";
 import {ReactElement} from "react";
 import {useTranslation} from "../../hooks/useTranslation.ts";
 import {Logo} from "./logo";
@@ -18,6 +18,14 @@ export function Navigation(): ReactElement {
                     title={t("songs-link")}
                     path="/songs"
                     icon={mdiDiscPlayer}
+                />
+            </Section>
+
+            <Section>
+                <NavLink
+                    title={t("settings-link")}
+                    path="/settings"
+                    icon={mdiCog}
                 />
             </Section>
         </div>
