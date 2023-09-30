@@ -1,0 +1,6 @@
+{
+    "name": "@muzik/importer-native",
+    "version": "0.0.0",
+    "main": "index.js",
+    "types": "pkg/importer_native.d.ts"
+}

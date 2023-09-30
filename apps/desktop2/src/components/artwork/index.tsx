@@ -1,35 +1,33 @@
 import {assignInlineVars} from "@vanilla-extract/dynamic";
-import {memo, useMemo} from "react";
-import {useInView} from "react-intersection-observer";
+import {memo, ReactElement, ReactNode, useMemo} from "react";
 import {useBoolean} from "../../hooks/useBoolean.ts";
 import {trpc} from "../../utils/trpc.ts";
 import {
+    childrenContainerClass,
     containerClass,
     imageStyle,
     placeholderColourVar,
     sizeVar
 } from "./styles.css.ts";
 
-function getImageSourceUrl(sourceId: number) {
-    return `image-source://${sourceId}`;
+function getImageSourceUrl(sourceId: number, minDimension: number) {
+    return `image-source://images.com/${sourceId}?mind=${minDimension}`;
 }
 
 const SIZES = {
-    small: 48
+    small: 48,
+    medium: 64
 };
 
-export interface ArtworkProps {
+interface ArtworkImageProps {
     id: number;
-    placeholderColour: string;
-    size: keyof typeof SIZES;
+    size: number;
 }
 
-function Artwork({id, placeholderColour, size: sizeKey}: ArtworkProps) {
+function ArtworkImage({id, size}: ArtworkImageProps): ReactElement | null {
     const {data} = trpc.artwork.imageSource.useQuery({
         artworkId: id
     });
-
-    const size = SIZES[sizeKey];
 
     const sourceId = useMemo(() => {
         if (!data) return null;
@@ -59,6 +57,39 @@ function Artwork({id, placeholderColour, size: sizeKey}: ArtworkProps) {
 
     const [loaded, setLoaded] = useBoolean(false);
 
+    if (!sourceId) return null;
+
+    return (
+        <img
+            className={imageStyle({loaded})}
+            src={getImageSourceUrl(sourceId, size)}
+            alt=""
+            onLoad={setLoaded.on}
+        />
+    );
+}
+
+const MemoisedArtworkImage = memo(ArtworkImage, (prev, next) => {
+    return prev.id === next.id && prev.size === next.size;
+});
+
+export interface ArtworkProps {
+    id: number;
+    placeholderColour: string;
+    size: keyof typeof SIZES;
+
+    // Allows e.g. a play button to be rendered on top of the artwork
+    children?: ReactNode;
+}
+
+export function Artwork({
+    id,
+    placeholderColour,
+    size: sizeKey,
+    children
+}: ArtworkProps) {
+    const size = SIZES[sizeKey];
+
     return (
         <div
             className={containerClass}
@@ -67,17 +98,11 @@ function Artwork({id, placeholderColour, size: sizeKey}: ArtworkProps) {
                 [sizeVar]: `${size}px`
             })}
         >
-            {sourceId && (
-                <img
-                    className={imageStyle({loaded})}
-                    src={getImageSourceUrl(sourceId)}
-                    alt=""
-                    onLoad={setLoaded.on}
-                />
+            <MemoisedArtworkImage id={id} size={size} />
+
+            {children && (
+                <div className={childrenContainerClass}>{children}</div>
             )}
         </div>
     );
 }
-
-const MemoisedArtwork = memo(Artwork);
-export {MemoisedArtwork as Artwork};

@@ -1,40 +1,23 @@
 import {createReadStream} from "fs";
-import {readFile} from "fs/promises";
-import {Readable} from "stream";
 import {protocol} from "electron";
-import {parseBuffer, selectCover} from "music-metadata";
 import {prisma} from "../prisma.ts";
-
-async function getImageStream(
-    imageSourcePath: string,
-    embedded: boolean
-): Promise<Readable> {
-    if (embedded) {
-        const buffer = await readFile(imageSourcePath);
-        const metadata = await parseBuffer(buffer, imageSourcePath);
-        const cover = selectCover(metadata.common.picture);
-
-        if (!cover) {
-            throw new Error(
-                "No cover found in embedded metadata for " + imageSourcePath
-            );
-        }
-
-        return Readable.from(cover.data);
-    } else {
-        return createReadStream(imageSourcePath);
-    }
-}
+import {getImagePath, getResizedImagePath} from "../utils/image-loading.ts";
 
 export function registerImageSourceProtocol() {
     protocol.registerStreamProtocol(
         "image-source",
         async (request, callback) => {
-            const id = request.url.substring("image-source://".length);
+            const url = new URL(request.url);
+            const id = parseInt(url.pathname.slice(1));
+            const resizeMinDimension = url.searchParams.get("mind");
+
+            if (Number.isNaN(id)) {
+                throw new Error("Invalid id");
+            }
 
             const imageSource = await prisma.imageSource.findUniqueOrThrow({
                 where: {
-                    id: parseInt(id)
+                    id: id
                 },
                 select: {
                     path: true,
@@ -47,17 +30,38 @@ export function registerImageSourceProtocol() {
                 }
             });
 
-            const stream = await getImageStream(
-                imageSource.path,
-                imageSource.embeddedIn != null
-            );
+            if (!resizeMinDimension) {
+                const stream = createReadStream(
+                    await getImagePath(
+                        id,
+                        imageSource.path,
+                        imageSource.embeddedIn != null
+                    )
+                );
 
-            callback({
-                data: stream,
-                headers: {
-                    "content-type": imageSource.format
-                }
-            });
+                callback({
+                    data: stream,
+                    headers: {
+                        "content-type": imageSource.format
+                    }
+                });
+            } else {
+                const resizedImagePath = await getResizedImagePath(
+                    id,
+                    imageSource.path,
+                    parseInt(resizeMinDimension),
+                    imageSource.embeddedIn != null
+                );
+
+                const stream = createReadStream(resizedImagePath);
+
+                callback({
+                    data: stream,
+                    headers: {
+                        "content-type": imageSource.format
+                    }
+                });
+            }
         }
     );
 }

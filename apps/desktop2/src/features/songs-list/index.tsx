@@ -5,13 +5,15 @@ import {
     useReactTable
 } from "@tanstack/react-table";
 import clsx from "clsx";
-import {Fragment, ReactElement} from "react";
-import AutoSizer from "react-virtualized-auto-sizer";
-import {FixedSizeList} from "react-window";
+import {Fragment, ReactElement, useCallback} from "react";
+import AutoSizer, {
+    HeightAndWidthProps as AutoSizerProps
+} from "react-virtualized-auto-sizer";
+import {FixedSizeList, FixedSizeListProps} from "react-window";
 import {formatDuration} from "../../../../desktop/src/app/utils/formatDuration.tsx";
 import {TrackItem} from "../../../electron/main/router/tracks/list.ts";
-import {Artwork} from "../../components/artwork";
 import {trpc} from "../../utils/trpc.ts";
+import {ArtworkPlayButton} from "./ArtworkPlayButton.tsx";
 import {
     albumColumnClass,
     artistColumnClass,
@@ -19,6 +21,8 @@ import {
     cellLinkClass,
     commaClass,
     containerClass,
+    indexColumnClass,
+    listClass,
     tableCellClass,
     tableClass,
     tableHeaderClass,
@@ -32,16 +36,23 @@ const columnHelper = createColumnHelper<TrackItem>();
 
 const columns = [
     columnHelper.display({
+        id: "index",
+        header: "#",
+        cell: info => {
+            return <span>{info.row.index + 1}</span>;
+        }
+    }),
+    columnHelper.display({
         id: "artwork",
         cell: info => {
-            const {artwork} = info.row.original;
+            const {artwork, id} = info.row.original;
             if (!artwork) return null;
 
             return (
-                <Artwork
-                    id={artwork.id}
-                    placeholderColour={artwork.avgColour}
-                    size="small"
+                <ArtworkPlayButton
+                    trackId={id}
+                    artworkId={artwork.id}
+                    avgColour={artwork.avgColour}
                 />
             );
         }
@@ -87,6 +98,7 @@ const columns = [
 ];
 
 const COLUMN_CLASSES = {
+    index: indexColumnClass,
     artwork: artworkColumnClass,
     name: titleColumnClass,
     artists: artistColumnClass,
@@ -102,6 +114,47 @@ export function Component(): ReactElement {
         columns,
         getCoreRowModel: getCoreRowModel()
     });
+
+    const renderListItem = useCallback<FixedSizeListProps["children"]>(
+        ({index, style}) => {
+            const row = table.getRowModel().rows[index];
+
+            return (
+                <div key={row.id} className={tableRowClass} style={style}>
+                    {row.getVisibleCells().map(cell => (
+                        <div
+                            key={cell.id}
+                            className={clsx(
+                                tableCellClass,
+                                COLUMN_CLASSES[cell.column.id]
+                            )}
+                        >
+                            {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext()
+                            )}
+                        </div>
+                    ))}
+                </div>
+            );
+        },
+        [table]
+    );
+
+    const renderAutoSizer = useCallback<AutoSizerProps["children"]>(
+        ({width, height}) => (
+            <FixedSizeList
+                width={width}
+                height={height}
+                itemCount={tracks.data?.length ?? 0}
+                itemSize={52}
+                className={listClass}
+            >
+                {renderListItem}
+            </FixedSizeList>
+        ),
+        [renderListItem, tracks.data?.length]
+    );
 
     return (
         <div className={containerClass}>
@@ -133,71 +186,9 @@ export function Component(): ReactElement {
                             </div>
                         ))}
                     </div>
-                    <AutoSizer>
-                        {({width, height}) => (
-                            <FixedSizeList
-                                width={width}
-                                height={height}
-                                itemCount={tracks.data?.length ?? 0}
-                                itemSize={52}
-                            >
-                                {({index, style}) => {
-                                    const row = table.getRowModel().rows[index];
-
-                                    return (
-                                        <div
-                                            key={row.id}
-                                            className={tableRowClass}
-                                            style={style}
-                                        >
-                                            {row.getVisibleCells().map(cell => (
-                                                <div
-                                                    key={cell.id}
-                                                    className={clsx(
-                                                        tableCellClass,
-                                                        COLUMN_CLASSES[
-                                                            cell.column.id
-                                                        ]
-                                                    )}
-                                                >
-                                                    {flexRender(
-                                                        cell.column.columnDef
-                                                            .cell,
-                                                        cell.getContext()
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    );
-                                }}
-                            </FixedSizeList>
-                        )}
-                    </AutoSizer>
+                    <AutoSizer>{renderAutoSizer}</AutoSizer>
                 </div>
             </div>
         </div>
     );
 }
-
-/*
-table.getRowModel().rows.map(row => {
-                            return (
-                                <div key={row.id} className={tableRowClass}>
-                                    {row.getVisibleCells().map(cell => (
-                                        <div
-                                            key={cell.id}
-                                            className={clsx(
-                                                tableCellClass,
-                                                COLUMN_CLASSES[cell.column.id]
-                                            )}
-                                        >
-                                            {flexRender(
-                                                cell.column.columnDef.cell,
-                                                cell.getContext()
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            );
-                        })
- */

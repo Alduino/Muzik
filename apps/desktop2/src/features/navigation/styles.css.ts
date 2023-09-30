@@ -8,5 +8,6 @@ export const containerClass = style({
     flexDirection: "column",
     gap: size(6),
     width: size(64),
-    backgroundColor: lm(colour("grey", 5), colour("grey", 90))
+    backgroundColor: lm(colour("grey", 5), colour("grey", 90)),
+    overflow: "auto"
 });

@@ -3,6 +3,7 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/native-libs/importer-native/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/native-libs/waveform-analyser/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/temp" />
       <excludeFolder url="file://$MODULE_DIR$/.tmp" />
       <excludeFolder url="file://$MODULE_DIR$/tmp" />
@@ -25,6 +26,7 @@
       <excludeFolder url="file://$MODULE_DIR$/apps/node_modules" />
       <excludeFolder url="file://$MODULE_DIR$/apps/desktop/.webpack" />
       <excludeFolder url="file://$MODULE_DIR$/native-libs/importer-native/target" />
+      <excludeFolder url="file://$MODULE_DIR$/native-libs/waveform-analyser/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

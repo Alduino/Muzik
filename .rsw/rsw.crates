@@ -1,0 +1,2 @@
+importer-native :~> native-libs/importer-native/pkg
+waveform-analyser :~> native-libs/waveform-analyser/pkg

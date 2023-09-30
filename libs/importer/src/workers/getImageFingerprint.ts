@@ -1,7 +1,4 @@
-import {phash} from "@muzik/importer-native";
-import {setupNative} from "../utils/setupNative";
-
-setupNative();
+import * as native from "@muzik/importer-native";
 
 export default function getImageFingerprint({
     arrayBuffer,
@@ -11,7 +8,7 @@ export default function getImageFingerprint({
     mimeType: string;
 }) {
     const startTime = process.hrtime.bigint();
-    const result = phash(new Uint8Array(arrayBuffer), mimeType);
+    const result = native.phash(new Uint8Array(arrayBuffer), mimeType);
     const durationMs = Number(process.hrtime.bigint() - startTime) / 1e6;
 
     return [result, durationMs] as const;

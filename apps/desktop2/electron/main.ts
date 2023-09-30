@@ -1,8 +1,9 @@
 import path from "node:path";
-import {app, BrowserWindow} from "electron";
+import {app, BrowserWindow, Menu, MenuItem} from "electron";
 import {initialiseMuzik} from "./main/initialise.ts";
 import {attachWindow, detachWindow} from "./main/ipc-setup.ts";
 import {prisma} from "./main/prisma.ts";
+import {tempDir} from "./main/utils/tmp-dir.ts";
 
 // The built directory structure
 //
@@ -22,6 +23,19 @@ let win: BrowserWindow | null;
 // 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
 
+Menu.setApplicationMenu(
+    Menu.buildFromTemplate([
+        new MenuItem({
+            accelerator: "Ctrl+Shift+I",
+            click() {
+                win?.webContents.toggleDevTools();
+            }
+        })
+    ])
+);
+
+app.commandLine.appendSwitch("enable-features", "OverlayScrollbar");
+
 function createWindow() {
     win = new BrowserWindow({
         icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
@@ -29,6 +43,9 @@ function createWindow() {
             preload: path.join(__dirname, "preload.js")
         }
     });
+
+    win.setMenuBarVisibility(false);
+    win.hide();
 
     attachWindow(win);
 
@@ -45,6 +62,10 @@ function createWindow() {
     } else {
         // win.loadFile('dist/index.html')
         win.loadFile(path.join(process.env.DIST, "index.html"));
+    }
+
+    if (VITE_DEV_SERVER_URL) {
+        win.showInactive();
     }
 
     const _win = win;
@@ -72,6 +93,7 @@ app.on("activate", () => {
 });
 
 app.on("before-quit", async () => {
+    tempDir.cleanupSync();
     await prisma.$disconnect();
 });
 

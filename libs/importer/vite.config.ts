@@ -1,5 +1,6 @@
 import {readdirSync} from "fs";
 import {defineConfig} from "vite";
+import commonjs from "vite-plugin-commonjs";
 
 export default defineConfig({
     build: {
@@ -14,5 +15,6 @@ export default defineConfig({
         rollupOptions: {
             external: ["sharp"]
         }
-    }
+    },
+    plugins: [commonjs()]
 });

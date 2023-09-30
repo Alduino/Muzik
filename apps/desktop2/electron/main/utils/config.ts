@@ -4,14 +4,20 @@ import {Low} from "lowdb";
 import {JSONFile} from "lowdb/node";
 
 interface Configuration {
+    ffPaths: {
+        mpeg: string;
+        probe: string;
+    } | null;
+
     sourceDirectories: string[];
 }
 
 const defaultData: Configuration = {
+    ffPaths: null,
     sourceDirectories: []
 };
 
-const path = join(app.getPath("appData"), "config.json");
+const path = join(app.getPath("userData"), "config.json");
 
 const adapter = new JSONFile<Configuration>(path);
 

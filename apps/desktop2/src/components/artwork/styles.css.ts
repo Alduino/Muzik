@@ -9,7 +9,8 @@ export const containerClass = style({
     width: sizeVar,
     backgroundColor: placeholderColourVar,
     overflow: "hidden",
-    borderRadius: 3
+    borderRadius: 3,
+    position: "relative"
 });
 
 const fadeIn = keyframes({
@@ -35,4 +36,12 @@ export const imageStyle = recipe({
             }
         }
     }
+});
+
+export const childrenContainerClass = style({
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%"
 });

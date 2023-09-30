@@ -8,5 +8,5 @@ export const fonts = {
 
 export const colours = {
     text: lm(colour("grey", 100), colour("grey", 0)),
-    textSecondary: lm(colour("grey", 70), colour("grey", 20))
+    textSecondary: lm(colour("grey", 70), colour("grey", 30))
 };

@@ -16,14 +16,24 @@ export const outerContainerClass = style({
 });
 
 export const containerClass = style({
+    display: "grid",
+    gridTemplateAreas: `"sidebar content" "footer footer"`,
+    gridTemplateColumns: "auto 1fr",
+    gridTemplateRows: "1fr auto",
     width: "100%",
-    height: "100%",
-    display: "flex",
-    alignItems: "stretch"
+    height: "100%"
+});
+
+export const navigationClass = style({
+    gridArea: "sidebar"
 });
 
 export const contentClass = style({
     backgroundColor: lm(colour("grey", 0), colour("grey", 100)),
-    flexGrow: 1,
-    overflow: "auto"
+    overflow: "auto",
+    gridArea: "content"
+});
+
+export const playbackBarProps = style({
+    gridArea: "footer"
 });

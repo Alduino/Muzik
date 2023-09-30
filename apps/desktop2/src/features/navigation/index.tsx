@@ -1,4 +1,5 @@
 import {mdiCog, mdiDiscPlayer} from "@mdi/js";
+import clsx from "clsx";
 import {ReactElement} from "react";
 import {useTranslation} from "../../hooks/useTranslation.ts";
 import {Logo} from "./logo";
@@ -6,11 +7,15 @@ import {NavLink} from "./nav-link";
 import {Section} from "./section";
 import {containerClass} from "./styles.css.ts";
 
-export function Navigation(): ReactElement {
+export interface NavigationProps {
+    className?: string;
+}
+
+export function Navigation({className}: NavigationProps): ReactElement {
     const t = useTranslation("navigation");
 
     return (
-        <div className={containerClass}>
+        <div className={clsx(containerClass, className)}>
             <Logo />
 
             <Section title={t("lists-section-title")}>

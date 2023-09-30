@@ -4,6 +4,7 @@ import {prisma} from "./prisma.ts";
 import {registerCustomProtocols} from "./protocols";
 import {markInitialisationComplete} from "./router/meta/init.ts";
 import {configDb} from "./utils/config.ts";
+import {initialiseFfmpeg} from "./utils/ffmpeg.ts";
 import {log} from "./utils/logger.ts";
 
 const PRISMA_MIGRATIONS_TABLE_CREATE_SQL = `
@@ -116,5 +117,6 @@ export async function initialiseMuzik() {
     registerCustomProtocols();
     await configDb.read();
     await migrateDatabase();
+    await initialiseFfmpeg();
     markInitialisationComplete();
 }

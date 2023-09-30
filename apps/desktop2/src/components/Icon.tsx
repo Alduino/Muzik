@@ -9,7 +9,7 @@ export function Icon({
     ...svgProps
 }: IconProps & SVGProps<SVGSVGElement>): ReactElement {
     return (
-        <svg viewBox="0 0 24 24" {...svgProps}>
+        <svg viewBox="0 0 24 24" width="1em" height="1em" {...svgProps}>
             <path fill="currentcolor" d={icon} />
         </svg>
     );

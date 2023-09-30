@@ -1,7 +1,4 @@
-import {getImageAverageColour} from "@muzik/importer-native";
-import {setupNative} from "../utils/setupNative";
-
-setupNative();
+import * as native from "@muzik/importer-native";
 
 interface Params {
     buffer: ArrayBuffer;
@@ -10,7 +7,7 @@ interface Params {
 export default function getAverageColour({buffer}: Params) {
     const startTime = process.hrtime.bigint();
 
-    const result = getImageAverageColour(new Uint8Array(buffer));
+    const result = native.getImageAverageColour(new Uint8Array(buffer));
 
     const {red, green, blue} = result;
     result.free();

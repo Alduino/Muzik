@@ -107,6 +107,10 @@ model Track {
   releaseYear      Int?
   trackNumber      Int?
   publicArtworkUrl String?
+
+  // First byte is the channel count, the rest is interleaved u16le samples that are
+  // the max value of that channel over a certain time period
+  waveformBins Bytes?
 }
 
 model AudioSource {

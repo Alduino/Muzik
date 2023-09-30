@@ -1,4 +1,6 @@
 import {style} from "@vanilla-extract/css";
+import {colour} from "../../theme/colour.ts";
+import {lm} from "../../theme/lm.ts";
 import {size} from "../../theme/size.ts";
 import {colours, fonts} from "../../theme/theme.ts";
 
@@ -12,6 +14,105 @@ export const containerClass = style({
 export const tableClass = style({
     width: "100%",
     height: "100%"
+});
+
+export const tableHeaderClass = style({
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "start",
+    gap: size(3),
+    height: size(6)
+});
+
+export const tableHeaderItemClass = style({
+    color: colours.textSecondary,
+    fontFamily: fonts.text,
+    fontSize: size(3),
+    fontWeight: 500,
+    letterSpacing: "0.05em",
+    textTransform: "uppercase",
+    textAlign: "start"
+});
+
+export const listClass = style({
+    "::-webkit-scrollbar": {
+        width: size(2)
+    },
+
+    "::-webkit-scrollbar-thumb": {
+        backgroundColor: lm(colour("grey", 40), colour("grey", 60)),
+        minHeight: size(8),
+        borderRadius: size(1)
+    },
+
+    "::-webkit-scrollbar-track": {
+        backgroundColor: lm(colour("grey", 10), colour("grey", 90)),
+        borderRadius: size(1)
+    }
+});
+
+export const tableRowClass = style({
+    display: "flex",
+    gap: size(3),
+    height: "52px",
+    alignItems: "center",
+    borderRadius: 6,
+    ":hover": {
+        backgroundColor: lm(colour("grey", 10), colour("grey", 90))
+    }
+});
+
+export const tableCellClass = style({
+    color: colours.text,
+    fontFamily: fonts.text,
+    textOverflow: "ellipsis",
+    overflow: "hidden",
+    whiteSpace: "nowrap"
+});
+
+export const commaClass = style({
+    marginInlineEnd: size(1),
+    "::before": {
+        content: '","'
+    }
+});
+
+export const cellLinkClass = style({
+    textDecoration: "none",
+    color: colours.text,
+    ":hover": {
+        textDecoration: "underline"
+    }
+});
+
+export const playButtonContainerClass = style({
+    width: "100%",
+    height: "100%",
+    opacity: 0,
+    backgroundColor: lm(colour("grey", 0, 0.5), colour("grey", 100, 0.5)),
+    cursor: "pointer",
+    border: "none",
+
+    selectors: {
+        [`${tableRowClass}:hover &`]: {
+            opacity: 1
+        }
+    }
+});
+
+export const playButtonClass = style({
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    color: lm(colour("grey", 100), colour("grey", 0)),
+    fontSize: size(8)
+});
+
+export const indexColumnClass = style({
+    flexBasis: "50px",
+    color: colours.textSecondary,
+    textAlign: "center"
 });
 
 export const artworkColumnClass = style({
@@ -37,52 +138,4 @@ export const albumColumnClass = style({
 export const timeColumnClass = style({
     flexGrow: 1,
     flexBasis: "50px"
-});
-
-export const tableHeaderClass = style({
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "start",
-    gap: size(2),
-    height: size(6)
-});
-
-export const tableHeaderItemClass = style({
-    color: colours.textSecondary,
-    fontFamily: fonts.text,
-    fontSize: size(3),
-    fontWeight: 500,
-    letterSpacing: "0.05em",
-    textTransform: "uppercase",
-    textAlign: "start"
-});
-
-export const tableRowClass = style({
-    display: "flex",
-    gap: size(2),
-    height: "52px",
-    alignItems: "center"
-});
-
-export const tableCellClass = style({
-    color: colours.text,
-    fontFamily: fonts.text,
-    textOverflow: "ellipsis",
-    overflow: "hidden",
-    whiteSpace: "nowrap"
-});
-
-export const commaClass = style({
-    marginInlineEnd: size(1),
-    "::before": {
-        content: '","'
-    }
-});
-
-export const cellLinkClass = style({
-    textDecoration: "none",
-    color: colours.text,
-    ":hover": {
-        textDecoration: "underline"
-    }
 });
