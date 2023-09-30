@@ -1,5 +1,5 @@
 import {assignInlineVars} from "@vanilla-extract/dynamic";
-import {useMemo} from "react";
+import {memo, useMemo} from "react";
 import {useInView} from "react-intersection-observer";
 import {useBoolean} from "../../hooks/useBoolean.ts";
 import {trpc} from "../../utils/trpc.ts";
@@ -24,17 +24,10 @@ export interface ArtworkProps {
     size: keyof typeof SIZES;
 }
 
-export function Artwork({id, placeholderColour, size: sizeKey}: ArtworkProps) {
-    const {ref, inView} = useInView();
-
-    const {data} = trpc.artwork.imageSource.useQuery(
-        {
-            artworkId: id
-        },
-        {
-            enabled: inView
-        }
-    );
+function Artwork({id, placeholderColour, size: sizeKey}: ArtworkProps) {
+    const {data} = trpc.artwork.imageSource.useQuery({
+        artworkId: id
+    });
 
     const size = SIZES[sizeKey];
 
@@ -68,7 +61,6 @@ export function Artwork({id, placeholderColour, size: sizeKey}: ArtworkProps) {
 
     return (
         <div
-            ref={ref}
             className={containerClass}
             style={assignInlineVars({
                 [placeholderColourVar]: placeholderColour,
@@ -86,3 +78,6 @@ export function Artwork({id, placeholderColour, size: sizeKey}: ArtworkProps) {
         </div>
     );
 }
+
+const MemoisedArtwork = memo(Artwork);
+export {MemoisedArtwork as Artwork};
