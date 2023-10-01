@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import {ReactElement} from "react";
+import {Fragment, ReactElement} from "react";
 import {Artwork} from "../../components/artwork";
 import {useCurrentTrack} from "../../hooks/data/useCurrentTrack.ts";
 import {trpc} from "../../utils/trpc.ts";
@@ -44,18 +44,24 @@ export function PlaybackBar({
                         />
                     )}
                     <div className={metadataContainerClass}>
-                        <span className={trackTitleClass}>
+                        <span
+                            className={trackTitleClass}
+                            title={trackInfo.name}
+                        >
                             {trackInfo.name}
                         </span>
                         <span className={artistNameClass}>
-                            {trackInfo.artists.map(artist => (
-                                <a
-                                    key={artist.id}
-                                    className={artistLinkClass}
-                                    href="#"
-                                >
-                                    {artist.name}
-                                </a>
+                            {trackInfo.artists.map((artist, i) => (
+                                <Fragment key={artist.id}>
+                                    {i > 0 && ", "}
+                                    <a
+                                        className={artistLinkClass}
+                                        title={artist.name}
+                                        href="#"
+                                    >
+                                        {artist.name}
+                                    </a>
+                                </Fragment>
                             ))}
                         </span>
                     </div>

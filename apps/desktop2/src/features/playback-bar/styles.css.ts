@@ -24,13 +24,19 @@ export const trackTitleClass = style({
     fontFamily: fonts.text,
     fontWeight: 500,
     color: colours.text,
-    fontSize: size(4)
+    fontSize: size(4),
+    overflow: "hidden",
+    whiteSpace: "nowrap",
+    textOverflow: "ellipsis"
 });
 
 export const artistNameClass = style({
     fontFamily: fonts.text,
     color: colours.textSecondary,
-    fontSize: size(3.5)
+    fontSize: size(3.5),
+    overflow: "hidden",
+    whiteSpace: "nowrap",
+    textOverflow: "ellipsis"
 });
 
 export const artistLinkClass = style({
