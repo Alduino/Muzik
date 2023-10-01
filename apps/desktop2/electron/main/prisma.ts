@@ -1,6 +1,6 @@
 import {PrismaClient} from "@muzik/db";
 import {app} from "electron";
-import {log} from "./utils/logger.ts";
+import {log} from "../../shared/logger.ts";
 
 export const dbPath = app.getPath("userData") + "/db.sqlite";
 log.info("Using database at %s", dbPath);

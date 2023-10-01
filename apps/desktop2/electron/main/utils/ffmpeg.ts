@@ -9,8 +9,8 @@ import {
     getBinaryFilename,
     locateBinariesSync
 } from "ffbinaries";
+import {log} from "../../../shared/logger.ts";
 import {configDb} from "./config.ts";
-import {log} from "./logger.ts";
 
 async function findOrDownload(component: Component) {
     const {[component]: locatedFfmpeg} = locateBinariesSync([component], {

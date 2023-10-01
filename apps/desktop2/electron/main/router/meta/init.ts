@@ -1,5 +1,5 @@
+import {log} from "../../../../shared/logger.ts";
 import {observable, procedure} from "../../trpc.ts";
-import {log} from "../../utils/logger.ts";
 
 let initialisationComplete = false;
 

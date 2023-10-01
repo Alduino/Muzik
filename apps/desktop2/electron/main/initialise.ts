@@ -1,11 +1,11 @@
 import {readdir, readFile, stat} from "fs/promises";
 import {join} from "path";
+import {log} from "../../shared/logger.ts";
 import {prisma} from "./prisma.ts";
 import {registerCustomProtocols} from "./protocols";
 import {markInitialisationComplete} from "./router/meta/init.ts";
 import {configDb} from "./utils/config.ts";
 import {initialiseFfmpeg} from "./utils/ffmpeg.ts";
-import {log} from "./utils/logger.ts";
 
 const PRISMA_MIGRATIONS_TABLE_CREATE_SQL = `
     CREATE TABLE "_prisma_migrations"

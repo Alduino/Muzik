@@ -1,7 +1,7 @@
 import {initTRPC} from "@trpc/server";
 import * as observable from "@trpc/server/observable";
 import superjson from "superjson";
-import {log} from "./utils/logger.ts";
+import {log} from "../../shared/logger.ts";
 
 const t = initTRPC.create({
     transformer: superjson,

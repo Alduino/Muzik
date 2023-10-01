@@ -1,4 +1,4 @@
-import {log} from "../../main/utils/logger.ts";
+import {log} from "../logger.ts";
 import {DataReader} from "./DataReader.ts";
 
 interface BucketData {
@@ -39,7 +39,7 @@ export class WaveformBucketCalculator<T = unknown> {
         );
     }
 
-    read(data: T) {
+    update(data: T) {
         const sampleCount = this.#dataReader.getLength(data);
 
         for (let sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++) {
@@ -59,7 +59,7 @@ export class WaveformBucketCalculator<T = unknown> {
      * Values are normalised to be between zero and one.
      * If any buckets are empty, their RMS values default to zero.
      */
-    getNormalisedBuckets(): number[][] {
+    digest(): number[][] {
         const rmsValues = this.#buckets.map(bucket => {
             return bucket.channelValues.map(channelSum => {
                 if (bucket.frameCount === 0) return 0;

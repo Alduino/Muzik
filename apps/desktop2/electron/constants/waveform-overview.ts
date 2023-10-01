@@ -1,0 +1,2 @@
+export const WAVEFORM_BINARY_VERSION = 1;
+export const WAVEFORM_BUCKET_COUNT = 3840;

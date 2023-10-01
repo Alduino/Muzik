@@ -3,7 +3,7 @@ import {mkdir, readFile, writeFile} from "fs/promises";
 import {dirname, join} from "path";
 import {app} from "electron";
 import {parseBuffer, selectCover} from "music-metadata";
-import {log} from "./logger.ts";
+import {log} from "../../../shared/logger.ts";
 
 function getBaseImageCachePath() {
     return join(app.getPath("userData"), "cache", "images");

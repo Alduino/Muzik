@@ -1,3 +1,4 @@
+import {readdirSync} from "fs";
 import path from "node:path";
 import ftl from "@muzik/vite-plugin-ftl";
 import {vanillaExtractPlugin} from "@vanilla-extract/vite-plugin";
@@ -15,8 +16,15 @@ export default defineConfig({
         vanillaExtractPlugin(),
         electron({
             main: {
-                // Shortcut of `build.lib.entry`.
-                entry: "electron/main.ts",
+                entry: {
+                    main: "electron/main.ts",
+                    ...Object.fromEntries(
+                        readdirSync("electron/workers").map(worker => [
+                            `workers/${worker.replace(/\.ts$/, "")}`,
+                            `electron/workers/${worker}`
+                        ])
+                    )
+                },
                 vite: {
                     plugins: [
                         commonjs(),

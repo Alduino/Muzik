@@ -3,7 +3,7 @@ import {useEffect, useMemo, useState} from "react";
 import {
     u16leReader,
     WaveformBucketCalculator
-} from "../../../../electron/shared/waveform-buckets";
+} from "../../../../shared/waveform-buckets";
 import {useCurrentTrack} from "../../../hooks/data/useCurrentTrack.ts";
 import {useColourModeValue} from "../../../hooks/useColourModeValue.ts";
 import useEventHandler from "../../../hooks/useEventHandler.ts";
@@ -262,10 +262,10 @@ function createWaveformRenderer(data: RendererData) {
             dataReader: u16leReader(5)
         });
 
-        waveformBucketCalculator.read(waveformData);
+        waveformBucketCalculator.update(waveformData);
 
         cache = {
-            waveformData: waveformBucketCalculator.getNormalisedBuckets(),
+            waveformData: waveformBucketCalculator.digest(),
             canvasWidth
         };
 

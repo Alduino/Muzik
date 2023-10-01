@@ -1,51 +1,47 @@
+import {randomUUID} from "crypto";
+import {join} from "path";
+import {Worker} from "worker_threads";
 import {z} from "zod";
+import {log} from "../../../../shared/logger.ts";
 import {
-    u16leReader,
-    WaveformBucketCalculator
-} from "../../../shared/waveform-buckets";
+    WAVEFORM_BINARY_VERSION,
+    WAVEFORM_BUCKET_COUNT
+} from "../../../constants/waveform-overview.ts";
 import {prisma} from "../../prisma.ts";
 import {observable, procedure} from "../../trpc.ts";
 import {getAudioFrameCount} from "../../utils/ffmpeg-utils.ts";
 import {ffargs, runFfmpeg} from "../../utils/ffmpeg.ts";
-import {log} from "../../utils/logger.ts";
 import {throttle} from "../../utils/throttle.ts";
 
-const WAVEFORM_BIN_COUNT = 3840;
-
-const WAVEFORM_BIN_VERSION = 1;
-
-const WAVEFORM_BIN_BINARY_HEADER_SIZE = 5;
-const WAVEFORM_BIN_BINARY_SAMPLE_SIZE = 2;
-const WAVEFORM_BIN_BINARY_SAMPLE_MAX =
-    2 ** (WAVEFORM_BIN_BINARY_SAMPLE_SIZE * 8) - 1;
-
-function formatWaveformBinBinary(scaledBins: number[][]): Buffer {
-    const frameCount = scaledBins.length;
-    const channelCount = scaledBins[0].length;
-
-    const bufferSize =
-        frameCount * channelCount * WAVEFORM_BIN_BINARY_SAMPLE_SIZE +
-        WAVEFORM_BIN_BINARY_HEADER_SIZE;
-    const buffer = Buffer.alloc(bufferSize);
-
-    buffer.writeUInt16LE(WAVEFORM_BIN_VERSION, 0);
-    buffer.writeUInt16LE(WAVEFORM_BIN_COUNT, 2);
-    buffer.writeUInt8(channelCount, 4);
-
-    let offset = WAVEFORM_BIN_BINARY_HEADER_SIZE;
-
-    for (const frame of scaledBins) {
-        for (const sample of frame) {
-            buffer.writeUInt16LE(
-                sample * WAVEFORM_BIN_BINARY_SAMPLE_MAX,
-                offset
-            );
-
-            offset += WAVEFORM_BIN_BINARY_SAMPLE_SIZE;
+async function getMetadata(trackId: number) {
+    const {path} = await prisma.audioSource.findFirstOrThrow({
+        where: {
+            trackId
+        },
+        select: {
+            path: true
         }
-    }
+    });
 
-    return buffer;
+    const {stdout: probeResultString} = await runFfmpeg(
+        "probe",
+        ffargs()
+            .add("select_streams", "a:0")
+            .add("show_entries", "stream=duration,sample_rate,channels")
+            .add("show_format")
+            .add("print_format", "json")
+            .addRaw(path)
+    );
+
+    const probeResult = JSON.parse(probeResultString);
+
+    const stream = probeResult.streams[0];
+    if (!stream) throw new Error("No audio stream found");
+
+    const channelCount: number = stream.channels;
+    const frameCount = getAudioFrameCount(stream);
+
+    return {channelCount, frameCount, path};
 }
 
 interface Response {
@@ -66,24 +62,19 @@ export const getWaveformOverview = procedure
                 return;
             }
 
-            const sendUpdate = throttle(
-                (calculator: WaveformBucketCalculator) => {
-                    const binary = formatWaveformBinBinary(
-                        calculator.getNormalisedBuckets()
-                    );
+            const {trackId} = input;
 
-                    emit.next({
-                        done: false,
-                        data: binary.toString("base64")
-                    });
-                },
-                300
-            );
+            const sendInProgressUpdate = throttle((binary: ArrayBuffer) => {
+                emit.next({
+                    done: false,
+                    data: Buffer.from(binary).toString("base64")
+                });
+            }, 300);
 
             (async () => {
                 const existingData = await prisma.track.findUniqueOrThrow({
                     where: {
-                        id: input.trackId
+                        id: trackId
                     },
                     select: {
                         waveformBins: true
@@ -95,8 +86,8 @@ export const getWaveformOverview = procedure
                     const binCount = existingData.waveformBins.readUInt16LE(2);
 
                     if (
-                        version === WAVEFORM_BIN_VERSION &&
-                        binCount == WAVEFORM_BIN_COUNT
+                        version === WAVEFORM_BINARY_VERSION &&
+                        binCount == WAVEFORM_BUCKET_COUNT
                     ) {
                         emit.next({
                             done: true,
@@ -107,37 +98,20 @@ export const getWaveformOverview = procedure
                     }
                 }
 
-                const {path} = await prisma.audioSource.findFirstOrThrow({
-                    where: {
-                        trackId: input.trackId
-                    },
-                    select: {
-                        path: true
-                    }
-                });
+                const {channelCount, frameCount, path} =
+                    await getMetadata(trackId);
 
-                const {stdout: probeResultString} = await runFfmpeg(
-                    "probe",
-                    ffargs()
-                        .add("select_streams", "a:0")
-                        .add(
-                            "show_entries",
-                            "stream=duration,sample_rate,channels"
-                        )
-                        .add("show_format")
-                        .add("print_format", "json")
-                        .addRaw(path)
+                const worker = new Worker(
+                    join(__dirname, "./workers/waveform-overview.js"),
+                    {
+                        workerData: {
+                            channelCount,
+                            frameCount
+                        }
+                    }
                 );
 
-                const probeResult = JSON.parse(probeResultString);
-
-                const stream = probeResult.streams[0];
-                if (!stream) throw new Error("No audio stream found");
-
-                const channelCount: number = stream.channels;
-                const frameCount = getAudioFrameCount(stream);
-
-                const result = runFfmpeg(
+                const ffmpeg = runFfmpeg(
                     "mpeg",
                     ffargs().add("i", path).add("f", "u16le").addRaw("-"),
                     {
@@ -145,35 +119,60 @@ export const getWaveformOverview = procedure
                     }
                 );
 
-                const waveformBucketCalculator = new WaveformBucketCalculator({
-                    dataReader: u16leReader(),
-                    bucketCount: WAVEFORM_BIN_COUNT,
-                    frameCount,
-                    channelCount
+                ffmpeg.stdout!.on("data", (data: Buffer) => {
+                    const id = randomUUID();
+
+                    worker.postMessage(
+                        {
+                            id,
+                            buffer: data.buffer
+                        },
+                        [data.buffer]
+                    );
+
+                    function handleResponse(message: {
+                        id: string;
+                        buffer: ArrayBuffer;
+                    }) {
+                        if (message.id !== id) return;
+
+                        worker.off("message", handleResponse);
+                        sendInProgressUpdate(message.buffer);
+                    }
+
+                    worker.on("message", handleResponse);
                 });
 
-                result.stdout!.on("data", (data: Buffer) => {
-                    const dataView = new DataView(data.buffer);
-                    waveformBucketCalculator.read(dataView);
+                await ffmpeg;
 
-                    sendUpdate(waveformBucketCalculator);
-                });
+                const finalBinaryDataBuffer = await new Promise<Buffer>(
+                    resolve => {
+                        const id = randomUUID();
 
-                await result;
+                        worker.postMessage({
+                            id
+                        });
 
-                const normalisedBuckets =
-                    waveformBucketCalculator.getNormalisedBuckets();
+                        worker.on("message", message => {
+                            if (message.id !== id) return;
+                            resolve(Buffer.from(message.buffer));
+                        });
+                    }
+                );
 
-                const formatted = formatWaveformBinBinary(normalisedBuckets);
+                worker.terminate();
 
                 emit.next({
                     done: true,
-                    data: formatted.toString("base64")
+                    data: finalBinaryDataBuffer.toString("base64")
                 });
                 emit.complete();
 
                 log.info(
-                    {trackId: input.trackId, byteLength: formatted.byteLength},
+                    {
+                        trackId: input.trackId,
+                        byteLength: finalBinaryDataBuffer.byteLength
+                    },
                     "Writing waveform data to database"
                 );
 
@@ -182,11 +181,9 @@ export const getWaveformOverview = procedure
                         id: input.trackId
                     },
                     data: {
-                        waveformBins: formatted
+                        waveformBins: finalBinaryDataBuffer
                     }
                 });
-
-                return formatted.toString("base64");
             })();
         });
     });

@@ -1,8 +1,8 @@
 import {importTracks, type Progress} from "@muzik/importer";
+import {log} from "../../../../shared/logger.ts";
 import {dbPath} from "../../prisma.ts";
 import {observable, procedure} from "../../trpc.ts";
 import {configDb} from "../../utils/config.ts";
-import {log} from "../../utils/logger.ts";
 
 export interface ImportProgress {
     musicDiscovered: number;
