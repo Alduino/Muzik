@@ -1,49 +1,34 @@
-import {prisma} from "../prisma.ts";
-import {SubscribableState} from "../utils/SubscribableState.ts";
+import {MethodHandlers} from "../../workers/audio-playback";
+import {consumeObservable} from "../utils/observable-rpc.ts";
+import {rpc} from "./worker.ts";
 
+export const PREVIOUS_RESTARTS_THRESHOLD_SECONDS = 5;
+
+/**
+ * Wraps the worker thread's audio playback engine.
+ * Also provides some higher-level functionality.
+ */
 export class AudioPlaybackEngine {
-    readonly currentTrackId = new SubscribableState<number | null>(null);
-    readonly seekPosition = new SubscribableState<number>(0);
-    readonly playing = new SubscribableState<boolean>(false);
+    readonly seekPosition = consumeObservable<MethodHandlers>()(
+        "ape.seekPosition",
+        0
+    );
 
-    constructor() {
-        this.currentTrackId.onChange(() => {
-            this.seekPosition.set(0);
-        });
+    readonly shouldRestartOnPrevious = this.seekPosition.extend(
+        seekPosition => seekPosition < PREVIOUS_RESTARTS_THRESHOLD_SECONDS
+    );
+
+    /**
+     * Seeks to a specific position in the media.
+     *
+     * @param {number} progress - The position (between zero and one) that the media should seek to.
+     */
+    async seek(progress: number) {
+        await rpc.seek(progress);
     }
 
-    async play() {
-        const currentTrackId = this.currentTrackId.get();
-        if (!currentTrackId) return;
-
-        this.playing.set(true);
-
-        const [{duration}] = await prisma.track
-            .findUniqueOrThrow({
-                where: {
-                    id: currentTrackId
-                }
-            })
-            .sources({
-                take: 1,
-                select: {
-                    duration: true
-                }
-            });
-
-        // TEMPORARY. For now we just start incrementing the seek position.
-
-        const interval = setInterval(() => {
-            this.seekPosition.set(prev => prev + 0.1 / duration);
-        }, 100);
-
-        this.currentTrackId.onChangeOnce(() => {
-            clearInterval(interval);
-        });
-
-        this.playing.onChangeOnce(() => {
-            clearInterval(interval);
-        });
+    async restart() {
+        await this.seek(0);
     }
 }
 

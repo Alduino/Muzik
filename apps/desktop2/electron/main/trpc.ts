@@ -14,7 +14,7 @@ export const router = t.router;
 export const mergeRouters = t.mergeRouters;
 export const middleware = t.middleware;
 export const procedure = t.procedure.use(async opts => {
-    log.debug({path: opts.path, input: opts.input}, "TRPC request");
+    log.trace({path: opts.path, input: opts.input}, "TRPC request");
 
     try {
         return await opts.next();

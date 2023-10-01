@@ -18,6 +18,6 @@ export const setCurrentSeekPosition = procedure
             seekPosition: z.number().min(0).max(1)
         })
     )
-    .mutation(({input}) => {
-        audioPlaybackEngine.seekPosition.set(input.seekPosition);
+    .mutation(async ({input}) => {
+        await audioPlaybackEngine.seek(input.seekPosition);
     });

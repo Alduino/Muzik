@@ -1,5 +1,5 @@
 import {z} from "zod";
-import {audioPlaybackEngine} from "../../core/AudioPlaybackEngine.ts";
+import {trackQueue} from "../../core/TrackQueue.ts";
 import {procedure} from "../../trpc.ts";
 
 export const play = procedure
@@ -9,9 +9,10 @@ export const play = procedure
         })
     )
     .mutation(async ({input}) => {
-        if (input.trackId) {
-            audioPlaybackEngine.currentTrackId.set(input.trackId);
+        if (input.trackId !== undefined) {
+            trackQueue.unshiftToImmediateQueue(input.trackId);
+            trackQueue.next();
         }
 
-        await audioPlaybackEngine.play();
+        // TODO
     });

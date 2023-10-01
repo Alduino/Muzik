@@ -1,5 +1,6 @@
 import path from "node:path";
 import {app, BrowserWindow, Menu, MenuItem} from "electron";
+import {log} from "../shared/logger.ts";
 import {initialiseMuzik} from "./main/initialise.ts";
 import {attachWindow, detachWindow} from "./main/ipc-setup.ts";
 import {prisma} from "./main/prisma.ts";
@@ -100,4 +101,9 @@ app.on("before-quit", async () => {
 
 app.whenReady().then(createWindow);
 
-app.whenReady().then(initialiseMuzik);
+app.whenReady()
+    .then(initialiseMuzik)
+    .catch(err => {
+        log.fatal(err, "Failed to initialise Muzik");
+        app.quit();
+    });

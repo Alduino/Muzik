@@ -1,6 +1,7 @@
 import {readdir, readFile, stat} from "fs/promises";
 import {join} from "path";
 import {log} from "../../shared/logger.ts";
+import {startAudioPlaybackEngine} from "./core/orchestrator.ts";
 import {prisma} from "./prisma.ts";
 import {registerCustomProtocols} from "./protocols";
 import {markInitialisationComplete} from "./router/meta/init.ts";
@@ -118,5 +119,6 @@ export async function initialiseMuzik() {
     await configDb.read();
     await migrateDatabase();
     await initialiseFfmpeg();
+    await startAudioPlaybackEngine();
     markInitialisationComplete();
 }

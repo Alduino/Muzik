@@ -1,9 +1,39 @@
-export class EventEmitter<Args extends unknown[]> {
+export class EventEmitter<Args extends unknown[] = []> {
     #handlers = new Set<(...args: Args) => void>();
+
+    #notEmptyEmitter: EventEmitter | null = null;
+    #emptyEmitter: EventEmitter | null = null;
+
+    get unempty(): EventEmitter {
+        if (!this.#notEmptyEmitter) {
+            this.#notEmptyEmitter = new EventEmitter();
+        }
+
+        return this.#notEmptyEmitter;
+    }
+
+    get empty(): EventEmitter {
+        if (!this.#emptyEmitter) {
+            this.#emptyEmitter = new EventEmitter();
+        }
+
+        return this.#emptyEmitter;
+    }
 
     listen(handler: (...args: Args) => void) {
         this.#handlers.add(handler);
-        return () => this.#handlers.delete(handler);
+
+        if (this.#handlers.size === 1) {
+            this.#notEmptyEmitter?.emit();
+        }
+
+        return () => {
+            this.#handlers.delete(handler);
+
+            if (this.#handlers.size === 0) {
+                this.#emptyEmitter?.emit();
+            }
+        };
     }
 
     listenOnce(handler: (...args: Args) => void) {
