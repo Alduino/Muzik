@@ -98,7 +98,8 @@ ${context
     }
 
     private isLogLevelEnabled(index: number) {
-        const logLevelEnvVar = process.env.LOG_LEVEL;
+        const logLevelEnvVar =
+            typeof process !== "undefined" ? process.env.LOG_LEVEL : undefined;
         if (logLevelEnvVar === undefined) return true;
 
         const logLevel = parseInt(logLevelEnvVar, 10);

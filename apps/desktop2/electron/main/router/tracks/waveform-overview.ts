@@ -1,16 +1,18 @@
 import {z} from "zod";
+import {
+    u16leReader,
+    WaveformBucketCalculator
+} from "../../../shared/waveform-buckets";
 import {prisma} from "../../prisma.ts";
-import {procedure} from "../../trpc.ts";
+import {observable, procedure} from "../../trpc.ts";
 import {getAudioFrameCount} from "../../utils/ffmpeg-utils.ts";
 import {ffargs, runFfmpeg} from "../../utils/ffmpeg.ts";
 import {log} from "../../utils/logger.ts";
+import {throttle} from "../../utils/throttle.ts";
 
 const WAVEFORM_BIN_COUNT = 3840;
-const SAMPLE_BYTES = 2;
-const SAMPLE_MAX = 2 ** (SAMPLE_BYTES * 8) - 1;
 
-// Version 3: RMS, scale min to zero
-const WAVEFORM_BIN_VERSION = 3;
+const WAVEFORM_BIN_VERSION = 1;
 
 const WAVEFORM_BIN_BINARY_HEADER_SIZE = 5;
 const WAVEFORM_BIN_BINARY_SAMPLE_SIZE = 2;
@@ -46,167 +48,145 @@ function formatWaveformBinBinary(scaledBins: number[][]): Buffer {
     return buffer;
 }
 
+interface Response {
+    done: boolean;
+    data: string;
+}
+
 export const getWaveformOverview = procedure
     .input(
         z.object({
-            trackId: z.number().int().positive()
+            trackId: z.number().int().positive().optional()
         })
     )
-    .query(async ({input}) => {
-        const existingData = await prisma.track.findUniqueOrThrow({
-            where: {
-                id: input.trackId
-            },
-            select: {
-                waveformBins: true
+    .subscription(async ({input}) => {
+        return observable.observable<Response>(emit => {
+            if (!input.trackId) {
+                emit.complete();
+                return;
             }
-        });
 
-        if (existingData.waveformBins) {
-            const version = existingData.waveformBins.readUInt16LE(0);
-            const binCount = existingData.waveformBins.readUInt16LE(2);
+            const sendUpdate = throttle(
+                (calculator: WaveformBucketCalculator) => {
+                    const binary = formatWaveformBinBinary(
+                        calculator.getNormalisedBuckets()
+                    );
 
-            if (
-                version === WAVEFORM_BIN_VERSION &&
-                binCount == WAVEFORM_BIN_COUNT
-            ) {
-                return existingData.waveformBins.toString("base64");
-            }
-        }
+                    emit.next({
+                        done: false,
+                        data: binary.toString("base64")
+                    });
+                },
+                300
+            );
 
-        const {path} = await prisma.audioSource.findFirstOrThrow({
-            where: {
-                trackId: input.trackId
-            },
-            select: {
-                path: true
-            }
-        });
+            (async () => {
+                const existingData = await prisma.track.findUniqueOrThrow({
+                    where: {
+                        id: input.trackId
+                    },
+                    select: {
+                        waveformBins: true
+                    }
+                });
 
-        const {stdout: probeResultString} = await runFfmpeg(
-            "probe",
-            ffargs()
-                .add("select_streams", "a:0")
-                .add("show_entries", "stream=duration,sample_rate,channels")
-                .add("show_format")
-                .add("print_format", "json")
-                .addRaw(path)
-        );
+                if (existingData.waveformBins) {
+                    const version = existingData.waveformBins.readUInt16LE(0);
+                    const binCount = existingData.waveformBins.readUInt16LE(2);
 
-        const probeResult = JSON.parse(probeResultString);
-
-        const stream = probeResult.streams[0];
-        if (!stream) throw new Error("No audio stream found");
-
-        const channelCount: number = stream.channels;
-        const frameCount = getAudioFrameCount(stream);
-        const framesPerBin = Math.floor(frameCount / WAVEFORM_BIN_COUNT);
-
-        const result = runFfmpeg(
-            "mpeg",
-            ffargs().add("i", path).add("f", "u16le").addRaw("-"),
-            {
-                pipe: true
-            }
-        );
-
-        interface BinData {
-            channelValues: number[];
-            frameCount: number;
-        }
-
-        function createBin(): BinData {
-            return {
-                channelValues: new Array(channelCount).fill(0),
-                frameCount: 0
-            };
-        }
-
-        let currentBin: BinData = createBin();
-        const bins: BinData[] = [];
-        let readSamples = 0;
-
-        result.stdout!.on("data", (data: Buffer) => {
-            for (let offset = 0; offset < data.length; offset += SAMPLE_BYTES) {
-                const currentSample = readSamples + offset / SAMPLE_BYTES;
-                const currentFrame = Math.floor(currentSample / channelCount);
-                const indexInBin = currentFrame % framesPerBin;
-                const channel = currentSample % channelCount;
-
-                if (
-                    channel === 0 &&
-                    indexInBin === 0 &&
-                    bins.length < WAVEFORM_BIN_COUNT
-                ) {
-                    currentBin = createBin();
-                    bins.push(currentBin);
+                    if (
+                        version === WAVEFORM_BIN_VERSION &&
+                        binCount == WAVEFORM_BIN_COUNT
+                    ) {
+                        emit.next({
+                            done: true,
+                            data: existingData.waveformBins.toString("base64")
+                        });
+                        emit.complete();
+                        return;
+                    }
                 }
 
-                const sample = data.readUInt16LE(offset) / SAMPLE_MAX;
+                const {path} = await prisma.audioSource.findFirstOrThrow({
+                    where: {
+                        trackId: input.trackId
+                    },
+                    select: {
+                        path: true
+                    }
+                });
 
-                // Squared to use RMS
-                currentBin.channelValues[channel] += sample * sample;
+                const {stdout: probeResultString} = await runFfmpeg(
+                    "probe",
+                    ffargs()
+                        .add("select_streams", "a:0")
+                        .add(
+                            "show_entries",
+                            "stream=duration,sample_rate,channels"
+                        )
+                        .add("show_format")
+                        .add("print_format", "json")
+                        .addRaw(path)
+                );
 
-                if (channel === 0) currentBin.frameCount++;
-            }
+                const probeResult = JSON.parse(probeResultString);
 
-            readSamples += data.length / SAMPLE_BYTES;
+                const stream = probeResult.streams[0];
+                if (!stream) throw new Error("No audio stream found");
 
-            log.trace(
-                {bytes: data.length},
-                "Read %d frames out of %d",
-                Math.floor(readSamples / channelCount),
-                frameCount
-            );
+                const channelCount: number = stream.channels;
+                const frameCount = getAudioFrameCount(stream);
+
+                const result = runFfmpeg(
+                    "mpeg",
+                    ffargs().add("i", path).add("f", "u16le").addRaw("-"),
+                    {
+                        pipe: true
+                    }
+                );
+
+                const waveformBucketCalculator = new WaveformBucketCalculator({
+                    dataReader: u16leReader(),
+                    bucketCount: WAVEFORM_BIN_COUNT,
+                    frameCount,
+                    channelCount
+                });
+
+                result.stdout!.on("data", (data: Buffer) => {
+                    const dataView = new DataView(data.buffer);
+                    waveformBucketCalculator.read(dataView);
+
+                    sendUpdate(waveformBucketCalculator);
+                });
+
+                await result;
+
+                const normalisedBuckets =
+                    waveformBucketCalculator.getNormalisedBuckets();
+
+                const formatted = formatWaveformBinBinary(normalisedBuckets);
+
+                emit.next({
+                    done: true,
+                    data: formatted.toString("base64")
+                });
+                emit.complete();
+
+                log.info(
+                    {trackId: input.trackId, byteLength: formatted.byteLength},
+                    "Writing waveform data to database"
+                );
+
+                await prisma.track.update({
+                    where: {
+                        id: input.trackId
+                    },
+                    data: {
+                        waveformBins: formatted
+                    }
+                });
+
+                return formatted.toString("base64");
+            })();
         });
-
-        await result;
-
-        // Array of bins, each bin has an array of channel values
-        const valueBins = bins.map(bin => {
-            return bin.channelValues.map(channelSum =>
-                Math.sqrt(channelSum / bin.frameCount)
-            );
-        });
-
-        const channelMinMaxValues = Array.from(
-            {length: channelCount},
-            (_, channelId) => {
-                let min = Infinity;
-                let max = 0;
-
-                for (const bin of valueBins) {
-                    const value = bin[channelId];
-                    if (value < min) min = value;
-                    if (value > max) max = value;
-                }
-
-                return {min, max};
-            }
-        );
-
-        const scaledBins = valueBins.map(bin => {
-            return bin.map((channelValue, channelId) => {
-                const {min, max} = channelMinMaxValues[channelId];
-                return (channelValue - min) / (max - min);
-            });
-        });
-
-        const formatted = formatWaveformBinBinary(scaledBins);
-
-        log.info(
-            {trackId: input.trackId, byteLength: formatted.byteLength},
-            "Writing waveform data to database"
-        );
-
-        await prisma.track.update({
-            where: {
-                id: input.trackId
-            },
-            data: {
-                waveformBins: formatted
-            }
-        });
-
-        return formatted.toString("base64");
     });

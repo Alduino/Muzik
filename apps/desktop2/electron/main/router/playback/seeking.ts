@@ -1,3 +1,4 @@
+import {z} from "zod";
 import {audioPlaybackEngine} from "../../core/AudioPlaybackEngine.ts";
 import {observable, procedure} from "../../trpc.ts";
 
@@ -10,3 +11,13 @@ export const getCurrentSeekPosition = procedure.subscription(() => {
         });
     });
 });
+
+export const setCurrentSeekPosition = procedure
+    .input(
+        z.object({
+            seekPosition: z.number().min(0).max(1)
+        })
+    )
+    .mutation(({input}) => {
+        audioPlaybackEngine.seekPosition.set(input.seekPosition);
+    });

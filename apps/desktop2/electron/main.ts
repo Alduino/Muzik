@@ -94,6 +94,7 @@ app.on("activate", () => {
 
 app.on("before-quit", async () => {
     tempDir.cleanupSync();
+    await prisma.$executeRawUnsafe("VACUUM");
     await prisma.$disconnect();
 });
 

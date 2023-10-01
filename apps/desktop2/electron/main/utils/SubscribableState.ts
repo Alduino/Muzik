@@ -12,6 +12,10 @@ export class SubscribableState<T> {
         return this.#eventEmitter.listen(handler);
     }
 
+    onChangeOnce(handler: (value: T, previousValue: T) => void) {
+        return this.#eventEmitter.listenOnce(handler);
+    }
+
     get() {
         return this.#value;
     }

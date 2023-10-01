@@ -1,42 +1,32 @@
 import {toUint8Array} from "js-base64";
-import {useEffect, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
+import {
+    u16leReader,
+    WaveformBucketCalculator
+} from "../../../../electron/shared/waveform-buckets";
 import {useCurrentTrack} from "../../../hooks/data/useCurrentTrack.ts";
 import {useColourModeValue} from "../../../hooks/useColourModeValue.ts";
+import useEventHandler from "../../../hooks/useEventHandler.ts";
 import {colour} from "../../../theme/colour.ts";
 import {Vector2} from "../../../utils/Vector2.ts";
 import {trpc} from "../../../utils/trpc.ts";
 import {canvasClass, containerClass} from "./styles.css.ts";
 
-// Waveform Bin Binary Format:
-// Version - u16le (ignored)
-// Bin count - u16le
-// Channel count - u8
-// Bins: [channel count * u16le] * bin count
+const emptyWaveformDataview = new DataView(
+    new Uint8Array([
+        0x00, // Version
+        0x00, // ...
+        0x00, // Bucket count = 0
+        0x00, // ...
+        0x00 // Channel count
+    ]).buffer
+);
 
-const binValueMax = 2 ** 16 - 1;
-
-function readWaveformBins(waveformBinsRaw: string) {
-    const buffer = toUint8Array(waveformBinsRaw);
-    const view = new DataView(buffer.buffer);
-
-    const binCount = view.getUint16(2, true);
-    const channelCount = view.getUint8(4);
-
-    const bins = new Array<number[]>(binCount);
-
-    for (let i = 0; i < binCount; i++) {
-        const bin = new Array<number>(channelCount);
-
-        for (let j = 0; j < channelCount; j++) {
-            bin[j] =
-                view.getUint16(5 + i * channelCount + j * 2, true) /
-                binValueMax;
-        }
-
-        bins[i] = bin;
-    }
-
-    return bins;
+function readWaveformBucketsMetadata(dataView: DataView) {
+    return {
+        bucketCount: dataView.getUint16(2, true),
+        channelCount: dataView.getUint8(4)
+    };
 }
 
 function getWaveformVerticalOffset(
@@ -53,60 +43,139 @@ function getWaveformVerticalOffset(
     }
 }
 
+const LOADING_WAVEFORM_WIDTH = 10;
+const LOADING_WAVEFORM_GAP = 0;
+
 const WAVEFORM_BAR_WIDTH = 3;
 const WAVEFORM_BAR_GAP = 1;
+
+function rect(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    width: number,
+    height: number
+) {
+    ctx.fillRect(
+        Math.floor(x),
+        Math.floor(y),
+        Math.ceil(width),
+        Math.ceil(height)
+    );
+}
 
 interface WaveformBarData {
     channel: "mono" | "left" | "right";
 
     canvasSize: Vector2;
-    waveformColour: string;
+    playedWaveformColour: string;
+    mouseWaveformColour: string;
     aheadWaveformColour: string;
 
     x: number;
     height: number;
-    progress: number;
+    mouseProgress: number;
+    playbackProgress: number;
+
+    hasMouse: boolean;
+
+    barWidth: number;
 }
 
 function renderWaveformBar(
     ctx: CanvasRenderingContext2D,
     data: WaveformBarData
 ) {
-    const heightScaled = Math.max(0, data.height * 0.95 + 0.05);
+    const minHeight = (data.channel === "mono" ? 10 : 5) / ctx.canvas.height;
+    const maxHeight = 1 - 10 / ctx.canvas.height;
 
-    const x = Math.round(data.x);
+    const heightScaled = minHeight + data.height * (maxHeight - minHeight);
 
-    const y = Math.round(
-        getWaveformVerticalOffset(data.channel, heightScaled, data.canvasSize.y)
+    const y = getWaveformVerticalOffset(
+        data.channel,
+        heightScaled,
+        data.canvasSize.y
     );
 
-    const height = Math.round(
+    const height =
         data.channel === "mono"
             ? heightScaled * data.canvasSize.y
-            : (heightScaled * data.canvasSize.y) / 2
+            : (heightScaled * data.canvasSize.y) / 2;
+
+    function calculatePositions() {
+        if (!data.hasMouse) {
+            return {
+                mouseStart: 0,
+                mouseWidth: 0,
+
+                playedStart: 0,
+                playedWidth: data.playbackProgress,
+
+                aheadStart: data.playbackProgress,
+                aheadWidth: 1 - data.playbackProgress
+            };
+        } else if (data.mouseProgress > data.playbackProgress) {
+            return {
+                mouseStart: data.playbackProgress,
+                mouseWidth: data.mouseProgress - data.playbackProgress,
+
+                playedStart: 0,
+                playedWidth: data.playbackProgress,
+
+                aheadStart: data.mouseProgress,
+                aheadWidth: 1 - data.mouseProgress
+            };
+        } else {
+            return {
+                mouseStart: data.mouseProgress,
+                mouseWidth: data.playbackProgress - data.mouseProgress,
+
+                playedStart: 0,
+                playedWidth: data.mouseProgress,
+
+                aheadStart: data.playbackProgress,
+                aheadWidth: 1 - data.playbackProgress
+            };
+        }
+    }
+
+    const positions = calculatePositions();
+
+    ctx.fillStyle = data.mouseWaveformColour;
+    rect(
+        ctx,
+        data.x + positions.mouseStart * data.barWidth,
+        y,
+        positions.mouseWidth * data.barWidth,
+        height
     );
 
-    if (data.progress < 1) {
-        ctx.fillStyle = data.aheadWaveformColour;
-        ctx.fillRect(x, y, WAVEFORM_BAR_WIDTH, height);
-    }
+    ctx.fillStyle = data.playedWaveformColour;
+    rect(
+        ctx,
+        data.x + positions.playedStart * data.barWidth,
+        y,
+        positions.playedWidth * data.barWidth,
+        height
+    );
 
-    if (data.progress > 0) {
-        ctx.fillStyle = data.waveformColour;
-        ctx.fillRect(
-            x,
-            y,
-            Math.round(WAVEFORM_BAR_WIDTH * data.progress),
-            height
-        );
-    }
+    ctx.fillStyle = data.aheadWaveformColour;
+    rect(
+        ctx,
+        data.x + positions.aheadStart * data.barWidth,
+        y,
+        positions.aheadWidth * data.barWidth,
+        height
+    );
 }
 
 interface RendererData {
-    waveformData: number[][];
     canvas: HTMLCanvasElement;
     waveformColour: string;
-    aheadWaveformColour: string;
+    playbackAheadWaveformColour: string;
+    cursorAheadWaveformColour: string;
+
+    onProgressChange(progress: number): void;
 }
 
 interface RendererWaveformCache {
@@ -120,6 +189,11 @@ function createWaveformRenderer(data: RendererData) {
     let cache: RendererWaveformCache | null = null;
     let cacheUpdateCallback: number | null = null;
 
+    let completedProgress = 0;
+    let mouseProgress: number | null = null;
+    let waveformData: DataView = emptyWaveformDataview;
+    let loaded = false;
+
     function handleResize() {
         data.canvas.width = data.canvas.clientWidth * devicePixelRatio;
         data.canvas.height = data.canvas.clientHeight * devicePixelRatio;
@@ -132,7 +206,33 @@ function createWaveformRenderer(data: RendererData) {
         queueCacheUpdate();
     }
 
+    function handleMouseExit() {
+        mouseProgress = null;
+        render();
+    }
+
+    function handleMouseDown(event: PointerEvent) {
+        (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    }
+
+    function handleMouseMove(event: PointerEvent) {
+        mouseProgress = Math.max(
+            0,
+            Math.min(event.offsetX / data.canvas.width)
+        );
+
+        render();
+
+        if (event.buttons & 1) {
+            data.onProgressChange(mouseProgress);
+        }
+    }
+
     function queueCacheUpdate() {
+        if (cacheUpdateCallback) {
+            cancelIdleCallback(cacheUpdateCallback);
+        }
+
         cacheUpdateCallback = requestIdleCallback(
             () => {
                 cacheUpdateCallback = null;
@@ -145,102 +245,35 @@ function createWaveformRenderer(data: RendererData) {
     }
 
     function updateCache() {
+        const barWidth = loaded ? WAVEFORM_BAR_WIDTH : LOADING_WAVEFORM_WIDTH;
+        const barGap = loaded ? WAVEFORM_BAR_GAP : LOADING_WAVEFORM_GAP;
+
+        const waveformMetadata = readWaveformBucketsMetadata(waveformData);
+
         const canvasWidth = data.canvas.width;
-        const requiredBinCount = Math.floor(
-            canvasWidth / (WAVEFORM_BAR_WIDTH + WAVEFORM_BAR_GAP)
+        const requiredBucketCount = Math.floor(
+            canvasWidth / (barWidth + barGap)
         );
 
-        interface Bin {
-            channelValues: number[];
-            sampleCount: number;
-        }
-
-        const bins = new Array<Bin>(requiredBinCount);
-        const samplesPerBin = data.waveformData.length / requiredBinCount;
-        const channelCount = data.waveformData[0].length;
-
-        for (
-            let sampleIndex = 0;
-            sampleIndex < data.waveformData.length;
-            sampleIndex++
-        ) {
-            const binIndex = Math.min(
-                Math.floor(sampleIndex / samplesPerBin),
-                requiredBinCount - 1
-            );
-
-            if (!bins[binIndex]) {
-                bins[binIndex] = {
-                    channelValues: new Array<number>(channelCount).fill(0),
-                    sampleCount: 0
-                };
-            }
-
-            const bin = bins[binIndex];
-            bin.sampleCount++;
-
-            for (
-                let channelIndex = 0;
-                channelIndex < channelCount;
-                channelIndex++
-            ) {
-                bin.channelValues[channelIndex] +=
-                    data.waveformData[sampleIndex][channelIndex] ** 2;
-            }
-        }
-
-        const binRmsValues = bins.map(bin =>
-            bin.channelValues.map(channelSquaredSum =>
-                Math.sqrt(channelSquaredSum / bin.sampleCount)
-            )
-        );
-
-        const channelMinMaxValues = Array.from(
-            {length: channelCount},
-            (_, channelId) => {
-                let min = Infinity;
-                let max = 0;
-
-                for (const bin of binRmsValues) {
-                    const value = bin[channelId];
-                    min = Math.min(min, value);
-                    max = Math.max(max, value);
-                }
-
-                return {min, max};
-            }
-        );
-
-        const scaledBinRmsValues = binRmsValues.map(channels => {
-            return channels.map((channelValue, channelId) => {
-                const {min, max} = channelMinMaxValues[channelId];
-                return (channelValue - min) / (max - min);
-            });
+        const waveformBucketCalculator = new WaveformBucketCalculator({
+            bucketCount: requiredBucketCount,
+            channelCount: waveformMetadata.channelCount,
+            frameCount: waveformMetadata.bucketCount,
+            dataReader: u16leReader(5)
         });
 
+        waveformBucketCalculator.read(waveformData);
+
         cache = {
-            waveformData: scaledBinRmsValues,
+            waveformData: waveformBucketCalculator.getNormalisedBuckets(),
             canvasWidth
         };
 
         render();
     }
 
-    let completedProgress = 0;
-
-    function calculateProgress(barIndex: number, barCount: number) {
-        const currentBar = Math.floor(completedProgress * barCount);
-
-        if (barIndex < currentBar) {
-            return 1;
-        } else if (barIndex > currentBar) {
-            return 0;
-        } else {
-            return completedProgress * barCount - currentBar;
-        }
-    }
-
     let canRender = true;
+
     function render() {
         if (!cache || !canRender) return;
 
@@ -248,64 +281,159 @@ function createWaveformRenderer(data: RendererData) {
 
         ctx.clearRect(0, 0, canvasSize.x, canvasSize.y);
 
+        const barWidth = loaded ? WAVEFORM_BAR_WIDTH : LOADING_WAVEFORM_WIDTH;
+        const barGap = loaded ? WAVEFORM_BAR_GAP : LOADING_WAVEFORM_GAP;
+
         const barCount = cache.waveformData.length;
-        const barWidth = WAVEFORM_BAR_WIDTH + WAVEFORM_BAR_GAP;
+        const barFullWidth = barWidth + barGap;
+        const barsWidth = barCount * barFullWidth;
+
+        function calculateProgress(
+            barIndex: number,
+            barCount: number,
+            progress: number
+        ) {
+            const currentBar = Math.floor(progress * barCount);
+
+            if (barIndex < currentBar) {
+                return 1;
+            } else if (barIndex > currentBar) {
+                return 0;
+            } else {
+                const rawProgress = progress * barCount - currentBar;
+                return Math.min(1, (rawProgress / barWidth) * barFullWidth);
+            }
+        }
 
         for (let i = 0; i < barCount; i++) {
             const channels = cache.waveformData[i];
-            const x = i * barWidth;
+            const x = i * barFullWidth;
 
-            const progress = calculateProgress(i, barCount);
+            const thisMouseProgress = calculateProgress(
+                i,
+                barCount,
+                mouseProgress ?? 0
+            );
 
-            if (channels.length === 0) {
+            const thisPlaybackProgress = calculateProgress(
+                i,
+                barCount,
+                completedProgress
+            );
+
+            if (channels.length === 1) {
                 renderWaveformBar(ctx, {
                     channel: "mono",
                     canvasSize,
-                    aheadWaveformColour: data.aheadWaveformColour,
-                    waveformColour: data.waveformColour,
-                    progress,
+                    mouseWaveformColour: data.cursorAheadWaveformColour,
+                    aheadWaveformColour: data.playbackAheadWaveformColour,
+                    playedWaveformColour: data.waveformColour,
+                    mouseProgress: thisMouseProgress,
+                    playbackProgress: thisPlaybackProgress,
                     height: channels[0],
+                    hasMouse: mouseProgress !== null,
+                    barWidth,
                     x
                 });
-            } else {
+            } else if (channels.length >= 2) {
                 renderWaveformBar(ctx, {
                     channel: "left",
                     canvasSize,
-                    aheadWaveformColour: data.aheadWaveformColour,
-                    waveformColour: data.waveformColour,
-                    progress,
+                    mouseWaveformColour: data.cursorAheadWaveformColour,
+                    aheadWaveformColour: data.playbackAheadWaveformColour,
+                    playedWaveformColour: data.waveformColour,
+                    mouseProgress: thisMouseProgress,
+                    playbackProgress: thisPlaybackProgress,
                     height: channels[0],
+                    hasMouse: mouseProgress !== null,
+                    barWidth,
                     x
                 });
 
                 renderWaveformBar(ctx, {
                     channel: "right",
                     canvasSize,
-                    aheadWaveformColour: data.aheadWaveformColour,
-                    waveformColour: data.waveformColour,
-                    progress,
+                    mouseWaveformColour: data.cursorAheadWaveformColour,
+                    aheadWaveformColour: data.playbackAheadWaveformColour,
+                    playedWaveformColour: data.waveformColour,
+                    mouseProgress: thisMouseProgress,
+                    playbackProgress: thisPlaybackProgress,
                     height: channels[1],
+                    hasMouse: mouseProgress !== null,
+                    barWidth,
                     x
                 });
             }
+        }
+
+        const gradient = ctx.createLinearGradient(
+            completedProgress * barsWidth - 10,
+            0,
+            completedProgress * barsWidth,
+            0
+        );
+
+        gradient.addColorStop(0, "rgba(31,120,136,0)");
+        gradient.addColorStop(1, "rgba(31,84,136,0.3)");
+
+        ctx.fillStyle = gradient;
+        ctx.fillRect(
+            0,
+            0,
+            Math.round(completedProgress * barsWidth),
+            canvasSize.y
+        );
+
+        ctx.strokeStyle = "rgb(31,84,136)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(completedProgress * barsWidth, 0);
+        ctx.lineTo(completedProgress * barsWidth, canvasSize.y);
+        ctx.stroke();
+
+        if (mouseProgress !== null) {
+            ctx.strokeStyle = "rgb(60,160,255)";
+            ctx.beginPath();
+            ctx.moveTo(Math.round(mouseProgress * barsWidth) - 0.5, 0);
+            ctx.lineTo(
+                Math.round(mouseProgress * barsWidth) - 0.5,
+                canvasSize.y
+            );
+            ctx.stroke();
         }
     }
 
     const resizeObserver = new ResizeObserver(handleResize);
     resizeObserver.observe(data.canvas);
-
     handleResize();
+
+    data.canvas.addEventListener("pointerleave", handleMouseExit);
+    data.canvas.addEventListener("pointermove", handleMouseMove);
+    data.canvas.addEventListener("pointerdown", handleMouseMove);
+    data.canvas.addEventListener("pointerdown", handleMouseDown);
 
     return {
         setProgress(progress: number) {
-            console.log(progress);
             completedProgress = progress;
             render();
         },
-        cancel() {
+        setWaveformData(newWaveformData: DataView) {
+            waveformData = newWaveformData;
+            queueCacheUpdate();
+        },
+        setLoaded(newState: boolean) {
+            loaded = newState;
+            updateCache();
+        },
+        cleanup() {
             canRender = false;
 
             resizeObserver.disconnect();
+
+            data.canvas.removeEventListener("pointerleave", handleMouseExit);
+            data.canvas.removeEventListener("pointermove", handleMouseMove);
+            data.canvas.removeEventListener("pointerdown", handleMouseMove);
+            data.canvas.removeEventListener("pointerdown", handleMouseDown);
 
             if (cacheUpdateCallback !== null) {
                 cancelIdleCallback(cacheUpdateCallback);
@@ -319,48 +447,71 @@ export function WaveformSeekBar() {
 
     const currentTrack = useCurrentTrack();
 
-    const {data: waveformBinsRaw} = trpc.tracks.getWaveformOverview.useQuery(
-        {
-            trackId: currentTrack as number
-        },
-        {
-            enabled: Boolean(currentTrack)
-        }
-    );
+    const setProgress = trpc.playback.setCurrentSeekPosition.useMutation();
 
     const waveformBarColour = useColourModeValue(
         colour("blue", 30),
         colour("blue", 20)
     );
 
-    const aheadWaveformBarColour = useColourModeValue(
+    const cursorAheadWaveformBarColour = useColourModeValue(
+        colour("blue", 30, 0.7),
+        colour("blue", 20, 0.8)
+    );
+
+    const playbackAheadWaveformBarColour = useColourModeValue(
         colour("blue", 30, 0.3),
         colour("blue", 10)
     );
 
-    const [seekProgressSetter, setSeekProgressSetter] = useState<
-        ((progress: number) => void) | null
-    >(null);
+    const handleProgressChanged = useEventHandler((progress: number) => {
+        setProgress.mutate({
+            seekPosition: progress
+        });
+    });
 
-    useEffect(() => {
-        if (!canvas || !waveformBinsRaw) return;
+    const waveformRenderer = useMemo(() => {
+        if (!canvas) return;
 
-        const controls = createWaveformRenderer({
+        return createWaveformRenderer({
             canvas,
             waveformColour: waveformBarColour,
-            aheadWaveformColour: aheadWaveformBarColour,
-            waveformData: readWaveformBins(waveformBinsRaw)
+            cursorAheadWaveformColour: cursorAheadWaveformBarColour,
+            playbackAheadWaveformColour: playbackAheadWaveformBarColour,
+            onProgressChange: handleProgressChanged
         });
+    }, [
+        canvas,
+        waveformBarColour,
+        cursorAheadWaveformBarColour,
+        playbackAheadWaveformBarColour,
+        handleProgressChanged
+    ]);
 
-        setSeekProgressSetter(() => controls.setProgress);
+    useEffect(() => {
+        return () => {
+            if (!waveformRenderer) return;
+            waveformRenderer.cleanup();
+        };
+    }, [waveformRenderer]);
 
-        return controls.cancel;
-    }, [aheadWaveformBarColour, canvas, waveformBarColour, waveformBinsRaw]);
+    trpc.tracks.getWaveformOverview.useSubscription(
+        {
+            trackId: currentTrack as number
+        },
+        {
+            onData(data) {
+                const waveformData = toUint8Array(data.data);
+                const waveformDataView = new DataView(waveformData.buffer);
+                waveformRenderer?.setWaveformData(waveformDataView);
+                waveformRenderer?.setLoaded(data.done);
+            }
+        }
+    );
 
     trpc.playback.getCurrentSeekPosition.useSubscription(undefined, {
         onData(seekPosition) {
-            if (!seekProgressSetter) return;
-            seekProgressSetter(seekPosition);
+            waveformRenderer?.setProgress(seekPosition);
         }
     });
 

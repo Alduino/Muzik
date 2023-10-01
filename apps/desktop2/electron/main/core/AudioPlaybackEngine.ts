@@ -4,6 +4,7 @@ import {SubscribableState} from "../utils/SubscribableState.ts";
 export class AudioPlaybackEngine {
     readonly currentTrackId = new SubscribableState<number | null>(null);
     readonly seekPosition = new SubscribableState<number>(0);
+    readonly playing = new SubscribableState<boolean>(false);
 
     constructor() {
         this.currentTrackId.onChange(() => {
@@ -14,6 +15,8 @@ export class AudioPlaybackEngine {
     async play() {
         const currentTrackId = this.currentTrackId.get();
         if (!currentTrackId) return;
+
+        this.playing.set(true);
 
         const [{duration}] = await prisma.track
             .findUniqueOrThrow({
@@ -34,7 +37,11 @@ export class AudioPlaybackEngine {
             this.seekPosition.set(prev => prev + 0.1 / duration);
         }, 100);
 
-        this.currentTrackId.onChange(() => {
+        this.currentTrackId.onChangeOnce(() => {
+            clearInterval(interval);
+        });
+
+        this.playing.onChangeOnce(() => {
             clearInterval(interval);
         });
     }

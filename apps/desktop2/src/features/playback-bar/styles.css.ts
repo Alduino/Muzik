@@ -1,4 +1,5 @@
 import {style} from "@vanilla-extract/css";
+import {calc} from "@vanilla-extract/css-utils";
 import {colour} from "../../theme/colour.ts";
 import {lm} from "../../theme/lm.ts";
 import {size} from "../../theme/size.ts";
@@ -15,7 +16,8 @@ export const containerClass = style({
 
 export const metadataContainerClass = style({
     display: "flex",
-    flexDirection: "column"
+    flexDirection: "column",
+    width: calc.subtract(size(64), size(8), "64px")
 });
 
 export const trackTitleClass = style({

@@ -89,7 +89,7 @@ export const playButtonContainerClass = style({
     width: "100%",
     height: "100%",
     opacity: 0,
-    backgroundColor: lm(colour("grey", 0, 0.5), colour("grey", 100, 0.5)),
+    backgroundColor: lm(colour("grey", 0, 0.8), colour("grey", 100, 0.5)),
     cursor: "pointer",
     border: "none",
 
@@ -137,5 +137,6 @@ export const albumColumnClass = style({
 
 export const timeColumnClass = style({
     flexGrow: 1,
-    flexBasis: "50px"
+    flexBasis: "50px",
+    minWidth: "50px"
 });

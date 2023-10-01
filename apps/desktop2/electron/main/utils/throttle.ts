@@ -6,8 +6,9 @@ export function throttle<Args extends readonly unknown[]>(
 
     return (...args: Args) => {
         const now = performance.now();
+        const diff = now - lastCallTime;
 
-        if (now - lastCallTime >= minIntervalMs) {
+        if (diff >= minIntervalMs) {
             lastCallTime = now;
             fn(...args);
         }
