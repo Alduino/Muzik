@@ -105,7 +105,10 @@ export function createRpc<Methods extends MethodsBase>(
             "message",
             async (message: InternalRequest | InternalResponse) => {
                 if (message.type === "response") {
-                    log.trace({id: message.id}, "Recv WorkerRPC response");
+                    log.trace(
+                        {id: message.id, isMainThread},
+                        "Recv WorkerRPC response"
+                    );
 
                     const receiver = messageReceivers.get(message.id);
                     receiver?.(message);
@@ -114,7 +117,7 @@ export function createRpc<Methods extends MethodsBase>(
 
                 try {
                     if (!loadedMessageHandlers) {
-                        log.warn("No message handlers loaded");
+                        log.warn({isMainThread}, "No message handlers loaded");
                         throw new Error("No message port attached");
                     }
 
@@ -122,7 +125,7 @@ export function createRpc<Methods extends MethodsBase>(
 
                     if (!handler) {
                         log.warn(
-                            {method: message.method},
+                            {method: message.method, isMainThread},
                             "No handler for method"
                         );
 
@@ -132,14 +135,14 @@ export function createRpc<Methods extends MethodsBase>(
                     }
 
                     log.trace(
-                        {method: message.method, id: message.id},
+                        {method: message.method, id: message.id, isMainThread},
                         "Recv WorkerRPC request"
                     );
 
                     const result = await handler(...message.params);
 
                     log.trace(
-                        {method: message.method, id: message.id},
+                        {method: message.method, id: message.id, isMainThread},
                         "Send WorkerRPC response"
                     );
 
@@ -149,8 +152,13 @@ export function createRpc<Methods extends MethodsBase>(
                         result
                     } satisfies InternalResponse);
                 } catch (err) {
-                    log.trace(
-                        {method: message.method, id: message.id, error: err},
+                    log.warn(
+                        {
+                            method: message.method,
+                            id: message.id,
+                            error: err,
+                            isMainThread
+                        },
                         "Send WorkerRPC error"
                     );
 
@@ -187,21 +195,11 @@ export function createRpc<Methods extends MethodsBase>(
                         const messageId = randomUUID();
 
                         log.trace(
-                            {method: prop, id: messageId},
+                            {method: prop, id: messageId, isMainThread},
                             "Send WorkerRPC request"
                         );
 
-                        messagePort.postMessage(
-                            {
-                                type: "request",
-                                id: messageId,
-                                method: prop,
-                                params: params as never[]
-                            } satisfies InternalRequest,
-                            options.transferList
-                        );
-
-                        return new Promise((resolve, reject) => {
+                        const promise = new Promise((resolve, reject) => {
                             messageReceivers.set(
                                 messageId,
                                 (response: InternalResponse) => {
@@ -215,6 +213,18 @@ export function createRpc<Methods extends MethodsBase>(
                                 }
                             );
                         });
+
+                        messagePort.postMessage(
+                            {
+                                type: "request",
+                                id: messageId,
+                                method: prop,
+                                params: params as never[]
+                            } satisfies InternalRequest,
+                            options.transferList
+                        );
+
+                        return promise;
                     };
                 }
             }

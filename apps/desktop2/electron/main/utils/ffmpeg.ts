@@ -82,6 +82,10 @@ class FfConfigBuilder {
         return this;
     }
 
+    addAll(args: FfConfigBuilder) {
+        this.#args.push(...args.#args);
+    }
+
     build() {
         return this.#args;
     }

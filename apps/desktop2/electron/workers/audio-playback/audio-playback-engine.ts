@@ -1,12 +1,58 @@
-import {observable} from "../../main/utils/Observable.ts";
+import {Readable} from "stream";
+import Speaker from "speaker";
+import {log} from "../../../shared/logger.ts";
+import {
+    PLAYBACK_CHANNELS,
+    PLAYBACK_SAMPLE_RATE,
+    PLAYBACK_SAMPLE_SIZE
+} from "../../main/constants.ts";
+import {audioStream} from "./audio-stream.ts";
+import {rpc} from "./index.ts";
 
-const seekPosition = observable(0);
+class SpeakerDataReader extends Readable {
+    _read(size: number) {
+        const result = audioStream.read(size);
 
-export const audioPlaybackEngine = {
-    seekPosition: seekPosition.observable(),
-    seek(newPosition: number) {
-        console.log("Seeking to", newPosition);
-        seekPosition.set(newPosition);
-        // TODO
+        if (result.nextTrackStarted) {
+            rpc.nextTrack();
+        }
+
+        this.push(result.buffer);
     }
-};
+}
+
+let speaker: Speaker | undefined = undefined;
+
+export function createSpeaker() {
+    cleanupSpeaker();
+
+    log.debug("Creating new speaker");
+
+    try {
+        speaker = new Speaker({
+            channels: PLAYBACK_CHANNELS,
+            sampleRate: PLAYBACK_SAMPLE_RATE,
+            bitDepth: PLAYBACK_SAMPLE_SIZE * 8
+        });
+
+        const reader = new SpeakerDataReader();
+
+        log.trace("Speaker has been created, beginning playback");
+
+        reader.pipe(speaker);
+
+        log.trace("Playback has begun");
+    } catch (err) {
+        log.fatal(err, "Failed to create speaker");
+        throw err;
+    }
+}
+
+export function cleanupSpeaker() {
+    if (!speaker) return;
+
+    log.debug("Closing speaker");
+
+    speaker.end();
+    speaker = undefined;
+}

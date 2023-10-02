@@ -23,7 +23,7 @@ type ExposedType<
 > = Rpc[ExposeKey<UniqueId>] extends () => infer T ? T : never;
 
 function getMethodName(uniqueId: string, name: string) {
-    return `observable-rpc://${uniqueId}.${name}`;
+    return `observable-rpc://${uniqueId}/${name}`;
 }
 
 const methods = {
@@ -70,13 +70,13 @@ export function exposeObservable<UniqueId extends string, T>(
 
 type Cast<T, U> = T extends U ? T : U;
 
-interface ConsumeObservableResult<
+type ConsumeObservableResult<
     UniqueId extends ExposedUniqueIds<Cast<keyof RpcMethods, string>>,
     RpcMethods extends SimpleExposeResult,
     InitialValue = ExposedType<UniqueId, RpcMethods>
-> extends Observable<ExposedType<UniqueId, RpcMethods> | InitialValue> {
+> = Observable<ExposedType<UniqueId, RpcMethods> | InitialValue> & {
     rpcExtension: Record<string, never>;
-}
+};
 
 export interface ConsumeObservableInitialResult<
     ExposeMethods extends SimpleExposeResult
@@ -105,6 +105,7 @@ export function consumeObservable<
         const subscriptionId = randomUUID();
 
         const updates = new EventEmitter<[Value, Value]>();
+        const rpcConnected = new EventEmitter<[]>();
 
         let currentValue: Value = initialValue;
         let rpc: SimpleExposeResult | null = null;
@@ -113,6 +114,8 @@ export function consumeObservable<
             [getMethodName(uniqueId, methods.sendUpdate)]: lazyMethod(
                 rpcObj => {
                     rpc = rpcObj;
+                    rpcConnected.emit();
+
                     return (value: ExposedType<UniqueId, ExposeMethods>) => {
                         const previousValue = currentValue;
                         currentValue = value;
@@ -136,9 +139,18 @@ export function consumeObservable<
             rpc[getMethodName(uniqueId, methods.unsubscribe)](subscriptionId);
         });
 
+        // Need to always stay subscribed so get() works synchronously.
+        // TODO: Have some way to unsubscribe when the observable is no longer used.
+        rpcConnected.listenOnce(() => {
+            updates.listen(() => {});
+        });
+
         return {
             onChange(handler) {
                 return updates.listen(handler);
+            },
+            onChangeOnce(handler) {
+                return updates.listenOnce(handler);
             },
             get() {
                 return currentValue;

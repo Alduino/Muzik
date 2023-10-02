@@ -31,6 +31,8 @@ export interface Observable<T> {
 
     onChange(handler: (value: T, previousValue: T) => void): () => void;
 
+    onChangeOnce(handler: (value: T, previousValue: T) => void): () => void;
+
     extend<U>(transformer: (value: T) => U): Observable<U>;
 }
 
@@ -55,6 +57,10 @@ class ObservableImpl<T> implements Observable<T> {
 
     onChange(handler: (value: T, previousValue: T) => void) {
         return this.#listener.listen(handler);
+    }
+
+    onChangeOnce(handler: (value: T, previousValue: T) => void) {
+        return this.#listener.listenOnce(handler);
     }
 
     extend<U>(transformer: (value: T) => U): Observable<U> {
@@ -99,6 +105,8 @@ export class ExtendedObservable<T> {
                 const cleanup = dependency.onChange(() => {
                     const newValue = this.#getValue();
                     const previousValue = this.#currentValue();
+                    if (newValue === previousValue) return;
+
                     this.#currentValue.set(newValue);
 
                     handler(newValue, previousValue);
@@ -128,7 +136,13 @@ export class ObservableController<T> {
     set(newValue: T) {
         const previousValue = this.#value;
         this.#value = newValue;
+        if (newValue === previousValue) return;
+
         this.#observableListener?.(newValue, previousValue);
+    }
+
+    get() {
+        return this.#value;
     }
 
     observable(): Observable<T> {

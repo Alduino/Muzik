@@ -2,50 +2,68 @@ import {join} from "path";
 import {Worker} from "worker_threads";
 import {log} from "../../../shared/logger.ts";
 import type {MethodHandlers as WorkerMessageHandlers} from "../../workers/audio-playback";
+import {exposeObservable} from "../utils/observable-rpc.ts";
 import {createRpc, InferMethods} from "../utils/worker-rpc.ts";
-import {audioPlaybackEngine} from "./AudioPlaybackEngine.ts";
-import {audioTrackBuffer} from "./AudioTrackBuffer.ts";
+import {trackQueue} from "./TrackQueue.ts";
+import {audioStream} from "./audio-stream.ts";
+import {loadTrack} from "./loadTrack.ts";
+
+const exposedObservables = {
+    ...exposeObservable("tq.currentTrack", trackQueue.currentTrack),
+    ...exposeObservable("tq.nextTrack", trackQueue.nextTrack)
+};
 
 const messageHandlers = {
-    /**
-     * Buffers a track for quick access later.
-     *
-     * This RPC call is hard-coded with `canThrow` set to `true`.
-     *
-     * You **MUST** call `unloadTrack` when you're done with the track (in a `finally`).
-     * Otherwise, there will be a severe memory leak.
-     */
-    async loadTrack(trackId: number) {
-        await audioTrackBuffer.loadTrack(trackId, true);
+    loadTrack,
+
+    nextTrack() {
+        trackQueue.next();
     },
 
-    /**
-     * Decrements the reference count of a track, that is incremented by `loadTrack`.
-     * If the reference count reaches zero, the track is unloaded.
-     */
-    unloadTrack(trackId: number) {
-        audioTrackBuffer.unloadTrack(trackId);
-    },
-
-    ...audioPlaybackEngine.seekPosition.rpcExtension
+    ...audioStream.currentTrackPosition.rpcExtension,
+    ...exposedObservables
 };
 
 export type MessageHandlers = InferMethods<typeof messageHandlers>;
+export type ExportedObservables = InferMethods<typeof exposedObservables>;
 
 const rpcCtrl = createRpc<WorkerMessageHandlers>(messageHandlers);
 
 export const rpc = rpcCtrl.rpc;
 
-export function initialiseWorker() {
+let worker: Worker | undefined;
+
+export async function initialiseWorker() {
+    if (worker) {
+        throw new Error("Worker has already been initialised");
+    }
+
     const workerPath = join(__dirname, "./workers/audio-playback.js");
 
     log.debug({workerPath}, "Starting audio worker");
 
-    const worker = new Worker(workerPath);
+    worker = new Worker(workerPath);
     rpcCtrl.attachPort(worker);
 
-    return new Promise((yay, nay) => {
-        worker.once("online", yay);
-        worker.once("error", nay);
-    });
+    try {
+        await new Promise((yay, nay) => {
+            worker!.once("online", yay);
+            worker!.once("error", nay);
+            worker!.once("exit", nay);
+        });
+    } catch (err) {
+        log.fatal({err}, "Failed to start audio worker");
+        throw err;
+    }
+
+    await rpc.init();
+}
+
+export async function terminateWorker() {
+    if (!worker) {
+        throw new Error("Worker has not been initialised");
+    }
+
+    await rpc.prepareForShutdown();
+    await worker.terminate();
 }

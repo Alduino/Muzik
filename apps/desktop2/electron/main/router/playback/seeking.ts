@@ -1,12 +1,12 @@
 import {z} from "zod";
-import {audioPlaybackEngine} from "../../core/AudioPlaybackEngine.ts";
+import {audioStream} from "../../core/audio-stream.ts";
 import {observable, procedure} from "../../trpc.ts";
 
 export const getCurrentSeekPosition = procedure.subscription(() => {
     return observable.observable<number>(observer => {
-        observer.next(audioPlaybackEngine.seekPosition.get());
+        observer.next(audioStream.currentTrackPosition.get());
 
-        return audioPlaybackEngine.seekPosition.onChange(seekPosition => {
+        return audioStream.currentTrackPosition.onChange(seekPosition => {
             observer.next(seekPosition);
         });
     });
@@ -19,5 +19,5 @@ export const setCurrentSeekPosition = procedure
         })
     )
     .mutation(async ({input}) => {
-        await audioPlaybackEngine.seek(input.seekPosition);
+        await audioStream.seek(input.seekPosition);
     });

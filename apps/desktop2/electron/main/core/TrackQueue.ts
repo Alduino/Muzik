@@ -12,15 +12,22 @@ export class TrackQueue {
 
     readonly lastTrack = this.history.extend(history => history.at(-1) ?? null);
 
-    readonly nextTrack = this.immediateQueue.extend(
+    /*readonly nextTrack = this.immediateQueue.extend(
         queue => queue.at(0) ?? null
+    );*/
+
+    // FOR TESTING:
+    readonly nextTrack = this.currentTrack.extend(currentTrack =>
+        currentTrack ? currentTrack + 1 : null
     );
 
     readonly canPrevious = this.lastTrack.extend(
         lastTrack => lastTrack !== null
     );
 
-    readonly canNext = this.nextTrack.extend(nextTrack => nextTrack !== null);
+    //readonly canNext = this.nextTrack.extend(nextTrack => nextTrack !== null);
+    // FOR TESTING:
+    readonly canNext = this.currentTrack.extend(() => true);
 
     constructor() {}
 

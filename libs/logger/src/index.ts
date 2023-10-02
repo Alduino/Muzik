@@ -91,8 +91,10 @@ ${context
             const formattedString = printf(message, ...rest);
             const contextString = LoggerImpl.formatContext(context);
 
+            const formattedTime = performance.now().toFixed(3).padStart(7, "0");
+
             console.log(
-                `[${level}] ${this.name}: ${formattedString}${contextString}`
+                `${formattedTime} [${level}] ${this.name}: ${formattedString}${contextString}`
             );
         };
     }

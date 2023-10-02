@@ -1,3 +1,5 @@
+import {log} from "../../../shared/logger.ts";
+
 export class EventEmitter<Args extends unknown[] = []> {
     #handlers = new Set<(...args: Args) => void>();
 
@@ -47,7 +49,20 @@ export class EventEmitter<Args extends unknown[] = []> {
 
     emit(...args: Args) {
         for (const handler of this.#handlers) {
-            handler(...args);
+            try {
+                const result = handler(...args) as unknown;
+
+                if (result instanceof Promise) {
+                    result.catch(err => {
+                        log.warn(
+                            err,
+                            "Caught an async error while emitting an event"
+                        );
+                    });
+                }
+            } catch (err) {
+                log.warn(err, "Caught an error while emitting an event");
+            }
         }
     }
 }
