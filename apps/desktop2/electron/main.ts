@@ -97,20 +97,24 @@ app.on("activate", () => {
 app.once("before-quit", async ev => {
     ev.preventDefault();
 
-    log.info("Shutting down");
+    try {
+        log.info("Shutting down");
 
-    log.debug("Cleaning up temporary files");
-    tempDir.cleanupSync();
+        log.debug("Cleaning up temporary files");
+        tempDir.cleanupSync();
 
-    log.debug("Terminating audio worker");
-    await terminateAudioWorker();
+        log.debug("Terminating audio worker");
+        await terminateAudioWorker();
 
-    log.debug("Disconnecting from database");
-    await prisma.$executeRawUnsafe("VACUUM");
-    await prisma.$disconnect();
-
-    log.debug("Quitting");
-    app.quit();
+        log.debug("Disconnecting from database");
+        await prisma.$executeRawUnsafe("VACUUM");
+        await prisma.$disconnect();
+    } catch (err) {
+        log.warn(err, "Failed to properly clean up");
+    } finally {
+        log.debug("Quitting");
+        app.quit();
+    }
 });
 
 app.whenReady().then(createWindow);

@@ -57,14 +57,17 @@ export class TrackQueue {
         if (!this.canNext.get()) return;
 
         const [nextTrack, ...rest] = this.immediateQueue.get();
-        this.#immediateQueue.set(rest);
-
         const currentTrack = this.currentTrack.get();
+
+        // Set order must be last -> current -> next,
+        // so that the current and next tracks don't get unloaded.
+
         if (currentTrack !== null) {
             this.#history.set([...this.history.get(), currentTrack]);
         }
 
         this.#currentTrack.set(nextTrack);
+        this.#immediateQueue.set(rest);
     }
 }
 

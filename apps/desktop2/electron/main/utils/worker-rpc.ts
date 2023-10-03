@@ -25,6 +25,7 @@ interface InternalResponse {
 
 interface MessageOptions {
     transferList?: readonly TransferListItem[];
+    timeout?: number;
 }
 
 interface MessagePortLike {
@@ -105,11 +106,6 @@ export function createRpc<Methods extends MethodsBase>(
             "message",
             async (message: InternalRequest | InternalResponse) => {
                 if (message.type === "response") {
-                    log.trace(
-                        {id: message.id, isMainThread},
-                        "Recv WorkerRPC response"
-                    );
-
                     const receiver = messageReceivers.get(message.id);
                     receiver?.(message);
                     return;
@@ -134,17 +130,7 @@ export function createRpc<Methods extends MethodsBase>(
                         );
                     }
 
-                    log.trace(
-                        {method: message.method, id: message.id, isMainThread},
-                        "Recv WorkerRPC request"
-                    );
-
                     const result = await handler(...message.params);
-
-                    log.trace(
-                        {method: message.method, id: message.id, isMainThread},
-                        "Send WorkerRPC response"
-                    );
 
                     port.postMessage({
                         type: "response",
@@ -194,16 +180,14 @@ export function createRpc<Methods extends MethodsBase>(
 
                         const messageId = randomUUID();
 
-                        log.trace(
-                            {method: prop, id: messageId, isMainThread},
-                            "Send WorkerRPC request"
-                        );
-
                         const promise = new Promise((resolve, reject) => {
+                            let timeout: NodeJS.Timeout | null = null;
+
                             messageReceivers.set(
                                 messageId,
                                 (response: InternalResponse) => {
                                     messageReceivers.delete(messageId);
+                                    if (timeout) clearTimeout(timeout);
 
                                     if (response.error) {
                                         reject(response.error);
@@ -212,6 +196,14 @@ export function createRpc<Methods extends MethodsBase>(
                                     }
                                 }
                             );
+
+                            if (options.timeout) {
+                                timeout = setTimeout(() => {
+                                    messageReceivers.delete(messageId);
+
+                                    reject(new Error("Request timed out"));
+                                }, options.timeout);
+                            }
                         });
 
                         messagePort.postMessage(

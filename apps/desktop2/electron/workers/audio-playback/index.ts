@@ -22,6 +22,8 @@ const methodHandlers = {
     init,
     prepareForShutdown,
 
+    importTrackPacket: audioStream.importTrackPacket,
+
     ...trackQueue.currentTrack.rpcExtension,
     ...trackQueue.nextTrack.rpcExtension,
     ...exposedObservables

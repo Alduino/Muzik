@@ -7,6 +7,7 @@ import {createRpc, InferMethods} from "../utils/worker-rpc.ts";
 import {trackQueue} from "./TrackQueue.ts";
 import {audioStream} from "./audio-stream.ts";
 import {loadTrack} from "./loadTrack.ts";
+import {readStreamManager} from "./read-stream-manager.ts";
 
 const exposedObservables = {
     ...exposeObservable("tq.currentTrack", trackQueue.currentTrack),
@@ -19,6 +20,8 @@ const messageHandlers = {
     nextTrack() {
         trackQueue.next();
     },
+
+    requestTrackPacket: readStreamManager.requestTrackPacket,
 
     ...audioStream.currentTrackPosition.rpcExtension,
     ...exposedObservables
@@ -45,6 +48,8 @@ export async function initialiseWorker() {
     worker = new Worker(workerPath);
     rpcCtrl.attachPort(worker);
 
+    log.debug("Waiting for worker to come online");
+
     try {
         await new Promise((yay, nay) => {
             worker!.once("online", yay);
@@ -56,7 +61,10 @@ export async function initialiseWorker() {
         throw err;
     }
 
+    log.debug("Initialising audio worker");
     await rpc.init();
+
+    log.debug("Audio worker initialised");
 }
 
 export async function terminateWorker() {
@@ -64,6 +72,11 @@ export async function terminateWorker() {
         throw new Error("Worker has not been initialised");
     }
 
-    await rpc.prepareForShutdown();
+    try {
+        await rpc.withOptions({timeout: 500}).prepareForShutdown();
+    } catch (err) {
+        log.warn({err}, "Failed to prepare audio worker for shutdown");
+    }
+
     await worker.terminate();
 }

@@ -16,6 +16,21 @@ export default defineConfig({
         vanillaExtractPlugin(),
         electron({
             main: {
+                onstart(options) {
+                    const args: string[] = ["."];
+
+                    if (process.env.RENDERER_DEBUG_PORT) {
+                        args.push(
+                            `--remote-debugging-port=${process.env.RENDERER_DEBUG_PORT}`
+                        );
+                    }
+
+                    if (process.env.MAIN_DEBUG_PORT) {
+                        args.push(`--inspect=${process.env.MAIN_DEBUG_PORT}`);
+                    }
+
+                    options.startup(args);
+                },
                 entry: {
                     main: "electron/main.ts",
                     ...Object.fromEntries(

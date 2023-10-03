@@ -36,6 +36,15 @@ ${context
     .map(l => "  " + l)
     .join("\n")}
 }`;
+        } else if (typeof Buffer !== "undefined" && context instanceof Buffer) {
+            const bufferString = context.subarray(0, 16).toString("hex");
+            const bufferStringSpaced = bufferString
+                .split("")
+                .map((c, i) => (i % 2 === 1 ? c + " " : c))
+                .join("")
+                .trim();
+            const ellipsis = context.length > 16 ? "..." : "";
+            return `Buffer(${context.length}) { ${bufferStringSpaced} ${ellipsis} }`;
         } else if (Array.isArray(context)) {
             return `[ ${context
                 .map(c => this.formatInnerContext(c))

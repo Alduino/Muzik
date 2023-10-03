@@ -6,6 +6,7 @@ import {
     PLAYBACK_SAMPLE_RATE,
     PLAYBACK_SAMPLE_SIZE
 } from "../../main/constants.ts";
+import {padBuffer} from "../../main/utils/padBuffer.ts";
 import {audioStream} from "./audio-stream.ts";
 import {rpc} from "./index.ts";
 
@@ -17,7 +18,14 @@ class SpeakerDataReader extends Readable {
             rpc.nextTrack();
         }
 
-        this.push(result.buffer);
+        try {
+            this.push(padBuffer(result.buffer, size));
+        } catch (err) {
+            log.warn(
+                {err, size, result},
+                "Failed to write audio data to speaker"
+            );
+        }
     }
 }
 

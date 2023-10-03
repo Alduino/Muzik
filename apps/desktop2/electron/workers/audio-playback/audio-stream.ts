@@ -1,6 +1,5 @@
 import {log} from "../../../shared/logger.ts";
 import {observable} from "../../main/utils/Observable.ts";
-import {padBuffer} from "../../main/utils/padBuffer.ts";
 import {TrackAudioBuffer} from "./track-audio-buffer.ts";
 import {trackBufferRepository} from "./track-buffer-repository.ts";
 import {trackQueue} from "./track-queue.ts";
@@ -9,6 +8,8 @@ interface ReadResult {
     /**
      * A buffer containing the audio data,
      * as interleaved little-endian signed 32-bit integers.
+     *
+     * Can be less than `bytes` long, so it should be padded with zeroes.
      */
     buffer: Buffer;
 
@@ -22,10 +23,24 @@ const currentTrackProgress = observable(0);
 export const audioStream = {
     currentTrackProgress: currentTrackProgress.observable(),
 
+    importTrackPacket(
+        trackId: number,
+        buffer: ArrayBuffer,
+        startFrame: number
+    ) {
+        const buff = Buffer.from(buffer);
+
+        if (trackId === currentTrack?.trackId) {
+            currentTrack.importPacket(buff, startFrame);
+        } else {
+            trackBufferRepository.importTrackPacket(trackId, buff, startFrame);
+        }
+    },
+
     read(bytes: number): ReadResult {
         if (currentTrack === null) {
             return {
-                buffer: Buffer.alloc(bytes),
+                buffer: Buffer.alloc(0),
                 nextTrackStarted: false
             };
         }
@@ -47,10 +62,7 @@ export const audioStream = {
 
                 const concatenated = Buffer.concat([
                     currentTrackData,
-                    nextTrackData,
-                    Buffer.alloc(
-                        bytes - currentTrackData.length - nextTrackData.length
-                    )
+                    nextTrackData
                 ]);
 
                 return {
@@ -59,13 +71,13 @@ export const audioStream = {
                 };
             } else {
                 return {
-                    buffer: padBuffer(currentTrackData, bytes),
+                    buffer: currentTrackData,
                     nextTrackStarted: true
                 };
             }
         } else {
             return {
-                buffer: padBuffer(currentTrackData, bytes),
+                buffer: currentTrackData,
                 nextTrackStarted: false
             };
         }
@@ -92,7 +104,9 @@ export function connectToTrackQueue() {
     let currentTrackLoadId: number | null = null;
 
     trackQueue.currentTrack.onChange(async trackId => {
-        if (trackId === null || currentTrack?.trackId === trackId) {
+        if (currentTrack?.trackId === trackId) return;
+
+        if (trackId === null) {
             currentTrack = null;
             return;
         }

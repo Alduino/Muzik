@@ -1,5 +1,7 @@
+import {log} from "../../../shared/logger.ts";
 import {PLAYBACK_CHANNELS, PLAYBACK_SAMPLE_SIZE} from "../../main/constants.ts";
 import {observable} from "../../main/utils/Observable.ts";
+import {rpc} from "./index.ts";
 
 interface Packet {
     // Inclusive
@@ -13,7 +15,7 @@ interface Packet {
 
 interface CurrentPacket {
     packet: Packet;
-    offset: number;
+    offsetBytes: number;
 }
 
 /**
@@ -32,7 +34,8 @@ export class TrackAudioBuffer {
             // Assumes `#currentPacket` is never set back to null.
             return (
                 this.#currentPacket.packet.startFrame +
-                this.#currentPacket.offset
+                this.#currentPacket.offsetBytes /
+                    (PLAYBACK_SAMPLE_SIZE * PLAYBACK_CHANNELS)
             );
         } else {
             return 0;
@@ -82,13 +85,15 @@ export class TrackAudioBuffer {
             buffer.byteLength / PLAYBACK_SAMPLE_SIZE / PLAYBACK_CHANNELS;
 
         const packet: Packet = {
-            buffer,
+            buffer: buffer,
             startFrame,
             endFrame: startFrame + frameCount
         };
 
         // TODO: Handle memory leak if this packet doesn't end up being used.
         this.#packets.add(packet);
+
+        log.trace({startFrame, frameCount}, "Received new packet");
 
         if (persistent) {
             this.#persistentPackets.add(packet);
@@ -105,7 +110,9 @@ export class TrackAudioBuffer {
     #requestPacket(frame: number) {
         if (this.frameCount && frame >= this.frameCount) return;
 
-        // TODO
+        log.debug({trackId: this.trackId, frame}, "Requesting packet");
+
+        rpc.requestTrackPacket(this.trackId, frame);
     }
 
     /**
@@ -128,6 +135,8 @@ export class TrackAudioBuffer {
         }
 
         if (!newPacket) {
+            log.trace({frame}, "Attempted to use packet before it was loaded");
+
             this.#requestPacket(frame);
             return null;
         }
@@ -138,8 +147,13 @@ export class TrackAudioBuffer {
 
         this.#currentPacket = {
             packet: newPacket,
-            offset: frame - newPacket.startFrame
+            offsetBytes:
+                (frame - newPacket.startFrame) *
+                PLAYBACK_SAMPLE_SIZE *
+                PLAYBACK_CHANNELS
         };
+
+        log.trace({startFrame: newPacket.startFrame}, "Started next packet");
 
         // So that it's ready when we need it.
         this.#requestPacket(newPacket.endFrame);
@@ -159,17 +173,20 @@ export class TrackAudioBuffer {
      * If `maxSize` is greater than the number of bytes remaining in the current packet,
      * only the remaining bytes will be read.
      */
-    #read(maxSize: number): Buffer {
-        if (!this.#currentPacket) return Buffer.alloc(0);
+    #read(maxSize: number): Buffer | null {
+        if (!this.#currentPacket) return null;
 
-        const {packet, offset} = this.#currentPacket;
+        const {packet, offsetBytes} = this.#currentPacket;
 
-        const readableBytes = Math.min(maxSize, packet.buffer.length - offset);
-        this.#currentPacket.offset += readableBytes;
+        const readableBytes = Math.min(
+            maxSize,
+            packet.buffer.length - offsetBytes
+        );
+        this.#currentPacket.offsetBytes += readableBytes;
 
         this.#currentFrameObserver.set(this.#currentFrame);
 
-        return packet.buffer.subarray(offset, offset + readableBytes);
+        return packet.buffer.subarray(offsetBytes, offsetBytes + readableBytes);
     }
 
     read(size: number) {
@@ -178,13 +195,24 @@ export class TrackAudioBuffer {
         }
 
         const result = new Array<Buffer>();
-        const totalSize = 0;
+        let totalSize = 0;
 
         while (totalSize < size) {
             const sizeToRead = size - totalSize;
             const next = this.#read(sizeToRead);
 
+            if (next == null) {
+                log.trace(
+                    "No current packet (start of track?); switching to next"
+                );
+                this.#nextPacket();
+                break;
+            }
+
+            totalSize += next.byteLength;
+
             if (next.byteLength === 0) {
+                log.trace("Switching to next packet");
                 this.#nextPacket();
             } else {
                 result.push(next);

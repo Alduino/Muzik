@@ -6,8 +6,7 @@
         "dev": "vite",
         "build": "tsc && vite build && electron-builder",
         "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-        "preview": "vite preview",
-        "postinstall": "electron-builder install-app-deps"
+        "preview": "vite preview"
     },
     "dependencies": {
         "@fluent/bundle": "^0.18.0",
@@ -32,7 +31,6 @@
         "@vanilla-extract/recipes": "^0.5.0",
         "clsx": "^2.0.0",
         "date-fns": "^2.30.0",
-        "electron": "26.1.0",
         "electron-trpc": "^0.5.2",
         "execa": "^8.0.1",
         "ffbinaries": "^1.1.5",
@@ -59,6 +57,7 @@
         "@typescript-eslint/parser": "^6.6.0",
         "@vanilla-extract/vite-plugin": "^3.9.0",
         "@vitejs/plugin-react": "^4.0.4",
+        "electron": "26.1.0",
         "electron-builder": "^24.6.4",
         "eslint": "^8.48.0",
         "eslint-plugin-react-hooks": "^4.6.0",

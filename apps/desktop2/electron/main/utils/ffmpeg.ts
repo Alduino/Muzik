@@ -116,7 +116,11 @@ export function runFfmpeg(
     log.debug({file, args}, "Running %s", component);
 
     return execa(file, args, {
-        stderr: process.env.NODE_ENV === "production" ? "ignore" : "inherit",
+        stderr:
+            process.env.NODE_ENV === "production" ||
+            process.env.ENABLE_FFMPEG_LOGS !== "1"
+                ? "ignore"
+                : "inherit",
         stdin: "pipe",
         stdout: "pipe",
         buffer: !options.pipe

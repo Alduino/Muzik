@@ -5,7 +5,6 @@ import {lm} from "../../theme/lm.ts";
 import {size} from "../../theme/size.ts";
 import {colours, fonts} from "../../theme/theme.ts";
 
-const CONTAINER_PADDING = size(2);
 const SPINNER_SIZE = size(6);
 
 export const pageClass = style({

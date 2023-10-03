@@ -6,9 +6,14 @@ import {TrackAudioBuffer} from "./track-audio-buffer.ts";
 // Track ID -> TrackAudioBuffer
 const bufferedTracks = new Map<number, TrackAudioBuffer>();
 
-// TODO: Handle the communication to support packet requests.
-
 export const trackBufferRepository = {
+    importTrackPacket(trackId: number, buffer: Buffer, startFrame: number) {
+        const bufferedTrack = bufferedTracks.get(trackId);
+        if (!bufferedTrack) return;
+
+        bufferedTrack.importPacket(buffer, startFrame);
+    },
+
     /**
      * Gets the track and deletes it from the queue.
      */
