@@ -25,13 +25,14 @@ export const canvasClass = style({
 
 export const timeIndicatorContainerClass = style({
     position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
+    inset: 0,
 
     display: "flex",
     alignItems: "center",
-    gap: size(2),
+    justifyContent: "center"
+});
+
+export const timeIndicatorClass = style({
     padding: `${size(1)} ${size(2)}`,
     backgroundColor: lm(
         colour("grey", 0, 0.6),
@@ -42,8 +43,7 @@ export const timeIndicatorContainerClass = style({
     fontSize: size(3),
     backdropFilter: "blur(8px)",
     borderRadius: size(1),
-
-    transition: "opacity 100ms ease-in-out",
+    pointerEvents: "none",
 
     selectors: {
         [`${containerClass}:hover &`]: {

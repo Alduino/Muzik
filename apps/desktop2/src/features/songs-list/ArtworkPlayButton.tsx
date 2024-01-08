@@ -8,7 +8,7 @@ import {playButtonClass, playButtonContainerClass} from "./styles.css.ts";
 
 export interface ArtworkPlayButtonProps {
     trackId: number;
-    artworkId: number;
+    artworkId: number | null;
     avgColour: string;
 }
 

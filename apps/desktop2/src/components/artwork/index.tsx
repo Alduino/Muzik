@@ -10,6 +10,8 @@ import {
     sizeVar
 } from "./styles.css.ts";
 
+const defaultImageUrl = new URL("../../assets/default-album-art.svg", import.meta.url);
+
 function getImageSourceUrl(sourceId: number, minDimension: number) {
     return `image-source://images.com/${sourceId}?mind=${minDimension}`;
 }
@@ -20,13 +22,15 @@ const SIZES = {
 };
 
 interface ArtworkImageProps {
-    id: number;
+    id: number | null;
     size: number;
 }
 
 function ArtworkImage({id, size}: ArtworkImageProps): ReactElement | null {
     const {data} = trpc.artwork.imageSource.useQuery({
-        artworkId: id
+        artworkId: id as number
+    }, {
+        enabled: id !== null
     });
 
     const sourceId = useMemo(() => {
@@ -57,7 +61,15 @@ function ArtworkImage({id, size}: ArtworkImageProps): ReactElement | null {
 
     const [loaded, setLoaded] = useBoolean(false);
 
-    if (!sourceId) return null;
+    if (!sourceId) {
+        return (
+            <img
+                className={imageStyle({loaded: true})}
+                src={defaultImageUrl.toString()}
+                alt=""
+            />
+        )
+    }
 
     return (
         <img
@@ -74,7 +86,7 @@ const MemoisedArtworkImage = memo(ArtworkImage, (prev, next) => {
 });
 
 export interface ArtworkProps {
-    id: number;
+    id: number | null;
     placeholderColour: string;
     size: keyof typeof SIZES;
 

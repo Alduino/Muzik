@@ -46,13 +46,12 @@ const columns = [
         id: "artwork",
         cell: info => {
             const {artwork, id} = info.row.original;
-            if (!artwork) return null;
 
             return (
                 <ArtworkPlayButton
                     trackId={id}
-                    artworkId={artwork.id}
-                    avgColour={artwork.avgColour}
+                    artworkId={artwork?.id ?? null}
+                    avgColour={artwork?.avgColour ?? "#000"}
                 />
             );
         }

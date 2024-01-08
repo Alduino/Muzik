@@ -1,10 +1,7 @@
 import {toUint8Array} from "js-base64";
 import {useEffect, useMemo, useState} from "react";
 import {formatDuration} from "../../../../../desktop/src/app/utils/formatDuration.tsx";
-import {
-    u16leReader,
-    WaveformBucketCalculator
-} from "../../../../shared/waveform-buckets";
+import {u16leReader, WaveformBucketCalculator} from "../../../../shared/waveform-buckets";
 import {useCurrentTrack} from "../../../hooks/data/useCurrentTrack.ts";
 import {useColourModeValue} from "../../../hooks/useColourModeValue.ts";
 import useEventHandler from "../../../hooks/useEventHandler.ts";
@@ -12,7 +9,7 @@ import {useTranslation} from "../../../hooks/useTranslation.ts";
 import {colour} from "../../../theme/colour.ts";
 import {Vector2} from "../../../utils/Vector2.ts";
 import {trpc} from "../../../utils/trpc.ts";
-import {canvasClass, containerClass, timeIndicatorContainerClass} from "./styles.css.ts";
+import {canvasClass, containerClass, timeIndicatorClass, timeIndicatorContainerClass} from "./styles.css.ts";
 
 const emptyWaveformDataview = new DataView(
     new Uint8Array([
@@ -555,10 +552,12 @@ function TimeIndicator() {
 
     return (
         <div className={timeIndicatorContainerClass}>
-            {t("track-seek-position", {
-                progress: passedTimeStr,
-                total: totalDurationStr
-            })}
+            <div className={timeIndicatorClass}>
+                {t("track-seek-position", {
+                    progress: passedTimeStr,
+                    total: totalDurationStr
+                })}
+            </div>
         </div>
-    )
+    );
 }
