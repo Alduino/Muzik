@@ -35,5 +35,5 @@ const dialect = new SqliteDialect({
 log.debug("Creating Kysely instance");
 export const db = new Kysely<DB>({
     dialect,
-    log: ["query", "error"]
+    log: ["error"]
 });

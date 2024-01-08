@@ -34,7 +34,7 @@ export interface CalculateArtworkAverageColoursOptions {
 export async function calculateArtworkAverageColours({
     averageColourWorkerPool
 }: CalculateArtworkAverageColoursOptions) {
-    const {db} = getContext();
+    const {db, progress} = getContext();
 
     const artworkUngrouped = await db.selectFrom("Artwork")
         .leftJoin("ImageSource", "ImageSource.artworkId", "Artwork.id")
@@ -116,6 +116,8 @@ export async function calculateArtworkAverageColours({
         }
     );
 
+    progress.start("artworkAverageColours", artwork.length);
+
     await db.transaction().execute(async trx => {
         await Promise.all(
             artwork.map(async artwork => {
@@ -166,6 +168,8 @@ export async function calculateArtworkAverageColours({
                     .where("id", "=", artwork.id)
                     .set("avgColour", avgColour)
                     .execute();
+
+                progress.increment();
             })
         );
     });

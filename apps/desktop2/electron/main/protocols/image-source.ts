@@ -16,8 +16,9 @@ export function registerImageSourceProtocol() {
             }
 
             const imageSource = await db.selectFrom("ImageSource")
-                .innerJoin("AudioSource", "AudioSource.embeddedImageSourceId", "ImageSource.id")
+                .leftJoin("AudioSource", "AudioSource.embeddedImageSourceId", "ImageSource.id")
                 .select(["ImageSource.path", "ImageSource.format", "AudioSource.embeddedImageSourceId as embedded"])
+                .where("ImageSource.id", "=", id)
                 .executeTakeFirstOrThrow();
 
             if (!resizeMinDimension) {

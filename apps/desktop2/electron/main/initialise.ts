@@ -3,7 +3,7 @@ import {join} from "path";
 import {sql} from "kysely";
 import {log} from "../../shared/logger.ts";
 import {startAudioPlaybackEngine} from "./core/orchestrator.ts";
-import {db, dbRaw} from "./db.ts";
+import {db} from "./db.ts";
 import {registerCustomProtocols} from "./protocols";
 import {markInitialisationComplete} from "./router/meta/init.ts";
 import {configDb} from "./utils/config.ts";

@@ -11,6 +11,7 @@ export const getTrackInfo = procedure
     .output(
         z.object({
             name: z.string(),
+            duration: z.number().positive(),
             artists: z.array(
                 z.object({
                     id: z.number().int().positive(),
@@ -29,6 +30,11 @@ export const getTrackInfo = procedure
             .select("name")
             .executeTakeFirstOrThrow();
 
+        const {duration} = await db.selectFrom("AudioSource")
+            .select("duration")
+            .where("trackId", "=", input.trackId)
+            .executeTakeFirstOrThrow();
+
         const artists = await db.selectFrom("Artist")
             .innerJoin("_ArtistToTrack", "Artist.id", "_ArtistToTrack.A")
             .where("_ArtistToTrack.B", "=", input.trackId)
@@ -42,8 +48,9 @@ export const getTrackInfo = procedure
             .executeTakeFirst();
 
         return {
-            name: name,
-            artists: artists,
+            name,
+            duration,
+            artists,
             artwork: artwork ? {
                 id: artwork.id,
                 avgColour: artwork.avgColour

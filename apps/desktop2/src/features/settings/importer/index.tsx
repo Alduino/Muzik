@@ -34,8 +34,8 @@ export function Importer(): ReactElement {
 
             {importProgress && (
                 <dl>
-                    <dt>{t("importer-progress-tracks-discovered")}</dt>
-                    <dd>{importProgress.musicDiscovered}</dd>
+                    <dt>{t(`importer-progress-${importProgress.stage}`)}</dt>
+                    <dd>{importProgress.progress} / {importProgress.total ?? "-"}</dd>
                 </dl>
             )}
         </div>

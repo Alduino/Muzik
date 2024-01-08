@@ -12,6 +12,12 @@ pub struct Result {
     pub blue: u8,
 }
 
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console)]
+    fn log(s: &str);
+}
+
 #[wasm_bindgen(js_name = getImageAverageColour)]
 pub fn get_image_average_colour(buffer: &[u8]) -> Result {
     let img_reader = Reader::new(Cursor::new(buffer))

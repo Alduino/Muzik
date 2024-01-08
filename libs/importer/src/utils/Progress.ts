@@ -1,15 +1,41 @@
+export interface ProgressStatus {
+    stage: string;
+
+    progress: number;
+
+    /**
+     * Null for indeterminate progress
+     */
+    total: number | null;
+}
+
 export class Progress {
     #listeners = new Set<() => void>();
 
-    #musicDiscovered = 0;
+    #status: ProgressStatus = {
+        stage: "waiting",
+        progress: 0,
+        total: null
+    };
 
-    get musicDiscovered() {
-        return this.#musicDiscovered;
+    start(stage: string, total: number | null) {
+        this.#status = {
+            stage,
+            progress: 0,
+            total
+        };
+
+        this.#notify();
     }
 
-    incrementMusicDiscovered() {
-        this.#musicDiscovered++;
+    increment() {
+        this.#status.progress++;
+
         this.#notify();
+    }
+
+    getStatus() {
+        return this.#status;
     }
 
     addListener(listener: () => void) {

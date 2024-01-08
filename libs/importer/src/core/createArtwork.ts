@@ -12,7 +12,7 @@ export async function createArtwork(
     imageSourceIdToAudioSourceId: ReadonlyMap<number, number>,
     {fingerprintWorkerPool}: CreateArtworkOptions
 ) {
-    const {db} = getContext();
+    const {db, progress} = getContext();
 
     const imageSourcesById = await db.selectFrom("ImageSource")
         .leftJoin("AudioSource", "AudioSource.embeddedImageSourceId", "ImageSource.id")
@@ -76,47 +76,49 @@ export async function createArtwork(
         }
     );
 
-    await db.transaction().execute(async trx => {
-        await Promise.all(
-            Array.from(imageSourceIdToAudioSourceId.keys()).map(
-                async imageSourceId => {
-                    const {path: imageSourcePath, embeddedInId} =
-                        imageSourcesById.get(imageSourceId)!;
+    progress.start("artworkFingerprints", imageSourceIdToAudioSourceId.size);
+    await Promise.all(
+        Array.from(imageSourceIdToAudioSourceId.keys()).map(
+            async imageSourceId => {
+                const {path: imageSourcePath, embeddedInId} =
+                    imageSourcesById.get(imageSourceId)!;
 
-                    const fingerprintResult = await queue
-                        .run({
-                            path: imageSourcePath,
-                            embedded: embeddedInId != null
-                        })
-                        .catch(err =>
-                            err instanceof Error ? err : new Error(err)
-                        );
-
-                    if (fingerprintResult instanceof Error) {
-                        log.warn(
-                            {
-                                imageSourcePath,
-                                embedded: embeddedInId !== null,
-                                error: fingerprintResult
-                            },
-                            "Failed to calculate fingerprint for image source, skipping"
-                        );
-                        return;
-                    }
-
-                    const {fingerprint, loadDurationMs, calcDurationMs} =
-                        fingerprintResult;
-
-                    log.trace(
-                        {
-                            fingerprint,
-                            loadDurationMs,
-                            calcDurationMs,
-                            imageSourcePath
-                        },
-                        "Calculated fingerprint for image source"
+                const fingerprintResult = await queue
+                    .run({
+                        path: imageSourcePath,
+                        embedded: embeddedInId != null
+                    })
+                    .catch(err =>
+                        err instanceof Error ? err : new Error(err)
                     );
 
+                if (fingerprintResult instanceof Error) {
+                    log.warn(
+                        {
+                            imageSourcePath,
+                            embedded: embeddedInId !== null,
+                            error: fingerprintResult
+                        },
+                        "Failed to calculate fingerprint for image source, skipping"
+                    );
+                    progress.increment();
+                    return;
+                }
+
+                const {fingerprint, loadDurationMs, calcDurationMs} =
+                    fingerprintResult;
+
+                log.trace(
+                    {
+                        fingerprint,
+                        loadDurationMs,
+                        calcDurationMs,
+                        imageSourcePath
+                    },
+                    "Calculated fingerprint for image source"
+                );
+
+                await db.transaction().execute(async trx => {
                     const {id: artworkId} = await trx.insertInto("Artwork")
                         .values({
                             updatedAt: new Date().toISOString(),
@@ -127,7 +129,7 @@ export async function createArtwork(
                         .onConflict(oc => {
                             return oc.doUpdateSet({
                                 // Need to update *something* so we can get the ID
-                                fingerprint,
+                                fingerprint
                             });
                         })
                         .returning("id")
@@ -137,14 +139,20 @@ export async function createArtwork(
                         .where("id", "=", imageSourceId)
                         .set("artworkId", artworkId)
                         .execute();
-                }
-            )
-        );
+                });
 
+                progress.increment();
+            }
+        )
+    );
+
+    await db.transaction().execute(async trx => {
         // Track ID -> Artwork IDs
         const trackUsedArtworkIds = new Map<number, number[]>();
 
         for (const [imageSourceId, audioSourceId] of imageSourceIdToAudioSourceId) {
+            console.log("Linking image source", imageSourceId, "to audio source", audioSourceId);
+
             const artwork = await trx.selectFrom("Artwork")
                 .innerJoin("ImageSource", "ImageSource.artworkId", "Artwork.id")
                 .where("ImageSource.id", "=", imageSourceId)
@@ -173,11 +181,11 @@ export async function createArtwork(
                 .execute();
         }
 
-        for (const [trackId, usedArtworkIds] of trackUsedArtworkIds) {
+        /*for (const [trackId, usedArtworkIds] of trackUsedArtworkIds) {
             await trx.deleteFrom("_ArtworkToTrack")
                 .where("A", "=", trackId)
                 .where("B", "not in", usedArtworkIds)
                 .execute();
-        }
+        }*/
     });
 }

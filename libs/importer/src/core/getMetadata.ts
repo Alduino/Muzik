@@ -102,6 +102,8 @@ export async function loadMetadata(
     paths: string[],
     {hashWorkerPool}: LoadMetadataContext
 ) {
+    const {progress} = getContext();
+
     const parseQueue = new PipelinedQueue<
         string,
         ContextWithStats,
@@ -180,8 +182,13 @@ export async function loadMetadata(
         }
     );
 
+    progress.start("detectAudioSources", null);
+
     const metadatas = await Promise.all(
-        paths.map(path => getMetadata(path, {parseQueue, hashQueue}))
+        paths.map(path => getMetadata(path, {parseQueue, hashQueue}).then(res => {
+            if (res) progress.increment();
+            return res;
+        }))
     );
 
     return metadatas.filter(Boolean) as AudioSourceMetadata[];
@@ -211,8 +218,6 @@ async function getMetadata(
     path: string,
     {parseQueue, hashQueue}: GetMetadataContext
 ): Promise<AudioSourceMetadata | null> {
-    const {progress} = getContext();
-
     const {
         result: metadata,
         buffer: sourceBuffer,
@@ -284,8 +289,6 @@ async function getMetadata(
         },
         "Discovered audio source file"
     );
-
-    progress.incrementMusicDiscovered();
 
     return {
         path,
@@ -384,7 +387,7 @@ export async function insertAudioSourceMetadata(
                         duration: metadata.audioSource.duration,
                         embeddedImageSourceId,
                         lyricsId
-                    })
+                    });
                 })
                 .execute();
         }

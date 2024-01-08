@@ -5,7 +5,9 @@ import {observable, procedure} from "../../trpc.ts";
 import {configDb} from "../../utils/config.ts";
 
 export interface ImportProgress {
-    musicDiscovered: number;
+    stage: string;
+    progress: number;
+    total: number | null;
 }
 
 let importProgress: Progress | null = null;
@@ -40,9 +42,7 @@ export const getImportProgress = procedure.subscription(() => {
         const cleanupHandlers: (() => void)[] = [];
 
         function handleProgress(progress: Progress) {
-            observer.next({
-                musicDiscovered: progress.musicDiscovered
-            });
+            observer.next(progress.getStatus());
         }
 
         if (importProgress) {

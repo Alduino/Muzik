@@ -1,5 +1,6 @@
 import {toUint8Array} from "js-base64";
 import {useEffect, useMemo, useState} from "react";
+import {formatDuration} from "../../../../../desktop/src/app/utils/formatDuration.tsx";
 import {
     u16leReader,
     WaveformBucketCalculator
@@ -7,10 +8,11 @@ import {
 import {useCurrentTrack} from "../../../hooks/data/useCurrentTrack.ts";
 import {useColourModeValue} from "../../../hooks/useColourModeValue.ts";
 import useEventHandler from "../../../hooks/useEventHandler.ts";
+import {useTranslation} from "../../../hooks/useTranslation.ts";
 import {colour} from "../../../theme/colour.ts";
 import {Vector2} from "../../../utils/Vector2.ts";
 import {trpc} from "../../../utils/trpc.ts";
-import {canvasClass, containerClass} from "./styles.css.ts";
+import {canvasClass, containerClass, timeIndicatorContainerClass} from "./styles.css.ts";
 
 const emptyWaveformDataview = new DataView(
     new Uint8Array([
@@ -521,6 +523,42 @@ export function WaveformSeekBar() {
     return (
         <div className={containerClass}>
             <canvas ref={setCanvas} className={canvasClass} />
+
+            <TimeIndicator />
         </div>
     );
+}
+
+function TimeIndicator() {
+    const t = useTranslation("playback-bar");
+
+    const [seekPosition, setSeekPosition] = useState(0);
+
+    trpc.playback.getCurrentSeekPosition.useSubscription(undefined, {
+        onData(seekPosition) {
+            setSeekPosition(seekPosition);
+        }
+    });
+
+    const currentTrackId = useCurrentTrack();
+
+    const {data: trackInfo} = trpc.tracks.getTrackInfo.useQuery({
+        trackId: currentTrackId as number
+    }, {
+        enabled: currentTrackId !== null
+    });
+
+    if (!trackInfo) return null;
+
+    const passedTimeStr = formatDuration(trackInfo.duration * seekPosition);
+    const totalDurationStr = formatDuration(trackInfo.duration);
+
+    return (
+        <div className={timeIndicatorContainerClass}>
+            {t("track-seek-position", {
+                progress: passedTimeStr,
+                total: totalDurationStr
+            })}
+        </div>
+    )
 }

@@ -48,39 +48,47 @@ export const list = procedure.output(
         .orderBy("sortableName", "asc")
         .execute();
 
-    // TODO: N+1
+    const durations = await db.selectFrom("AudioSource")
+        .select(["trackId", "duration"])
+        .execute();
 
-    return await Promise.all(tracks.map(async track => {
-        const {duration} = await db.selectFrom("AudioSource")
-            .select("duration")
-            .where("trackId", "=", track.id)
-            .executeTakeFirstOrThrow();
+    const artists = await db.selectFrom("Artist")
+        .innerJoin("_ArtistToTrack", "_ArtistToTrack.A", "Artist.id")
+        .select(["Artist.id", "Artist.name", "_ArtistToTrack.B as trackId"])
+        .execute();
 
-        const artists = await db.selectFrom("Artist")
-            .innerJoin("_ArtistToTrack", "_ArtistToTrack.A", "Artist.id")
-            .where("_ArtistToTrack.B", "=", track.id)
-            .select(["Artist.id", "Artist.name"])
-            .execute();
+    const albums = await db.selectFrom("Album")
+        .innerJoin("_AlbumToTrack", "_AlbumToTrack.A", "Album.id")
+        .select(["Album.id", "Album.name", "_AlbumToTrack.B as trackId"])
+        .execute();
 
-        const album = await db.selectFrom("Album")
-            .innerJoin("_AlbumToTrack", "_AlbumToTrack.A", "Album.id")
-            .where("_AlbumToTrack.B", "=", track.id)
-            .select(["Album.id", "Album.name"])
-            .executeTakeFirst() ?? null;
+    const artworks = await db.selectFrom("Artwork")
+        .innerJoin("_ArtworkToTrack", "_ArtworkToTrack.A", "Artwork.id")
+        .select(["Artwork.id", "Artwork.avgColour", "_ArtworkToTrack.B as trackId"])
+        .execute();
 
-        const artwork = await db.selectFrom("Artwork")
-            .innerJoin("_ArtworkToTrack", "_ArtworkToTrack.A", "Artwork.id")
-            .where("_ArtworkToTrack.B", "=", track.id)
-            .select(["Artwork.id", "Artwork.avgColour"])
-            .executeTakeFirst() ?? null;
+    return tracks.map(track => {
+        const duration = durations.find(d => d.trackId === track.id)?.duration ?? 0;
+        const trackArtists = artists.filter(artist => artist.trackId === track.id);
+        const album = albums.find(album => album.trackId === track.id) ?? null;
+        const artwork = artworks.find(artwork => artwork.trackId === track.id) ?? null;
 
         return {
             id: track.id,
             name: track.name,
             duration,
-            artists,
-            album,
-            artwork
+            artists: trackArtists.map(artist => ({
+                id: artist.id,
+                name: artist.name
+            })),
+            album: album ? {
+                id: album.id,
+                name: album.name
+            } : null,
+            artwork: artwork ? {
+                id: artwork.id,
+                avgColour: artwork.avgColour
+            } : null
         };
-    }));
+    });
 });

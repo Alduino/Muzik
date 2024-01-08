@@ -1,12 +1,28 @@
-import {
-    PLAYBACK_CHANNELS,
-    PLAYBACK_SAMPLE_RATE,
-    PLAYBACK_SAMPLE_SIZE
-} from "../constants.ts";
+import {ExecaChildProcess} from "execa";
+import {childLogger} from "../../../shared/logger.ts";
+import {PLAYBACK_CHANNELS, PLAYBACK_SAMPLE_RATE, PLAYBACK_SAMPLE_SIZE} from "../constants.ts";
 import {EventEmitter} from "../utils/EventEmitter.ts";
 import {ffargs, runFfmpeg} from "../utils/ffmpeg.ts";
 
+const log = childLogger("TrackReadStream");
+
 const PACKET_DURATION_SECONDS = 1;
+
+function bytesToFrames(offset: number) {
+    return offset / (PLAYBACK_CHANNELS * PLAYBACK_SAMPLE_SIZE);
+}
+
+function framesToBytes(frame: number) {
+    return Math.floor(frame * PLAYBACK_CHANNELS * PLAYBACK_SAMPLE_SIZE);
+}
+
+function framesToSeconds(frame: number) {
+    return frame / PLAYBACK_SAMPLE_RATE;
+}
+
+function secondsToFrames(seconds: number) {
+    return seconds * PLAYBACK_SAMPLE_RATE;
+}
 
 interface AudioPacket {
     buffer: Buffer;
@@ -19,81 +35,26 @@ interface AudioPacket {
 }
 
 class PacketReader {
-    static #bytesToFrames(offset: number) {
-        return offset / (PLAYBACK_CHANNELS * PLAYBACK_SAMPLE_SIZE);
-    }
-
-    static #framesToBytes(frame: number) {
-        return Math.floor(frame * PLAYBACK_CHANNELS * PLAYBACK_SAMPLE_SIZE);
-    }
-
-    static #framesToSeconds(frame: number) {
-        return frame / PLAYBACK_SAMPLE_RATE;
-    }
-
     #closed = new EventEmitter();
 
-    #currentlyReadingPromise: Promise<AudioPacket | undefined> | undefined;
-
     #offset = 0;
+    #process: ExecaChildProcess<Buffer> | undefined;
 
-    get currentFrame() {
-        return PacketReader.#bytesToFrames(this.#offset);
+    constructor(private readonly path: string) {
+        this.#openFfmpeg(0);
     }
 
-    constructor(private readonly path: string) {}
+    get currentFrame() {
+        return bytesToFrames(this.#offset);
+    }
 
     // Returns undefined if the stream ends
     async readNextPacket(): Promise<AudioPacket | undefined> {
-        if (this.#currentlyReadingPromise) {
-            return await this.#currentlyReadingPromise;
-        }
+        const data = await this.#read();
+        this.#offset += data.byteLength;
 
-        const promise = this.#readPacket();
-
-        this.#currentlyReadingPromise = promise;
-        const result = await promise;
-        this.#currentlyReadingPromise = undefined;
-        return result;
-    }
-
-    close() {
-        this.#closed.emit();
-    }
-
-    async #readPacket(): Promise<AudioPacket | undefined> {
-        const ffmpeg = await runFfmpeg(
-            "mpeg",
-            ffargs()
-                .add(
-                    "ss",
-                    PacketReader.#framesToSeconds(this.currentFrame).toString()
-                )
-                .add("t", PACKET_DURATION_SECONDS.toString())
-                .add("i", this.path)
-                .add("f", "s32le")
-                .add("ar", PLAYBACK_SAMPLE_RATE.toString())
-                .add("ac", PLAYBACK_CHANNELS.toString())
-                .addRaw("-")
-        );
-
-        const data = ffmpeg.stdout;
-
-        if (data == null) {
-            this.close();
-            return;
-        }
-
-        const startFrame = PacketReader.#bytesToFrames(this.#offset);
-
-        const endByte = this.#offset + data.byteLength;
-
-        const endFrame = PacketReader.#roundFrame(
-            PacketReader.#bytesToFrames(endByte),
-            "ceil"
-        );
-
-        this.#offset = PacketReader.#framesToBytes(endFrame);
+        const startFrame = bytesToFrames(this.#offset - data.byteLength);
+        const endFrame = bytesToFrames(this.#offset);
 
         return {
             buffer: data,
@@ -102,22 +63,111 @@ class PacketReader {
         };
     }
 
+    close() {
+        this.#closed.emit();
+    }
+
     seekApprox(containingFrame: number) {
         // Keep the offset a multiple of `PACKET_DURATION_SECONDS`
 
-        this.#offset = PacketReader.#framesToBytes(
-            PacketReader.#roundFrame(containingFrame, "floor")
+        this.#closeFfmpeg();
+        this.#openFfmpeg(containingFrame);
+    }
+
+    #closeFfmpeg() {
+        const process = this.#getProcess();
+        process.kill();
+        this.#process = undefined;
+    }
+
+    #openFfmpeg(containingFrame: number) {
+        // Only allows seeking to the second
+        const offsetSeconds = Math.floor(framesToSeconds(containingFrame));
+        this.#offset = framesToBytes(secondsToFrames(offsetSeconds));
+
+        this.#process = runFfmpeg(
+            "mpeg",
+            ffargs()
+                .add("ss", offsetSeconds.toString())
+                .add("i", this.path)
+                .add("f", "s32le")
+                .add("ar", PLAYBACK_SAMPLE_RATE.toString())
+                .add("ac", PLAYBACK_CHANNELS.toString())
+                .addRaw("-")
         );
     }
 
-    static #roundFrame(endFrame: number, direction: "floor" | "ceil") {
-        const multiplier = PACKET_DURATION_SECONDS * PLAYBACK_SAMPLE_RATE;
-
-        if (direction === "floor") {
-            return Math.floor(endFrame / multiplier) * multiplier;
-        } else {
-            return Math.ceil(endFrame / multiplier) * multiplier;
+    #getProcess() {
+        if (!this.#process) {
+            throw new Error("Stream is not open");
         }
+
+        return this.#process;
+    }
+
+    #getDataStream() {
+        const process = this.#getProcess();
+        const stdout = process.stdout;
+
+        if (!stdout) {
+            throw new Error("Stream did not open properly");
+        }
+
+        return stdout;
+    }
+
+    async #read(): Promise<Buffer> {
+        const ds = this.#getDataStream();
+        const size = framesToBytes(secondsToFrames(PACKET_DURATION_SECONDS));
+
+        const result = await new Promise<Buffer>((resolve, reject) => {
+            let bytesRead = 0;
+            const chunks: Buffer[] = [];
+
+            function handleReadable() {
+                let chunk;
+
+                while ((chunk = ds.read(size - bytesRead)) !== null) {
+                    chunks.push(chunk);
+                    bytesRead += chunk.byteLength;
+
+                    if (bytesRead >= size) {
+                        ds.removeListener("readable", handleReadable);
+                        ds.removeListener("end", handleEnd);
+                        ds.removeListener("error", handleError);
+
+                        resolve(Buffer.concat(chunks));
+                        break;
+                    }
+                }
+            }
+
+            function handleEnd() {
+                ds.removeListener("readable", handleReadable);
+                ds.removeListener("end", handleEnd);
+                ds.removeListener("error", handleError);
+
+                resolve(Buffer.concat(chunks));
+            }
+
+            function handleError(err: Error) {
+                ds.removeListener("readable", handleReadable);
+                ds.removeListener("end", handleEnd);
+                ds.removeListener("error", handleError);
+
+                reject(err);
+            }
+
+            ds.on("readable", handleReadable);
+            ds.once("end", handleEnd);
+            ds.once("error", handleError);
+        });
+
+        if (result.byteLength < size) {
+            this.close();
+        }
+
+        return result;
     }
 }
 
@@ -130,6 +180,23 @@ export class TrackReadStream {
 
     constructor(path: string) {
         this.#packetReader = new PacketReader(path);
+    }
+
+    async requestPacket(
+        containingFrame: number
+    ): Promise<AudioPacket | undefined> {
+        const existingRequest = this.#requestingPackets.get(containingFrame);
+        if (existingRequest) return await existingRequest;
+
+        const newRequest = this.#requestPacket(containingFrame);
+
+        this.#requestingPackets.set(containingFrame, newRequest);
+
+        const result = await newRequest;
+
+        this.#requestingPackets.delete(containingFrame);
+
+        return result;
     }
 
     async #requestPacket(
@@ -148,7 +215,7 @@ export class TrackReadStream {
             this.#packetReader.seekApprox(containingFrame);
         }
 
-        for (;;) {
+        for (; ;) {
             const packet = await this.#packetReader.readNextPacket();
             if (!packet) break;
 
@@ -159,26 +226,18 @@ export class TrackReadStream {
                 containingFrame < packet.endFrame
             ) {
                 return packet;
+            } else {
+                log.trace(
+                    {
+                        packetStart: packet.startFrame,
+                        packetEnd: packet.endFrame,
+                        searchingFor: containingFrame
+                    },
+                    "Skipping packet"
+                );
             }
         }
 
         return undefined;
-    }
-
-    async requestPacket(
-        containingFrame: number
-    ): Promise<AudioPacket | undefined> {
-        const existingRequest = this.#requestingPackets.get(containingFrame);
-        if (existingRequest) return await existingRequest;
-
-        const newRequest = this.#requestPacket(containingFrame);
-
-        this.#requestingPackets.set(containingFrame, newRequest);
-
-        const result = await newRequest;
-
-        this.#requestingPackets.delete(containingFrame);
-
-        return result;
     }
 }

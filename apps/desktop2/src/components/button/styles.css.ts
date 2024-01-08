@@ -19,8 +19,15 @@ export const containerStyle = recipe({
         textDecoration: "none",
         outline: `2px solid ${lm(colour("grey", 0), colour("grey", 100))}`,
 
-        ":hover": {
-            backgroundColor: lm(colour("grey", 10), colour("grey", 80))
+        ":disabled": {
+            opacity: 0.75,
+            cursor: "not-allowed"
+        },
+
+        selectors: {
+            "&:not(:disabled):hover": {
+                backgroundColor: lm(colour("grey", 10), colour("grey", 80))
+            }
         }
     },
     variants: {

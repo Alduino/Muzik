@@ -25,7 +25,7 @@ export function importTracks(options: ImporterOptions): ImporterResult {
         dialect: new SqliteDialect({
             database: new SQLite(options.dbPath)
         }),
-        log: ["error", "query"]
+        log: ["error"]
     })
 
     setContext({

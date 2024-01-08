@@ -34,7 +34,7 @@ const rpcCtrl = createRpc<WorkerMessageHandlers>(messageHandlers);
 
 export const rpc = rpcCtrl.rpc;
 
-let worker: Worker | undefined;
+let worker: Worker | undefined, killingWorker = false;
 
 export async function initialiseWorker() {
     if (worker) {
@@ -67,6 +67,8 @@ export async function initialiseWorker() {
     log.debug("Audio worker initialised");
 
     worker.once("error", async () => {
+        if (killingWorker) return;
+
         log.warn("Audio worker crashed, attempting to restart");
 
         if (worker) {
@@ -90,5 +92,7 @@ export async function terminateWorker() {
         log.warn({err}, "Failed to prepare audio worker for shutdown");
     }
 
+    killingWorker = true;
     await worker.terminate();
+    killingWorker = false;
 }

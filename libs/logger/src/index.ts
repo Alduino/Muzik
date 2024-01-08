@@ -110,7 +110,8 @@ ${context
 
             const fullMessage = `${formattedTime} [${level}] ${this.name}: ${formattedString}${contextString}`;
 
-            if (process.stdout.isTTY) {
+            // @ts-expect-error Window *is* defined, sometimes
+            if (typeof window === "undefined") {
                 console.log(`\x1b${ansiCode}${fullMessage}\x1b[0m`);
             } else {
                 console.log(fullMessage);

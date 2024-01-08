@@ -10,7 +10,7 @@ export async function createMetadata(
         audioSourceMetadataWithIds.map(metadata => [metadata.id, metadata])
     );
 
-    const {db} = getContext();
+    const {db, progress} = getContext();
 
     await db.transaction().execute(async trx => {
         const tracksUngrouped = await trx.selectFrom("Track")
@@ -28,6 +28,9 @@ export async function createMetadata(
 
             return acc;
         }, new Map<number, number[]>());
+
+
+        progress.start("metadataCreation", tracks.size);
 
         for (const [trackId, audioSourceIds] of tracks) {
             const audioSourcesMetadata = audioSourceIds
@@ -66,6 +69,7 @@ export async function createMetadata(
                     trackId
                 );
 
+                progress.increment();
                 continue;
             }
 
@@ -90,7 +94,10 @@ export async function createMetadata(
                 const albumTrackCount =
                     metadata.audioSource.rawMetadata.common.track.of;
 
-                if (!albumName || !albumArtist) continue;
+                if (!albumName || !albumArtist) {
+                    progress.increment();
+                    continue;
+                }
 
                 const sortableAlbumName = normaliseName(albumName);
                 const sortableAlbumArtist = normaliseName(albumArtist);
@@ -206,6 +213,8 @@ export async function createMetadata(
                 .where("B", "=", trackId)
                 .where("A", "not in", Array.from(usedArtistIds))
                 .execute();
+
+            progress.increment();
         }
     });
 }

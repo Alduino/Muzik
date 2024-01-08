@@ -6,6 +6,12 @@ use image::ImageFormat;
 use image::io::Reader;
 use wasm_bindgen::prelude::wasm_bindgen;
 
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console)]
+    fn log(s: &str);
+}
+
 fn image_format_from_mime(mime_type: &str) -> Option<ImageFormat> {
     match mime_type {
         "image/png" => Some(ImageFormat::Png),
