@@ -19,11 +19,11 @@ export interface Logger {
 }
 
 class LoggerImpl implements Logger {
-    trace = this.createLogFn("trace", 40);
-    debug = this.createLogFn("debug", 30);
-    info = this.createLogFn("info ", 20);
-    warn = this.createLogFn("warn ", 10);
-    fatal = this.createLogFn("fatal", 0);
+    trace = this.createLogFn("trace", 40, "[90m");
+    debug = this.createLogFn("debug", 30, "[34m");
+    info = this.createLogFn("info ", 20, "[32m");
+    warn = this.createLogFn("warn ", 10, "[33m");
+    fatal = this.createLogFn("fatal", 0, "[31m");
 
     constructor(private name: string) {}
 
@@ -84,7 +84,7 @@ ${context
         }
     }
 
-    private createLogFn(level: string, index: number): LogFunction {
+    private createLogFn(level: string, index: number, ansiCode: string): LogFunction {
         if (!this.isLogLevelEnabled(index)) {
             return () => {
                 /* noop */
@@ -108,9 +108,13 @@ ${context
 
             const formattedTime = performance.now().toFixed(3).padStart(7, "0");
 
-            console.log(
-                `${formattedTime} [${level}] ${this.name}: ${formattedString}${contextString}`
-            );
+            const fullMessage = `${formattedTime} [${level}] ${this.name}: ${formattedString}${contextString}`;
+
+            if (process.stdout.isTTY) {
+                console.log(`\x1b${ansiCode}${fullMessage}\x1b[0m`);
+            } else {
+                console.log(fullMessage);
+            }
         };
     }
 

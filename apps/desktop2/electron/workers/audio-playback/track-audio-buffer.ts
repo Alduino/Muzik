@@ -84,6 +84,11 @@ export class TrackAudioBuffer {
         const frameCount =
             buffer.byteLength / PLAYBACK_SAMPLE_SIZE / PLAYBACK_CHANNELS;
 
+        if (frameCount !== Math.round(frameCount)) {
+            log.warn({frameCount}, "Packet size is not an integer number of frames");
+            throw new Error("Packet size is not an integer number of frames");
+        }
+
         const packet: Packet = {
             buffer: buffer,
             startFrame,
@@ -112,7 +117,10 @@ export class TrackAudioBuffer {
 
         log.trace({trackId: this.trackId, frame}, "Requesting packet");
 
-        rpc.requestTrackPacket(this.trackId, frame);
+        rpc.requestTrackPacket(this.trackId, frame).catch(() => {
+            // TODO: display error in UI
+            this.#done = true;
+        });
     }
 
     /**

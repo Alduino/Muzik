@@ -37,7 +37,7 @@ export const readStreamManager = {
         const packet = await readStream.requestPacket(frameIndex);
         if (!packet) return;
 
-        rpc.importTrackPacket(trackId, packet.buffer, packet.startFrame);
+        await rpc.importTrackPacket(trackId, packet.buffer, packet.startFrame);
     }
 };
 

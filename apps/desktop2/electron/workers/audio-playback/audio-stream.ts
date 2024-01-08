@@ -33,9 +33,9 @@ export const audioStream = {
 
         if (trackId === currentTrack?.trackId) {
             currentTrack.importPacket(buff, startFrame);
-        } else {
-            trackBufferRepository.importTrackPacket(trackId, buff, startFrame);
         }
+
+        trackBufferRepository.importTrackPacket(trackId, buff, startFrame);
     },
 
     read(bytes: number): ReadResult {
