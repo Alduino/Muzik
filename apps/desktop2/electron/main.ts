@@ -1,10 +1,11 @@
 import path from "node:path";
 import {app, BrowserWindow, Menu, MenuItem} from "electron";
+import { sql } from "kysely";
 import {log} from "../shared/logger.ts";
 import {terminateWorker as terminateAudioWorker} from "./main/core/worker.ts";
+import {db} from "./main/db.ts";
 import {initialiseMuzik} from "./main/initialise.ts";
 import {attachWindow, detachWindow} from "./main/ipc-setup.ts";
-import {prisma} from "./main/prisma.ts";
 import {tempDir} from "./main/utils/tmp-dir.ts";
 
 // The built directory structure
@@ -107,8 +108,8 @@ app.once("before-quit", async ev => {
         await terminateAudioWorker();
 
         log.debug("Disconnecting from database");
-        await prisma.$executeRawUnsafe("VACUUM");
-        await prisma.$disconnect();
+        await sql`VACUUM`.execute(db);
+        await db.destroy();
     } catch (err) {
         log.warn(err, "Failed to properly clean up");
     } finally {

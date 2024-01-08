@@ -1,4 +1,5 @@
-import {prisma} from "../../prisma.ts";
+import { z } from "zod";
+import {db} from "../../db.ts";
 import {procedure} from "../../trpc.ts";
 
 export interface TrackItem {
@@ -19,52 +20,67 @@ export interface TrackItem {
     } | null;
 }
 
-export const list = procedure.query(async () => {
-    const data = await prisma.track.findMany({
-        orderBy: {
-            sortableName: "asc"
-        },
-        select: {
-            id: true,
-            name: true,
-            sources: {
-                take: 1,
-                select: {
-                    duration: true
-                }
-            },
-            artists: {
-                select: {
-                    id: true,
-                    name: true
-                }
-            },
-            albums: {
-                take: 1,
-                select: {
-                    id: true,
-                    name: true
-                }
-            },
-            artworks: {
-                take: 1,
-                select: {
-                    id: true,
-                    avgColour: true
-                }
-            }
-        }
-    });
+export const list = procedure.output(
+    z.array(
+        z.object({
+            id: z.number(),
+            name: z.string(),
+            duration: z.number(),
+            artists: z.array(
+                z.object({
+                    id: z.number(),
+                    name: z.string()
+                })
+            ),
+            album: z.object({
+                id: z.number(),
+                name: z.string()
+            }).nullable(),
+            artwork: z.object({
+                id: z.number(),
+                avgColour: z.string()
+            }).nullable()
+        })
+    )
+).query(async () => {
+    const tracks = await db.selectFrom("Track")
+        .select(["id", "name"])
+        .orderBy("sortableName", "asc")
+        .execute();
 
-    return data.map<TrackItem>(track => ({
-        id: track.id,
-        name: track.name,
-        duration: track.sources[0].duration,
-        artists: track.artists.map(artist => ({
-            id: artist.id,
-            name: artist.name
-        })),
-        album: track.albums.length > 0 ? track.albums[0] : null,
-        artwork: track.artworks.length > 0 ? track.artworks[0] : null
+    // TODO: N+1
+
+    return await Promise.all(tracks.map(async track => {
+        const {duration} = await db.selectFrom("AudioSource")
+            .select("duration")
+            .where("trackId", "=", track.id)
+            .executeTakeFirstOrThrow();
+
+        const artists = await db.selectFrom("Artist")
+            .innerJoin("_ArtistToTrack", "_ArtistToTrack.A", "Artist.id")
+            .where("_ArtistToTrack.B", "=", track.id)
+            .select(["Artist.id", "Artist.name"])
+            .execute();
+
+        const album = await db.selectFrom("Album")
+            .innerJoin("_AlbumToTrack", "_AlbumToTrack.A", "Album.id")
+            .where("_AlbumToTrack.B", "=", track.id)
+            .select(["Album.id", "Album.name"])
+            .executeTakeFirst() ?? null;
+
+        const artwork = await db.selectFrom("Artwork")
+            .innerJoin("_ArtworkToTrack", "_ArtworkToTrack.A", "Artwork.id")
+            .where("_ArtworkToTrack.B", "=", track.id)
+            .select(["Artwork.id", "Artwork.avgColour"])
+            .executeTakeFirst() ?? null;
+
+        return {
+            id: track.id,
+            name: track.name,
+            duration,
+            artists,
+            album,
+            artwork
+        };
     }));
 });

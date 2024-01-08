@@ -46,10 +46,6 @@ export default defineConfig({
                         viteStaticCopy({
                             targets: [
                                 {
-                                    src: "node_modules/@muzik/db/prisma/schema.prisma",
-                                    dest: ""
-                                },
-                                {
                                     src: "node_modules/@muzik/db/prisma/migrations",
                                     dest: ""
                                 },
@@ -70,7 +66,7 @@ export default defineConfig({
                     ],
                     build: {
                         rollupOptions: {
-                            external: ["sharp", "speaker"]
+                            external: ["sharp", "speaker", "better-sqlite3"]
                         }
                     }
                 }

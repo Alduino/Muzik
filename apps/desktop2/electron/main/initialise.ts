@@ -1,20 +1,15 @@
 import {readdir, readFile, stat} from "fs/promises";
 import {join} from "path";
+import {sql} from "kysely";
 import {log} from "../../shared/logger.ts";
 import {startAudioPlaybackEngine} from "./core/orchestrator.ts";
-import {prisma} from "./prisma.ts";
+import {db, dbRaw} from "./db.ts";
 import {registerCustomProtocols} from "./protocols";
 import {markInitialisationComplete} from "./router/meta/init.ts";
 import {configDb} from "./utils/config.ts";
 import {initialiseFfmpeg} from "./utils/ffmpeg.ts";
 
-const PRISMA_MIGRATIONS_TABLE_CREATE_SQL = `
-    CREATE TABLE "_prisma_migrations"
-    (
-        "migration_name" TEXT NOT NULL,
-        PRIMARY KEY ("migration_name")
-    );
-`;
+const MIGRATIONS_TABLE_NAME: string = "_migrations";
 
 // From https://github.com/prisma/prisma/issues/2868#issuecomment-650283841
 function splitSqlStatements(sql: string) {
@@ -31,24 +26,21 @@ function splitSqlStatements(sql: string) {
 
 async function migrateDatabase() {
     try {
-        const hasMigrationsTable = await prisma.$queryRaw<unknown[]>`SELECT name
-          FROM sqlite_master
-          WHERE type = 'table'
-            AND name = '_prisma_migrations'`;
+        const hasMigrationsTable = await db.introspection.getTables().then(tables => tables.some(table => table.name === MIGRATIONS_TABLE_NAME));
 
-        if (hasMigrationsTable.length === 0) {
-            log.debug("Creating migrations table");
-            await prisma.$executeRawUnsafe(PRISMA_MIGRATIONS_TABLE_CREATE_SQL);
-        } else {
+        if (hasMigrationsTable) {
             log.debug("Migrations table already exists");
+        } else {
+            log.debug("Creating migrations table");
+            await db.schema.createTable("_migrations")
+                .addColumn("migration_name", "text", col => col.notNull().primaryKey())
+                .execute();
         }
 
-        const appliedMigrations = await prisma.$queryRaw<
-            {
-                migration_name: string;
-            }[]
-        >`SELECT migration_name
-          FROM "_prisma_migrations"`;
+        // @ts-expect-error Table does not exist in schema
+        const appliedMigrations = await db.selectFrom(MIGRATIONS_TABLE_NAME)
+            .selectAll()
+            .execute() as {migration_name: string}[];
 
         const appliedMigrationNames = new Set(
             appliedMigrations.map(migration => migration.migration_name)
@@ -83,22 +75,12 @@ async function migrateDatabase() {
 
                 const statements = [
                     ...splitSqlStatements(migrationSource),
-                    `INSERT INTO "_prisma_migrations" VALUES ('${migrationName}');`
+                    `INSERT INTO "${MIGRATIONS_TABLE_NAME}"
+                     VALUES ('${migrationName}');`
                 ];
 
                 for (const statement of statements) {
-                    log.trace({statement}, "Executing statement");
-
-                    try {
-                        await prisma.$executeRawUnsafe(statement);
-                    } catch (err) {
-                        if (
-                            err instanceof Error &&
-                            err.message.includes("Execute returned results")
-                        ) {
-                            await prisma.$queryRawUnsafe(statement);
-                        } else throw err;
-                    }
+                    await sql.raw(statement).execute(db);
                 }
             }
         } else {
@@ -106,8 +88,7 @@ async function migrateDatabase() {
         }
     } catch (err) {
         log.fatal(err, "Failed to migrate database");
-
-        await prisma.$disconnect();
+        await db.destroy();
 
         // TODO: show a dialogue or something
         process.exit(1);

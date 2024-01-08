@@ -1,17 +1,11 @@
-import {prisma} from "../prisma.ts";
+import {db} from "../db.ts";
 
 export async function findBestAudioSource(trackId: number): Promise<number> {
-    const audioSource = await prisma.audioSource.findFirstOrThrow({
-        where: {
-            trackId
-        },
-        orderBy: {
-            bitrate: "desc"
-        },
-        select: {
-            id: true
-        }
-    });
+    const {id} = await db.selectFrom("AudioSource")
+        .where("trackId", "=", trackId)
+        .orderBy("bitrate", "desc")
+        .select("id")
+        .executeTakeFirstOrThrow();
 
-    return audioSource.id;
+    return id;
 }

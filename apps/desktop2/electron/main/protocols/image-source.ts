@@ -1,6 +1,6 @@
 import {createReadStream} from "fs";
 import {protocol} from "electron";
-import {prisma} from "../prisma.ts";
+import {db} from "../db.ts";
 import {getImagePath, getResizedImagePath} from "../utils/image-loading.ts";
 
 export function registerImageSourceProtocol() {
@@ -15,27 +15,17 @@ export function registerImageSourceProtocol() {
                 throw new Error("Invalid id");
             }
 
-            const imageSource = await prisma.imageSource.findUniqueOrThrow({
-                where: {
-                    id: id
-                },
-                select: {
-                    path: true,
-                    format: true,
-                    embeddedIn: {
-                        select: {
-                            id: true
-                        }
-                    }
-                }
-            });
+            const imageSource = await db.selectFrom("ImageSource")
+                .innerJoin("AudioSource", "AudioSource.embeddedImageSourceId", "ImageSource.id")
+                .select(["ImageSource.path", "ImageSource.format", "AudioSource.embeddedImageSourceId as embedded"])
+                .executeTakeFirstOrThrow();
 
             if (!resizeMinDimension) {
                 const stream = createReadStream(
                     await getImagePath(
                         id,
                         imageSource.path,
-                        imageSource.embeddedIn != null
+                        imageSource.embedded != null
                     )
                 );
 
@@ -50,7 +40,7 @@ export function registerImageSourceProtocol() {
                     id,
                     imageSource.path,
                     parseInt(resizeMinDimension),
-                    imageSource.embeddedIn != null
+                    imageSource.embedded != null
                 );
 
                 const stream = createReadStream(resizedImagePath);

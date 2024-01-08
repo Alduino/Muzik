@@ -1,4 +1,3 @@
-import {PrismaPromise} from "@muzik/db";
 import Piscina from "piscina";
 import {log} from "../logger";
 import {PipelinedQueue} from "../utils/PipelinedQueue";
@@ -15,29 +14,12 @@ export async function createArtwork(
 ) {
     const {db} = getContext();
 
-    const imageSourcesById = await db.imageSource
-        .findMany({
-            where: {
-                id: {
-                    in: Array.from(imageSourceIdToAudioSourceId.keys())
-                }
-            },
-            select: {
-                id: true,
-                path: true,
-                embeddedIn: {
-                    select: {
-                        id: true
-                    }
-                }
-            }
-        })
-        .then(
-            res =>
-                new Map(res.map(imageSource => [imageSource.id, imageSource]))
-        );
-
-    const transactionQueries: PrismaPromise<unknown>[] = [];
+    const imageSourcesById = await db.selectFrom("ImageSource")
+        .leftJoin("AudioSource", "AudioSource.embeddedImageSourceId", "ImageSource.id")
+        .where("ImageSource.id", "in", Array.from(imageSourceIdToAudioSourceId.keys()))
+        .select(["ImageSource.id", "ImageSource.path", "AudioSource.id as embeddedInId"])
+        .execute()
+        .then(res => new Map(res.map(imageSource => [imageSource.id, imageSource])));
 
     interface QueueInput {
         path: string;
@@ -94,178 +76,108 @@ export async function createArtwork(
         }
     );
 
-    await Promise.all(
-        Array.from(imageSourceIdToAudioSourceId.keys()).map(
-            async imageSourceId => {
-                const {path: imageSourcePath, embeddedIn} =
-                    imageSourcesById.get(imageSourceId)!;
+    await db.transaction().execute(async trx => {
+        await Promise.all(
+            Array.from(imageSourceIdToAudioSourceId.keys()).map(
+                async imageSourceId => {
+                    const {path: imageSourcePath, embeddedInId} =
+                        imageSourcesById.get(imageSourceId)!;
 
-                const fingerprintResult = await queue
-                    .run({
-                        path: imageSourcePath,
-                        embedded: embeddedIn != null
-                    })
-                    .catch(err =>
-                        err instanceof Error ? err : new Error(err)
-                    );
+                    const fingerprintResult = await queue
+                        .run({
+                            path: imageSourcePath,
+                            embedded: embeddedInId != null
+                        })
+                        .catch(err =>
+                            err instanceof Error ? err : new Error(err)
+                        );
 
-                if (fingerprintResult instanceof Error) {
-                    log.warn(
+                    if (fingerprintResult instanceof Error) {
+                        log.warn(
+                            {
+                                imageSourcePath,
+                                embedded: embeddedInId !== null,
+                                error: fingerprintResult
+                            },
+                            "Failed to calculate fingerprint for image source, skipping"
+                        );
+                        return;
+                    }
+
+                    const {fingerprint, loadDurationMs, calcDurationMs} =
+                        fingerprintResult;
+
+                    log.trace(
                         {
-                            imageSourcePath,
-                            embedded: embeddedIn !== null,
-                            error: fingerprintResult
+                            fingerprint,
+                            loadDurationMs,
+                            calcDurationMs,
+                            imageSourcePath
                         },
-                        "Failed to calculate fingerprint for image source, skipping"
+                        "Calculated fingerprint for image source"
                     );
-                    return;
+
+                    const {id: artworkId} = await trx.insertInto("Artwork")
+                        .values({
+                            updatedAt: new Date().toISOString(),
+                            fingerprint,
+                            // Average colour is added later
+                            avgColour: "#000"
+                        })
+                        .onConflict(oc => {
+                            return oc.doUpdateSet({
+                                // Need to update *something* so we can get the ID
+                                fingerprint,
+                            });
+                        })
+                        .returning("id")
+                        .executeTakeFirstOrThrow();
+
+                    await trx.updateTable("ImageSource")
+                        .where("id", "=", imageSourceId)
+                        .set("artworkId", artworkId)
+                        .execute();
                 }
-
-                const {fingerprint, loadDurationMs, calcDurationMs} =
-                    fingerprintResult;
-
-                log.trace(
-                    {
-                        fingerprint,
-                        loadDurationMs,
-                        calcDurationMs,
-                        imageSourcePath
-                    },
-                    "Calculated fingerprint for image source"
-                );
-
-                transactionQueries.push(
-                    db.imageSource.update({
-                        where: {
-                            id: imageSourceId
-                        },
-                        data: {
-                            artwork: {
-                                connectOrCreate: {
-                                    where: {
-                                        fingerprint
-                                    },
-                                    create: {
-                                        fingerprint,
-                                        // Average colour is added later
-                                        avgColour: "#000"
-                                    }
-                                }
-                            }
-                        }
-                    })
-                );
-            }
-        )
-    );
-
-    log.trace(
-        {queryCount: transactionQueries.length},
-        "Committing transaction to create and link artwork to image sources"
-    );
-
-    await db.$transaction(transactionQueries);
-    transactionQueries.length = 0;
-
-    // Track ID -> Artwork IDs
-    const trackUsedArtworkIds = new Map<number, number[]>();
-
-    for (const [imageSourceId, audioSourceId] of imageSourceIdToAudioSourceId) {
-        const artwork = await db.imageSource
-            .findUniqueOrThrow({
-                where: {
-                    id: imageSourceId
-                }
-            })
-            .artwork({
-                select: {
-                    id: true
-                }
-            });
-
-        if (!artwork) continue;
-
-        const track = await db.audioSource
-            .findUniqueOrThrow({
-                where: {
-                    id: audioSourceId
-                }
-            })
-            .track({
-                select: {
-                    id: true
-                }
-            });
-
-        if (!track) continue;
-
-        trackUsedArtworkIds.set(track.id, [
-            ...(trackUsedArtworkIds.get(track.id) ?? []),
-            artwork.id
-        ]);
-
-        transactionQueries.push(
-            db.track.update({
-                where: {
-                    id: track.id
-                },
-                data: {
-                    artworks: {
-                        connect: {
-                            id: artwork.id
-                        }
-                    }
-                }
-            })
+            )
         );
-    }
 
-    for (const [trackId, usedArtworkIds] of trackUsedArtworkIds) {
-        const artworkToDisconnect = await db.artwork.findMany({
-            where: {
-                tracks: {
-                    some: {
-                        id: trackId
-                    }
-                },
-                id: {
-                    notIn: usedArtworkIds
-                }
-            },
-            select: {
-                id: true
-            }
-        });
+        // Track ID -> Artwork IDs
+        const trackUsedArtworkIds = new Map<number, number[]>();
 
-        if (artworkToDisconnect.length > 0) {
-            log.trace(
-                {disconnectCount: artworkToDisconnect.length, trackId},
-                "Disconnecting artwork that was removed from track"
-            );
+        for (const [imageSourceId, audioSourceId] of imageSourceIdToAudioSourceId) {
+            const artwork = await trx.selectFrom("Artwork")
+                .innerJoin("ImageSource", "ImageSource.artworkId", "Artwork.id")
+                .where("ImageSource.id", "=", imageSourceId)
+                .select("Artwork.id")
+                .executeTakeFirst();
+            if (!artwork) continue;
 
-            for (const artwork of artworkToDisconnect) {
-                transactionQueries.push(
-                    db.track.update({
-                        where: {
-                            id: trackId
-                        },
-                        data: {
-                            artworks: {
-                                disconnect: {
-                                    id: artwork.id
-                                }
-                            }
-                        }
-                    })
-                );
-            }
+            const track = await trx.selectFrom("Track")
+                .innerJoin("AudioSource", "AudioSource.trackId", "Track.id")
+                .where("AudioSource.id", "=", audioSourceId)
+                .select("Track.id")
+                .executeTakeFirst();
+            if (!track) continue;
+
+            trackUsedArtworkIds.set(track.id, [
+                ...(trackUsedArtworkIds.get(track.id) ?? []),
+                artwork.id
+            ]);
+
+            await trx.insertInto("_ArtworkToTrack")
+                .values({
+                    A: artwork.id,
+                    B: track.id
+                })
+                .onConflict(oc => oc.doNothing())
+                .execute();
         }
-    }
 
-    log.trace(
-        {queryCount: transactionQueries.length},
-        "Committing transaction to update artwork connections"
-    );
-
-    await db.$transaction(transactionQueries);
+        for (const [trackId, usedArtworkIds] of trackUsedArtworkIds) {
+            await trx.deleteFrom("_ArtworkToTrack")
+                .where("A", "=", trackId)
+                .where("B", "not in", usedArtworkIds)
+                .execute();
+        }
+    });
 }

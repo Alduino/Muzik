@@ -1,11 +1,11 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-kysely"
   output   = "../dist"
 }
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  url      = "unused"
 }
 
 model Artwork {

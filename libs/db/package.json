@@ -2,15 +2,14 @@
     "name": "@muzik/db",
     "version": "0.0.0",
     "private": true,
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
+    "main": "./noop.js",
+    "types": "./dist/types.ts",
     "scripts": {
         "build": "prisma generate"
     },
     "devDependencies": {
-        "prisma": "^5.3.1"
-    },
-    "dependencies": {
-        "@prisma/client": "^5.3.1"
+        "kysely": "^0.26.3",
+        "prisma": "^5.5.2",
+        "prisma-kysely": "^1.7.1"
     }
 }

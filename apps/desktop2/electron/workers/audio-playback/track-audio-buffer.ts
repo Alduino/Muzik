@@ -110,7 +110,7 @@ export class TrackAudioBuffer {
     #requestPacket(frame: number) {
         if (this.frameCount && frame >= this.frameCount) return;
 
-        log.debug({trackId: this.trackId, frame}, "Requesting packet");
+        log.trace({trackId: this.trackId, frame}, "Requesting packet");
 
         rpc.requestTrackPacket(this.trackId, frame);
     }

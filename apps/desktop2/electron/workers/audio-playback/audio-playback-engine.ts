@@ -30,6 +30,7 @@ class SpeakerDataReader extends Readable {
 }
 
 let speaker: Speaker | undefined = undefined;
+let reader: SpeakerDataReader | undefined = undefined;
 
 export function createSpeaker() {
     cleanupSpeaker();
@@ -43,7 +44,7 @@ export function createSpeaker() {
             bitDepth: PLAYBACK_SAMPLE_SIZE * 8
         });
 
-        const reader = new SpeakerDataReader();
+        reader = new SpeakerDataReader();
 
         log.trace("Speaker has been created, beginning playback");
 
@@ -56,11 +57,18 @@ export function createSpeaker() {
     }
 }
 
-export function cleanupSpeaker() {
-    if (!speaker) return;
+export async function cleanupSpeaker() {
+    if (reader) {
+        log.debug("Closing speaker reader");
 
-    log.debug("Closing speaker");
+        reader.destroy();
+        reader = undefined;
+    }
 
-    speaker.end();
-    speaker = undefined;
+    if (speaker) {
+        log.debug("Closing speaker");
+
+        speaker.close(true);
+        speaker = undefined;
+    }
 }

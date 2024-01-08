@@ -1,4 +1,3 @@
-import {PrismaPromise} from "@muzik/db";
 import {log} from "../logger";
 import {getContext} from "../utils/context";
 import {normaliseName} from "../utils/normaliseName";
@@ -13,362 +12,202 @@ export async function createMetadata(
 
     const {db} = getContext();
 
-    const transactionQueries: PrismaPromise<unknown>[] = [];
-    const thisTransactionNewAlbums = new Set<string>();
-    const thisTransactionNewArtists = new Set<string>();
+    await db.transaction().execute(async trx => {
+        const tracksUngrouped = await trx.selectFrom("Track")
+            .innerJoin("AudioSource", "AudioSource.trackId", "Track.id")
+            .where("AudioSource.id", "in", audioSourceMetadataWithIds.map(metadata => metadata.id))
+            .select(["Track.id as trackId", "AudioSource.id as audioSourceId"])
+            .execute();
 
-    const tracks = await db.track.findMany({
-        where: {
-            sources: {
-                some: {
-                    id: {
-                        in: audioSourceMetadataWithIds.map(
-                            metadata => metadata.id
-                        )
-                    }
-                }
+        const tracks = tracksUngrouped.reduce((acc, track) => {
+            if (!acc.has(track.trackId)) {
+                acc.set(track.trackId, []);
             }
-        },
-        select: {
-            id: true,
-            sources: {
-                select: {
-                    id: true
-                }
-            }
-        }
-    });
 
-    for (const track of tracks) {
-        const audioSourcesMetadata = track.sources
-            .map(source => audioSourceMetadataById.get(source.id))
-            .filter(Boolean) as AudioSourceMetadataWithId[];
+            acc.get(track.trackId)!.push(track.audioSourceId);
 
-        const releaseYear = findRawMetadata(
-            audioSourcesMetadata,
-            metadata => metadata.common.year
-        );
+            return acc;
+        }, new Map<number, number[]>());
 
-        transactionQueries.push(
-            db.track.update({
-                where: {
-                    id: track.id
-                },
-                data: {
-                    releaseYear: releaseYear ?? null
-                }
-            })
-        );
+        for (const [trackId, audioSourceIds] of tracks) {
+            const audioSourcesMetadata = audioSourceIds
+                .map(source => audioSourceMetadataById.get(source))
+                .filter(Boolean) as AudioSourceMetadataWithId[];
 
-        const trackNumber = findRawMetadata(
-            audioSourcesMetadata,
-            metadata => metadata.common.track.no
-        );
-
-        transactionQueries.push(
-            db.track.update({
-                where: {
-                    id: track.id
-                },
-                data: {
-                    trackNumber: trackNumber ?? null
-                }
-            })
-        );
-
-        const name = findRawMetadata(
-            audioSourcesMetadata,
-            metadata => metadata.common.title
-        );
-
-        if (!name) {
-            log.warn(
-                "Track %s has no name (which is a required field), cannot add further metadata",
-                track.id
+            const releaseYear = findRawMetadata(
+                audioSourcesMetadata,
+                metadata => metadata.common.year
             );
 
-            continue;
-        }
+            await trx.updateTable("Track")
+                .where("id", "=", trackId)
+                .set("releaseYear", releaseYear ?? null)
+                .execute();
 
-        const sortableName = normaliseName(name);
+            const trackNumber = findRawMetadata(
+                audioSourcesMetadata,
+                metadata => metadata.common.track.no
+            );
 
-        transactionQueries.push(
-            db.track.update({
-                where: {
-                    id: track.id
-                },
-                data: {
-                    name,
-                    sortableName
-                }
-            })
-        );
+            await trx.updateTable("Track")
+                .where("id", "=", trackId)
+                .set("trackNumber", trackNumber ?? null)
+                .execute();
 
-        const usedAlbumIds = new Set<number>();
+            const name = findRawMetadata(
+                audioSourcesMetadata,
+                metadata => metadata.common.title
+            );
 
-        for (const metadata of audioSourcesMetadata) {
-            const albumName = metadata.audioSource.rawMetadata.common.album;
-
-            const albumArtist = (
-                metadata.audioSource.rawMetadata.common.albumartist ??
-                metadata.audioSource.rawMetadata.common.artist
-            )?.split(/[,;] /)[0];
-
-            const albumTrackCount =
-                metadata.audioSource.rawMetadata.common.track.of;
-
-            if (!albumName || !albumArtist) continue;
-
-            const sortableAlbumName = normaliseName(albumName);
-            const sortableAlbumArtist = normaliseName(albumArtist);
-
-            const albumKey = JSON.stringify([
-                sortableAlbumName,
-                sortableAlbumArtist
-            ]);
-
-            if (thisTransactionNewAlbums.has(albumKey)) {
-                // Been added in this transaction, need to commit to get the ID
-
-                log.trace(
-                    "Committing transaction (%s queries) to use created album",
-                    transactionQueries.length
+            if (!name) {
+                log.warn(
+                    {audioSourceIds},
+                    "Track %s has no name (which is a required field), cannot add further metadata",
+                    trackId
                 );
 
-                await db.$transaction(transactionQueries);
-
-                transactionQueries.length = 0;
-                thisTransactionNewAlbums.clear();
-                thisTransactionNewArtists.clear();
+                continue;
             }
 
-            const existingAlbum = await db.album.findUnique({
-                where: {
-                    sortableName_sortableAlbumArtist: {
-                        sortableName: sortableAlbumName,
+            const sortableName = normaliseName(name);
+
+            await trx.updateTable("Track")
+                .where("id", "=", trackId)
+                .set("name", name)
+                .set("sortableName", sortableName)
+                .execute();
+
+            const usedAlbumIds = new Set<number>();
+
+            for (const metadata of audioSourcesMetadata) {
+                const albumName = metadata.audioSource.rawMetadata.common.album;
+
+                const albumArtist = (
+                    metadata.audioSource.rawMetadata.common.albumartist ??
+                    metadata.audioSource.rawMetadata.common.artist
+                )?.split(/[,;] /)[0];
+
+                const albumTrackCount =
+                    metadata.audioSource.rawMetadata.common.track.of;
+
+                if (!albumName || !albumArtist) continue;
+
+                const sortableAlbumName = normaliseName(albumName);
+                const sortableAlbumArtist = normaliseName(albumArtist);
+
+                const existingAlbum = await trx.selectFrom("Album")
+                    .where("sortableName", "=", sortableAlbumName)
+                    .where("sortableAlbumArtist", "=", sortableAlbumArtist)
+                    .select("id")
+                    .executeTakeFirst();
+
+                if (existingAlbum) {
+                    usedAlbumIds.add(existingAlbum.id);
+
+                    await trx.updateTable("Album")
+                        .where("id", "=", existingAlbum.id)
+                        .set("trackCount", albumTrackCount ?? null)
+                        .execute();
+
+                    await trx.insertInto("_AlbumToTrack")
+                        .values({
+                            A: existingAlbum.id,
+                            B: trackId
+                        })
+                        .onConflict(oc => oc.doNothing())
+                        .execute();
+                } else {
+                    log.trace(
+                        "Creating new album, %s by %s",
+                        sortableAlbumName,
                         sortableAlbumArtist
-                    }
-                },
-                select: {
-                    id: true
-                }
-            });
+                    );
 
-            if (existingAlbum) {
-                usedAlbumIds.add(existingAlbum.id);
-
-                transactionQueries.push(
-                    db.track.update({
-                        where: {
-                            id: track.id
-                        },
-                        data: {
-                            albums: {
-                                connect: {
-                                    id: existingAlbum.id
-                                },
-                                update: albumTrackCount
-                                    ? {
-                                          where: {
-                                              id: existingAlbum.id
-                                          },
-                                          data: {
-                                              trackCount: albumTrackCount
-                                          }
-                                      }
-                                    : undefined
-                            }
-                        }
-                    })
-                );
-            } else {
-                log.trace(
-                    "Creating new album, %s by %s",
-                    sortableAlbumName,
-                    sortableAlbumArtist
-                );
-
-                transactionQueries.push(
-                    db.album.create({
-                        data: {
+                    const {id: albumId} = await trx.insertInto("Album")
+                        .values({
+                            updatedAt: new Date().toISOString(),
                             name: albumName,
                             sortableName: sortableAlbumName,
                             albumArtist,
                             sortableAlbumArtist,
-                            trackCount: albumTrackCount ?? null,
-                            tracks: {
-                                connect: {
-                                    id: track.id
-                                }
-                            }
-                        }
-                    })
-                );
+                            trackCount: albumTrackCount ?? null
+                        })
+                        .returning("id")
+                        .executeTakeFirstOrThrow();
 
-                thisTransactionNewAlbums.add(albumKey);
-            }
-        }
+                    await trx.insertInto("_AlbumToTrack")
+                        .values({
+                            A: albumId,
+                            B: trackId
+                        })
+                        .execute();
 
-        const albumsToDisconnect = await db.album.findMany({
-            where: {
-                tracks: {
-                    some: {
-                        id: track.id
-                    }
-                },
-                id: {
-                    notIn: Array.from(usedAlbumIds)
+                    usedAlbumIds.add(albumId);
                 }
-            },
-            select: {
-                id: true
-            }
-        });
-
-        if (albumsToDisconnect.length > 0) {
-            log.trace(
-                "Disconnecting %s albums that were removed from track %s",
-                albumsToDisconnect.length,
-                track.id
-            );
-
-            for (const album of albumsToDisconnect) {
-                transactionQueries.push(
-                    db.track.update({
-                        where: {
-                            id: track.id
-                        },
-                        data: {
-                            albums: {
-                                disconnect: {
-                                    id: album.id
-                                }
-                            }
-                        }
-                    })
-                );
-            }
-        }
-
-        const artistNames = (
-            audioSourcesMetadata
-                .flatMap(
-                    metadata => metadata.audioSource.rawMetadata.common.artists
-                )
-                .filter(Boolean) as string[]
-        ).flatMap(artist => artist.split(/[,;] /));
-
-        const usedArtistIds = new Set<number>();
-
-        for (const artistName of artistNames as string[]) {
-            const sortableArtistName = normaliseName(artistName);
-
-            if (thisTransactionNewArtists.has(sortableArtistName)) {
-                // Been added in this transaction, need to commit to get the ID
-
-                log.trace(
-                    "Committing transaction (%s queries) to use created artist",
-                    transactionQueries.length
-                );
-
-                await db.$transaction(transactionQueries);
-
-                transactionQueries.length = 0;
-                thisTransactionNewAlbums.clear();
-                thisTransactionNewArtists.clear();
             }
 
-            const existingArtist = await db.artist.findUnique({
-                where: {
-                    sortableName: sortableArtistName
-                }
-            });
+            await trx.deleteFrom("_AlbumToTrack")
+                .where("B", "=", trackId)
+                .where("A", "not in", Array.from(usedAlbumIds))
+                .execute();
 
-            if (existingArtist) {
-                usedArtistIds.add(existingArtist.id);
+            const artistNames = (
+                audioSourcesMetadata
+                    .flatMap(
+                        metadata => metadata.audioSource.rawMetadata.common.artists
+                    )
+                    .filter(Boolean) as string[]
+            ).flatMap(artist => artist.split(/[,;] /));
 
-                transactionQueries.push(
-                    db.track.update({
-                        where: {
-                            id: track.id
-                        },
-                        data: {
-                            artists: {
-                                connect: {
-                                    id: existingArtist.id
-                                }
-                            }
-                        }
-                    })
-                );
-            } else {
-                log.trace("Creating new artist, %s", sortableArtistName);
+            const usedArtistIds = new Set<number>();
 
-                transactionQueries.push(
-                    db.artist.create({
-                        data: {
+            for (const artistName of artistNames as string[]) {
+                const sortableArtistName = normaliseName(artistName);
+
+                const existingArtist = await trx.selectFrom("Artist")
+                    .where("sortableName", "=", sortableArtistName)
+                    .select("id")
+                    .executeTakeFirst();
+
+                if (existingArtist) {
+                    usedArtistIds.add(existingArtist.id);
+
+                    await trx.insertInto("_ArtistToTrack")
+                        .values({
+                            A: existingArtist.id,
+                            B: trackId
+                        })
+                        .onConflict(oc => oc.doNothing())
+                        .execute();
+                } else {
+                    log.trace("Creating new artist, %s", sortableArtistName);
+
+                    const {id: artistId} = await trx.insertInto("Artist")
+                        .values({
+                            updatedAt: new Date().toISOString(),
                             name: artistName,
-                            sortableName: sortableArtistName,
-                            tracks: {
-                                connect: {
-                                    id: track.id
-                                }
-                            }
-                        }
-                    })
-                );
+                            sortableName: sortableArtistName
+                        })
+                        .returning("id")
+                        .executeTakeFirstOrThrow();
 
-                thisTransactionNewArtists.add(sortableArtistName);
-            }
-        }
+                    await trx.insertInto("_ArtistToTrack")
+                        .values({
+                            A: artistId,
+                            B: trackId
+                        })
+                        .execute();
 
-        const artistsToDisconnect = await db.artist.findMany({
-            where: {
-                tracks: {
-                    some: {
-                        id: track.id
-                    }
-                },
-                id: {
-                    notIn: Array.from(usedArtistIds)
+                    usedArtistIds.add(artistId);
                 }
             }
-        });
 
-        if (artistsToDisconnect.length > 0) {
-            log.trace(
-                "Disconnecting %s artists that were removed from track %s",
-                artistsToDisconnect.length,
-                track.id
-            );
-
-            for (const artist of artistsToDisconnect) {
-                transactionQueries.push(
-                    db.track.update({
-                        where: {
-                            id: track.id
-                        },
-                        data: {
-                            artists: {
-                                disconnect: {
-                                    id: artist.id
-                                }
-                            }
-                        }
-                    })
-                );
-            }
+            await trx.deleteFrom("_ArtistToTrack")
+                .where("B", "=", trackId)
+                .where("A", "not in", Array.from(usedArtistIds))
+                .execute();
         }
-    }
-
-    if (transactionQueries.length > 0) {
-        log.trace(
-            "Committing transaction (%s queries) to finish",
-            transactionQueries.length
-        );
-
-        await db.$transaction(transactionQueries);
-    }
+    });
 }
 
 function findRawMetadata<T>(

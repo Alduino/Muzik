@@ -1,5 +1,5 @@
 import {log} from "../../../shared/logger.ts";
-import {prisma} from "../prisma.ts";
+import {db} from "../db.ts";
 import {findBestAudioSource} from "../utils/findBestAudioSource.ts";
 import {trackQueue} from "./TrackQueue.ts";
 import {TrackReadStream} from "./TrackReadStream.ts";
@@ -12,7 +12,6 @@ async function readStreamHandler(
     oldTrackId: number | null
 ) {
     if (oldTrackId) {
-        trackReadStreams.get(oldTrackId)?.close();
         trackReadStreams.delete(oldTrackId);
     }
 
@@ -21,14 +20,10 @@ async function readStreamHandler(
 
         const audioSourceId = await findBestAudioSource(newTrackId);
 
-        const {path} = await prisma.audioSource.findUniqueOrThrow({
-            where: {
-                id: audioSourceId
-            },
-            select: {
-                path: true
-            }
-        });
+        const {path} = await db.selectFrom("AudioSource")
+            .where("id", "=", audioSourceId)
+            .select("path")
+            .executeTakeFirstOrThrow();
 
         trackReadStreams.set(newTrackId, new TrackReadStream(path));
     }

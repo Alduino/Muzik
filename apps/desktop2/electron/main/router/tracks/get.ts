@@ -1,5 +1,5 @@
 import {z} from "zod";
-import {prisma} from "../../prisma.ts";
+import {db} from "../../db.ts";
 import {procedure} from "../../trpc.ts";
 
 export const getTrackInfo = procedure
@@ -8,37 +8,45 @@ export const getTrackInfo = procedure
             trackId: z.number().int().positive()
         })
     )
+    .output(
+        z.object({
+            name: z.string(),
+            artists: z.array(
+                z.object({
+                    id: z.number().int().positive(),
+                    name: z.string()
+                })
+            ),
+            artwork: z.object({
+                id: z.number().int().positive(),
+                avgColour: z.string()
+            }).nullable()
+        })
+    )
     .query(async ({input}) => {
-        const data = await prisma.track.findUniqueOrThrow({
-            where: {
-                id: input.trackId
-            },
-            select: {
-                name: true,
-                artists: {
-                    select: {
-                        id: true,
-                        name: true
-                    }
-                },
-                artworks: {
-                    take: 1,
-                    select: {
-                        id: true,
-                        avgColour: true
-                    }
-                }
-            }
-        });
+        const {name} = await db.selectFrom("Track")
+            .where("id", "=", input.trackId)
+            .select("name")
+            .executeTakeFirstOrThrow();
 
-        const artwork = data.artworks.at(0);
+        const artists = await db.selectFrom("Artist")
+            .innerJoin("_ArtistToTrack", "Artist.id", "_ArtistToTrack.A")
+            .where("_ArtistToTrack.B", "=", input.trackId)
+            .select(["Artist.id", "Artist.name"])
+            .execute();
+
+        const artwork = await db.selectFrom("Artwork")
+            .innerJoin("_ArtworkToTrack", "Artwork.id", "_ArtworkToTrack.A")
+            .where("_ArtworkToTrack.B", "=", input.trackId)
+            .select(["Artwork.id", "Artwork.avgColour"])
+            .executeTakeFirst();
 
         return {
-            name: data.name,
-            artists: data.artists,
-            artwork: artwork && {
+            name: name,
+            artists: artists,
+            artwork: artwork ? {
                 id: artwork.id,
                 avgColour: artwork.avgColour
-            }
+            } : null
         };
     });

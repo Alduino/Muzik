@@ -1,5 +1,3 @@
-import {ExecaChildProcess} from "execa";
-import {log} from "../../../shared/logger.ts";
 import {
     PLAYBACK_CHANNELS,
     PLAYBACK_SAMPLE_RATE,
@@ -7,6 +5,8 @@ import {
 } from "../constants.ts";
 import {EventEmitter} from "../utils/EventEmitter.ts";
 import {ffargs, runFfmpeg} from "../utils/ffmpeg.ts";
+
+const PACKET_DURATION_SECONDS = 1;
 
 interface AudioPacket {
     buffer: Buffer;
@@ -24,43 +24,24 @@ class PacketReader {
     }
 
     static #framesToBytes(frame: number) {
-        return frame * (PLAYBACK_CHANNELS * PLAYBACK_SAMPLE_SIZE);
+        return Math.floor(frame * PLAYBACK_CHANNELS * PLAYBACK_SAMPLE_SIZE);
     }
 
-    // rounds down to the nearest frame
-    static #getRoundByteCount(byteSize: number) {
-        return this.#framesToBytes(Math.floor(this.#bytesToFrames(byteSize)));
+    static #framesToSeconds(frame: number) {
+        return frame / PLAYBACK_SAMPLE_RATE;
     }
 
     #closed = new EventEmitter();
 
     #currentlyReadingPromise: Promise<AudioPacket | undefined> | undefined;
 
-    #ffmpeg: ExecaChildProcess | undefined;
     #offset = 0;
-
-    #previousPacketExtra: Buffer | null = null;
 
     get currentFrame() {
         return PacketReader.#bytesToFrames(this.#offset);
     }
 
-    constructor(path: string) {
-        this.#ffmpeg = runFfmpeg(
-            "mpeg",
-            ffargs()
-                .add("i", path)
-                .add("f", "s32le")
-                .add("ar", PLAYBACK_SAMPLE_RATE.toString())
-                .add("ac", PLAYBACK_CHANNELS.toString())
-                .addRaw("-"),
-            {pipe: true}
-        );
-
-        this.#ffmpeg.stdout!.on("close", () => {
-            this.close();
-        });
-    }
+    constructor(private readonly path: string) {}
 
     // Returns undefined if the stream ends
     async readNextPacket(): Promise<AudioPacket | undefined> {
@@ -68,39 +49,7 @@ class PacketReader {
             return await this.#currentlyReadingPromise;
         }
 
-        if (!this.#ffmpeg) return undefined;
-
-        if (this.#ffmpeg.stdout!.readableLength > 0) {
-            return this.#readPacket();
-        }
-
-        const promise = new Promise<AudioPacket | undefined>(
-            (resolve, reject) => {
-                const handleError = (error: Error) => {
-                    this.#ffmpeg?.stdout!.off("readable", handleReadable);
-                    cancelClosed();
-                    reject(error);
-                };
-
-                const handleReadable = () => {
-                    this.#ffmpeg?.stdout!.off("error", handleError);
-                    cancelClosed();
-                    resolve(this.#readPacket());
-                };
-
-                const handleClosed = () => {
-                    this.#ffmpeg?.stdout!.off("error", handleError);
-                    this.#ffmpeg?.stdout!.off("readable", handleReadable);
-                    cancelClosed();
-                    resolve(undefined);
-                };
-
-                this.#ffmpeg!.stdout!.once("error", handleError);
-                this.#ffmpeg!.stdout!.once("readable", handleReadable);
-
-                const cancelClosed = this.#closed.listenOnce(handleClosed);
-            }
-        );
+        const promise = this.#readPacket();
 
         this.#currentlyReadingPromise = promise;
         const result = await promise;
@@ -109,48 +58,66 @@ class PacketReader {
     }
 
     close() {
-        if (!this.#ffmpeg) return;
-
-        this.#ffmpeg.kill();
         this.#closed.emit();
-        this.#ffmpeg = undefined;
     }
 
-    closed() {
-        return !this.#ffmpeg;
-    }
+    async #readPacket(): Promise<AudioPacket | undefined> {
+        const ffmpeg = await runFfmpeg(
+            "mpeg",
+            ffargs()
+                .add(
+                    "ss",
+                    PacketReader.#framesToSeconds(this.currentFrame).toString()
+                )
+                .add("t", PACKET_DURATION_SECONDS.toString())
+                .add("i", this.path)
+                .add("f", "s32le")
+                .add("ar", PLAYBACK_SAMPLE_RATE.toString())
+                .add("ac", PLAYBACK_CHANNELS.toString())
+                .addRaw("-")
+        );
 
-    #readPacket(): AudioPacket | undefined {
-        const data = this.#ffmpeg?.stdout!.read();
+        const data = ffmpeg.stdout;
 
         if (data == null) {
             this.close();
             return;
         }
 
-        const fullData = this.#previousPacketExtra
-            ? Buffer.concat([this.#previousPacketExtra, data])
-            : data;
-
         const startFrame = PacketReader.#bytesToFrames(this.#offset);
 
-        const roundLength = PacketReader.#getRoundByteCount(
-            fullData.byteLength
+        const endByte = this.#offset + data.byteLength;
+
+        const endFrame = PacketReader.#roundFrame(
+            PacketReader.#bytesToFrames(endByte),
+            "ceil"
         );
 
-        const roundedData = fullData.subarray(0, roundLength);
-        this.#previousPacketExtra = fullData.subarray(roundLength);
-
-        const endByte = this.#offset + roundLength;
-        const endFrame = PacketReader.#bytesToFrames(endByte);
-
-        this.#offset = endByte;
+        this.#offset = PacketReader.#framesToBytes(endFrame);
 
         return {
-            buffer: roundedData,
+            buffer: data,
             startFrame,
             endFrame
         };
+    }
+
+    seekApprox(containingFrame: number) {
+        // Keep the offset a multiple of `PACKET_DURATION_SECONDS`
+
+        this.#offset = PacketReader.#framesToBytes(
+            PacketReader.#roundFrame(containingFrame, "floor")
+        );
+    }
+
+    static #roundFrame(endFrame: number, direction: "floor" | "ceil") {
+        const multiplier = PACKET_DURATION_SECONDS * PLAYBACK_SAMPLE_RATE;
+
+        if (direction === "floor") {
+            return Math.floor(endFrame / multiplier) * multiplier;
+        } else {
+            return Math.ceil(endFrame / multiplier) * multiplier;
+        }
     }
 }
 
@@ -161,12 +128,8 @@ export class TrackReadStream {
 
     #lastPacket: AudioPacket | null = null;
 
-    constructor(private readonly path: string) {
+    constructor(path: string) {
         this.#packetReader = new PacketReader(path);
-    }
-
-    close() {
-        this.#packetReader.close();
     }
 
     async #requestPacket(
@@ -181,20 +144,8 @@ export class TrackReadStream {
             }
         }
 
-        if (this.#packetReader.closed()) return undefined;
-
         if (containingFrame < this.#packetReader.currentFrame) {
-            log.warn(
-                {
-                    requestedFrame: containingFrame,
-                    currentFrame: this.#packetReader.currentFrame
-                },
-                "Restarting FFMPEG stream due to request for packet before current frame"
-            );
-
-            // Reader can only go forwards, need to restart to emulate going backwards.
-            this.#packetReader.close();
-            this.#packetReader = new PacketReader(this.path);
+            this.#packetReader.seekApprox(containingFrame);
         }
 
         for (;;) {

@@ -14,6 +14,8 @@ export interface Logger {
     info: LogFunction;
     warn: LogFunction;
     fatal: LogFunction;
+
+    child(name: string): Logger;
 }
 
 class LoggerImpl implements Logger {
@@ -24,6 +26,10 @@ class LoggerImpl implements Logger {
     fatal = this.createLogFn("fatal", 0);
 
     constructor(private name: string) {}
+
+    child(name: string) {
+        return new LoggerImpl(`${this.name}:${name}`);
+    }
 
     private static formatInnerContext(context: unknown): string {
         if (typeof context === "undefined") return "undefined";

@@ -1,4 +1,6 @@
-import * as Prisma from "@muzik/db";
+import {DB} from "@muzik/db";
+import SQLite from "better-sqlite3";
+import {Kysely, sql, SqliteDialect} from "kysely";
 import {discoverSources} from "./core/discover";
 import {log} from "./logger";
 import {Progress} from "./utils/Progress";
@@ -19,13 +21,16 @@ interface ImporterResult {
 export function importTracks(options: ImporterOptions): ImporterResult {
     const progress = new Progress();
 
-    const database = new Prisma.PrismaClient({
-        datasourceUrl: `file:${options.dbPath}?connection_limit=1`
-    });
+    const db = new Kysely<DB>({
+        dialect: new SqliteDialect({
+            database: new SQLite(options.dbPath)
+        }),
+        log: ["error", "query"]
+    })
 
     setContext({
         progress,
-        db: database
+        db
     });
 
     const promise = (async (): Promise<true | Error> => {
@@ -33,14 +38,14 @@ export function importTracks(options: ImporterOptions): ImporterResult {
             await discoverSources(options.directories);
 
             log.info("Vacuuming database");
-            console.log("Vacuuming database");
-            await database.$executeRawUnsafe("VACUUM");
+            await sql`VACUUM`.execute(db);
+
             return true;
         } catch (err) {
             log.fatal(err, "Failed to import tracks");
             return err as Error;
         } finally {
-            await database.$disconnect();
+            await db.destroy();
         }
     })();
 

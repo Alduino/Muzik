@@ -1,5 +1,4 @@
 import {readFile} from "fs/promises";
-import {PrismaPromise} from "@muzik/db";
 import {IAudioMetadata, parseBuffer as readMetadata} from "music-metadata";
 import Piscina from "piscina";
 import {log} from "../logger";
@@ -319,76 +318,92 @@ export async function insertAudioSourceMetadata(
         audioSourceMetadata.length
     );
 
-    await db.$transaction(
-        audioSourceMetadata.map(metadata =>
-            db.audioSource.upsert({
-                where: {
-                    path: metadata.path
-                },
-                create: {
+    await db.transaction().execute(async trx => {
+        for (const metadata of audioSourceMetadata) {
+            let embeddedImageSourceId: number | null = null;
+            let lyricsId: number | null = null;
+
+            if (metadata.embeddedImageSource) {
+                const result = await trx.insertInto("ImageSource")
+                    .values({
+                        updatedAt: new Date().toISOString(),
+                        path: metadata.path,
+                        ...metadata.embeddedImageSource
+                    })
+                    .onConflict(oc => {
+                        return oc.doUpdateSet({
+                            // noop so `returning` works
+                            path: metadata.path
+                        });
+                    })
+                    .returning(["id"])
+                    .executeTakeFirstOrThrow();
+
+                embeddedImageSourceId = result.id;
+            }
+
+            if (metadata.lyrics) {
+                const result = await trx.insertInto("Lyrics")
+                    .values({
+                        updatedAt: new Date().toISOString(),
+                        path: metadata.lyrics.path,
+                        staticLyrics: metadata.lyrics.staticLyrics,
+                        timedLines: metadata.lyrics.timedLyrics
+                    })
+                    .onConflict(oc => {
+                        return oc.doUpdateSet({
+                            // noop so `returning` works
+                            path: metadata.lyrics!.path
+                        });
+                    })
+                    .returning(["id"])
+                    .executeTakeFirstOrThrow();
+
+                lyricsId = result.id;
+            }
+
+            await trx.insertInto("AudioSource")
+                .values({
+                    updatedAt: new Date().toISOString(),
                     path: metadata.path,
                     mimeType: metadata.audioSource.mimeType,
                     bitrate: metadata.audioSource.bitrate,
                     sampleRate: metadata.audioSource.sampleRate,
                     bitsPerSample: metadata.audioSource.bitsPerSample,
                     duration: metadata.audioSource.duration,
-                    embeddedImageSource: metadata.embeddedImageSource
-                        ? {
-                              connectOrCreate: {
-                                  where: {
-                                      path: metadata.path
-                                  },
-                                  create: {
-                                      path: metadata.path,
-                                      ...metadata.embeddedImageSource
-                                  }
-                              }
-                          }
-                        : undefined,
-                    lyrics: metadata.lyrics
-                        ? {
-                              connectOrCreate: {
-                                  where: {
-                                      path: metadata.lyrics.path
-                                  },
-                                  create: {
-                                      path: metadata.lyrics.path,
-                                      staticLyrics:
-                                          metadata.lyrics.staticLyrics,
-                                      timedLines: metadata.lyrics.timedLyrics
-                                  }
-                              }
-                          }
-                        : undefined
-                },
-                update: {
-                    mimeType: metadata.audioSource.mimeType,
-                    bitrate: metadata.audioSource.bitrate,
-                    sampleRate: metadata.audioSource.sampleRate,
-                    bitsPerSample: metadata.audioSource.bitsPerSample,
-                    duration: metadata.audioSource.duration
-                }
-            })
-        )
-    );
+                    embeddedImageSourceId,
+                    lyricsId
+                })
+                .onConflict(oc => {
+                    return oc.doUpdateSet({
+                        updatedAt: new Date().toISOString(),
+                        mimeType: metadata.audioSource.mimeType,
+                        bitrate: metadata.audioSource.bitrate,
+                        sampleRate: metadata.audioSource.sampleRate,
+                        bitsPerSample: metadata.audioSource.bitsPerSample,
+                        duration: metadata.audioSource.duration,
+                        embeddedImageSourceId,
+                        lyricsId
+                    })
+                })
+                .execute();
+        }
+    });
 
-    await db.$transaction(
-        audioSourceMetadata
-            .map(metadata => {
-                if (!metadata.lyrics) return;
+    await db.transaction().execute(async trx => {
+        for (const metadata of audioSourceMetadata) {
+            if (!metadata.lyrics) continue;
 
-                return db.lyrics.update({
-                    where: {
-                        path: metadata.lyrics.path
-                    },
-                    data: {
-                        staticLyrics: metadata.lyrics.staticLyrics,
-                        timedLines: metadata.lyrics.timedLyrics
-                    }
-                });
-            })
-            .filter(Boolean) as PrismaPromise<unknown>[]
-    );
+            await trx.updateTable("Lyrics")
+                .where("path", "=", metadata.lyrics.path)
+                .set({
+                    updatedAt: new Date().toISOString(),
+                    staticLyrics: metadata.lyrics.staticLyrics,
+                    timedLines: metadata.lyrics.timedLyrics
+                })
+                .execute();
+        }
+    });
 }
 
 export async function linkAudioSourceMetadataIds(
@@ -396,17 +411,10 @@ export async function linkAudioSourceMetadataIds(
 ): Promise<AudioSourceMetadataWithId[]> {
     const {db} = getContext();
 
-    const audioSourceIds = await db.audioSource.findMany({
-        where: {
-            path: {
-                in: audioSourceMetadata.map(metadata => metadata.path)
-            }
-        },
-        select: {
-            id: true,
-            path: true
-        }
-    });
+    const audioSourceIds = await db.selectFrom("AudioSource")
+        .where("path", "in", audioSourceMetadata.map(metadata => metadata.path))
+        .select(["id", "path"])
+        .execute();
 
     return audioSourceMetadata.map<AudioSourceMetadataWithId>(metadata => {
         const data = audioSourceIds.find(a => a.path === metadata.path);

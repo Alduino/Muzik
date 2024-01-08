@@ -24,9 +24,10 @@ export async function discoverSources(dirs: string[]) {
         })
     );
 
-    const path = "./workers/hashBuffer.cjs";
+    log.debug("Preparing metadata worker pool");
+    const hashWorkerPath = "./workers/hashBuffer.cjs";
     const hashWorkerPool = new Piscina({
-        filename: fileURLToPath(new URL(path, import.meta.url)),
+        filename: fileURLToPath(new URL(hashWorkerPath, import.meta.url)),
         maxQueue: "auto",
         idleTimeout: 500
     });

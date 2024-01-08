@@ -1,6 +1,5 @@
 import {parentPort} from "worker_threads";
 import {log} from "../../../shared/logger.ts";
-import {PLAYBACK_SAMPLE_RATE} from "../../main/constants.ts";
 import type {MessageHandlers as MainMessageHandlers} from "../../main/core/worker.ts";
 import {exposeObservable} from "../../main/utils/observable-rpc.ts";
 import {createRpc, InferMethods} from "../../main/utils/worker-rpc.ts";
@@ -15,8 +14,8 @@ const exposedObservables = {
 };
 
 const methodHandlers = {
-    seek(seconds: number) {
-        audioStream.seek(seconds * PLAYBACK_SAMPLE_RATE);
+    seek(progress: number) {
+        audioStream.seek(progress);
     },
 
     init,

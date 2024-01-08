@@ -65,6 +65,18 @@ export async function initialiseWorker() {
     await rpc.init();
 
     log.debug("Audio worker initialised");
+
+    worker.once("error", async () => {
+        log.warn("Audio worker crashed, attempting to restart");
+
+        if (worker) {
+            log.debug("Terminating old audio worker");
+            await worker.terminate();
+            worker = undefined;
+        }
+
+        await initialiseWorker();
+    });
 }
 
 export async function terminateWorker() {

@@ -1,9 +1,10 @@
+import {log} from "../../../shared/logger.ts";
 import {
     PLAYBACK_CHANNELS,
     PLAYBACK_SAMPLE_RATE,
     TRACK_CACHED_FRAMES
 } from "../constants.ts";
-import {prisma} from "../prisma.ts";
+import {db} from "../db.ts";
 import {ffargs, runFfmpeg} from "../utils/ffmpeg.ts";
 import {findBestAudioSource} from "../utils/findBestAudioSource.ts";
 import {readStreamToBuffer} from "../utils/readStreamToBuffer.ts";
@@ -37,17 +38,14 @@ async function getTrackCache(path: string) {
 }
 
 export async function loadTrack(id: number): Promise<TrackInfo> {
+    log.debug({trackId: id}, "Loading track data and cache");
+
     const audioSourceId = await findBestAudioSource(id);
 
-    const audioSource = await prisma.audioSource.findUniqueOrThrow({
-        where: {
-            id: audioSourceId
-        },
-        select: {
-            path: true,
-            duration: true
-        }
-    });
+    const audioSource = await db.selectFrom("AudioSource")
+        .where("id", "=", audioSourceId)
+        .select(["path", "duration"])
+        .executeTakeFirstOrThrow();
 
     const buffer = await getTrackCache(audioSource.path);
 

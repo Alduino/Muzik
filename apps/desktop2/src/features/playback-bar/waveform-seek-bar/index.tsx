@@ -222,10 +222,11 @@ function createWaveformRenderer(data: RendererData) {
         );
 
         render();
+    }
 
-        if (event.buttons & 1) {
-            data.onProgressChange(mouseProgress);
-        }
+    function handleMouseUp() {
+        if (!mouseProgress) return;
+        data.onProgressChange(mouseProgress);
     }
 
     function queueCacheUpdate() {
@@ -409,6 +410,7 @@ function createWaveformRenderer(data: RendererData) {
 
     data.canvas.addEventListener("pointerleave", handleMouseExit);
     data.canvas.addEventListener("pointermove", handleMouseMove);
+    data.canvas.addEventListener("pointerup", handleMouseUp);
     data.canvas.addEventListener("pointerdown", handleMouseMove);
     data.canvas.addEventListener("pointerdown", handleMouseDown);
 
@@ -432,6 +434,7 @@ function createWaveformRenderer(data: RendererData) {
 
             data.canvas.removeEventListener("pointerleave", handleMouseExit);
             data.canvas.removeEventListener("pointermove", handleMouseMove);
+            data.canvas.removeEventListener("pointerup", handleMouseUp);
             data.canvas.removeEventListener("pointerdown", handleMouseMove);
             data.canvas.removeEventListener("pointerdown", handleMouseDown);
 

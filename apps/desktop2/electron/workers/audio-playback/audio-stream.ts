@@ -17,6 +17,7 @@ interface ReadResult {
 }
 
 let currentTrack: TrackAudioBuffer | null = null;
+let currentTrackFrameCount: number | null = null;
 
 const currentTrackProgress = observable(0);
 
@@ -83,13 +84,19 @@ export const audioStream = {
         }
     },
 
-    seek(newFrame: number) {
-        currentTrack?.seek(newFrame);
+    seek(progress: number) {
+        if (currentTrackFrameCount) {
+            currentTrack?.seek(progress * currentTrackFrameCount);
+        } else {
+            log.warn("Attempted to seek on track with unknown length");
+        }
     }
 };
 
 function useTrackForProgress(loadedTrack: TrackAudioBuffer) {
     loadedTrack.currentFrame.onChange(frame => {
+        currentTrackFrameCount = loadedTrack.frameCount ?? null;
+
         if (loadedTrack.frameCount) {
             currentTrackProgress.set(frame / loadedTrack.frameCount);
         } else {

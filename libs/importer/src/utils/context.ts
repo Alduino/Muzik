@@ -1,8 +1,9 @@
-import {PrismaClient} from "@muzik/db";
+import {DB} from "@muzik/db";
+import {Kysely} from "kysely";
 import {Progress} from "./Progress";
 
 export interface Context {
-    db: PrismaClient;
+    db: Kysely<DB>;
     progress: Progress;
 }
 

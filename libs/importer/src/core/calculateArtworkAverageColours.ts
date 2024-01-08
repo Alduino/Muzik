@@ -1,4 +1,3 @@
-import {PrismaPromise} from "@muzik/db";
 import Piscina from "piscina";
 import {log} from "../logger";
 import {PipelinedQueue} from "../utils/PipelinedQueue";
@@ -37,21 +36,29 @@ export async function calculateArtworkAverageColours({
 }: CalculateArtworkAverageColoursOptions) {
     const {db} = getContext();
 
-    const artwork = await db.artwork.findMany({
-        select: {
-            id: true,
-            sources: {
-                select: {
-                    path: true,
-                    embeddedIn: {
-                        select: {
-                            id: true
-                        }
-                    }
-                }
-            }
+    const artworkUngrouped = await db.selectFrom("Artwork")
+        .leftJoin("ImageSource", "ImageSource.artworkId", "Artwork.id")
+        .leftJoin("AudioSource", "AudioSource.embeddedImageSourceId", "ImageSource.id")
+        .select(["Artwork.id", "ImageSource.path", "AudioSource.id as embeddedInId"])
+        .execute();
+
+    const artwork = Array.from(artworkUngrouped.reduce((acc, row) => {
+        const artwork = acc.get(row.id);
+
+        if (artwork == null) {
+            acc.set(row.id, {
+                id: row.id,
+                sources: []
+            });
+        } else {
+            artwork.sources.push({
+                path: row.path!,
+                embedded: row.embeddedInId !== null
+            });
         }
-    });
+
+        return acc;
+    }, new Map<number, {id: number; sources: {path: string; embedded: boolean}[]}>()).values());
 
     type ArtworkItem = (typeof artwork)[number];
     type ArtworkSourceItem = ArtworkItem["sources"][number];
@@ -68,8 +75,6 @@ export async function calculateArtworkAverageColours({
         processDurationMs: number;
     }
 
-    const transactionQueries: PrismaPromise<unknown>[] = [];
-
     const queue = new PipelinedQueue<
         ArtworkSourceItem,
         QueueContext,
@@ -80,7 +85,7 @@ export async function calculateArtworkAverageColours({
                 const startTime = process.hrtime.bigint();
                 const {buffer, mime} = await getImageBuffer(
                     source.path,
-                    source.embeddedIn != null
+                    source.embedded
                 );
 
                 return {
@@ -111,63 +116,57 @@ export async function calculateArtworkAverageColours({
         }
     );
 
-    await Promise.all(
-        artwork.map(async artwork => {
-            const avgColours = await queue.runAll(artwork.sources);
+    await db.transaction().execute(async trx => {
+        await Promise.all(
+            artwork.map(async artwork => {
+                const avgColours = await queue.runAll(artwork.sources);
 
-            const totalPrepareDurationMs = avgColours.reduce(
-                (acc, {prepareDurationMs}) => acc + prepareDurationMs,
-                0
-            );
-
-            const totalProcessDurationMs = avgColours.reduce(
-                (acc, {processDurationMs}) => acc + processDurationMs,
-                0
-            );
-
-            const colourSum = avgColours
-                .map(c => c.rgb)
-                .reduce(
-                    (acc, {r, g, b}) => {
-                        acc.r += r;
-                        acc.g += g;
-                        acc.b += b;
-                        return acc;
-                    },
-                    {r: 0, g: 0, b: 0}
+                const totalPrepareDurationMs = avgColours.reduce(
+                    (acc, {prepareDurationMs}) => acc + prepareDurationMs,
+                    0
                 );
 
-            const colourAvg = {
-                r: colourSum.r / avgColours.length,
-                g: colourSum.g / avgColours.length,
-                b: colourSum.b / avgColours.length
-            };
+                const totalProcessDurationMs = avgColours.reduce(
+                    (acc, {processDurationMs}) => acc + processDurationMs,
+                    0
+                );
 
-            const avgColour = rgbToHex(colourAvg);
+                const colourSum = avgColours
+                    .map(c => c.rgb)
+                    .reduce(
+                        (acc, {r, g, b}) => {
+                            acc.r += r;
+                            acc.g += g;
+                            acc.b += b;
+                            return acc;
+                        },
+                        {r: 0, g: 0, b: 0}
+                    );
 
-            log.trace(
-                {
-                    artwork: artwork.id,
-                    avgColour,
-                    sourceCount: avgColours.length,
-                    totalPrepareDurationMs,
-                    totalProcessDurationMs
-                },
-                "Calculated average colour"
-            );
+                const colourAvg = {
+                    r: colourSum.r / avgColours.length,
+                    g: colourSum.g / avgColours.length,
+                    b: colourSum.b / avgColours.length
+                };
 
-            transactionQueries.push(
-                db.artwork.update({
-                    where: {
-                        id: artwork.id
+                const avgColour = rgbToHex(colourAvg);
+
+                log.trace(
+                    {
+                        artwork: artwork.id,
+                        avgColour,
+                        sourceCount: avgColours.length,
+                        totalPrepareDurationMs,
+                        totalProcessDurationMs
                     },
-                    data: {
-                        avgColour
-                    }
-                })
-            );
-        })
-    );
+                    "Calculated average colour"
+                );
 
-    await db.$transaction(transactionQueries);
+                await trx.updateTable("Artwork")
+                    .where("id", "=", artwork.id)
+                    .set("avgColour", avgColour)
+                    .execute();
+            })
+        );
+    });
 }

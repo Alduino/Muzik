@@ -1,3 +1,4 @@
+import assert from "assert";
 import {randomUUID} from "crypto";
 import {join} from "path";
 import {Worker} from "worker_threads";
@@ -7,23 +8,19 @@ import {
     WAVEFORM_BINARY_VERSION,
     WAVEFORM_BUCKET_COUNT
 } from "../../../constants/waveform-overview.ts";
-import {prisma} from "../../prisma.ts";
+import {db} from "../../db.ts";
 import {observable, procedure} from "../../trpc.ts";
 import {getAudioFrameCount} from "../../utils/ffmpeg-utils.ts";
 import {ffargs, runFfmpeg} from "../../utils/ffmpeg.ts";
 import {throttle} from "../../utils/throttle.ts";
 
 async function getMetadata(trackId: number) {
-    const {path} = await prisma.audioSource.findFirstOrThrow({
-        where: {
-            trackId
-        },
-        select: {
-            path: true
-        }
-    });
+    const {path} = await db.selectFrom("AudioSource")
+        .where("trackId", "=", trackId)
+        .select("path")
+        .executeTakeFirstOrThrow();
 
-    const {stdout: probeResultString} = await runFfmpeg(
+    const {stdout: probeResultBuffer} = await runFfmpeg(
         "probe",
         ffargs()
             .add("select_streams", "a:0")
@@ -33,7 +30,7 @@ async function getMetadata(trackId: number) {
             .addRaw(path)
     );
 
-    const probeResult = JSON.parse(probeResultString);
+    const probeResult = JSON.parse(probeResultBuffer.toString("utf8"));
 
     const stream = probeResult.streams[0];
     if (!stream) throw new Error("No audio stream found");
@@ -72,14 +69,10 @@ export const getWaveformOverview = procedure
             }, 300);
 
             (async () => {
-                const existingData = await prisma.track.findUniqueOrThrow({
-                    where: {
-                        id: trackId
-                    },
-                    select: {
-                        waveformBins: true
-                    }
-                });
+                const existingData = await db.selectFrom("Track")
+                    .where("id", "=", trackId)
+                    .select("waveformBins")
+                    .executeTakeFirstOrThrow();
 
                 if (existingData.waveformBins) {
                     const version = existingData.waveformBins.readUInt16LE(0);
@@ -176,14 +169,13 @@ export const getWaveformOverview = procedure
                     "Writing waveform data to database"
                 );
 
-                await prisma.track.update({
-                    where: {
-                        id: input.trackId
-                    },
-                    data: {
+                assert(input.trackId);
+                await db.updateTable("Track")
+                    .where("id", "=", input.trackId)
+                    .set({
                         waveformBins: finalBinaryDataBuffer
-                    }
-                });
+                    })
+                    .execute();
             })();
         });
     });

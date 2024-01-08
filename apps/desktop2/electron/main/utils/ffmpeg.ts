@@ -97,6 +97,7 @@ export function ffargs() {
 
 interface Options {
     pipe?: boolean;
+    lowWaterMark?: number;
 }
 
 export function runFfmpeg(
@@ -115,7 +116,7 @@ export function runFfmpeg(
 
     log.debug({file, args}, "Running %s", component);
 
-    return execa(file, args, {
+    const promise = execa(file, args, {
         stderr:
             process.env.NODE_ENV === "production" ||
             process.env.ENABLE_FFMPEG_LOGS !== "1"
@@ -123,6 +124,9 @@ export function runFfmpeg(
                 : "inherit",
         stdin: "pipe",
         stdout: "pipe",
+        encoding: "buffer",
         buffer: !options.pipe
     });
+
+    return promise;
 }

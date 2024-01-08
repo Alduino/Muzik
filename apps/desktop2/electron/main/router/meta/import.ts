@@ -1,6 +1,6 @@
 import {importTracks, type Progress} from "@muzik/importer";
 import {log} from "../../../../shared/logger.ts";
-import {dbPath} from "../../prisma.ts";
+import {dbPath} from "../../db.ts";
 import {observable, procedure} from "../../trpc.ts";
 import {configDb} from "../../utils/config.ts";
 
