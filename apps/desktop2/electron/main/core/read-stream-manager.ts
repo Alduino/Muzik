@@ -47,8 +47,14 @@ async function readStreamHandler(
             .select("path")
             .executeTakeFirstOrThrow();
 
+        const readStream = new TrackReadStream(path);
+
+        readStream.closeEvent.listenOnce(() => {
+            trackReadStreams.delete(newTrackId);
+        });
+
         trackReadStreams.set(newTrackId, {
-            readStream: new TrackReadStream(path),
+            readStream: readStream,
             lastUsed: process.hrtime.bigint()
         });
     }

@@ -1,5 +1,10 @@
 import {log} from "../../../shared/logger.ts";
 
+export interface EventListener {
+    listen(handler: () => void): () => void;
+    listenOnce(handler: () => void): () => void;
+}
+
 export class EventEmitter<Args extends unknown[] = []> {
     #handlers = new Set<(...args: Args) => void>();
 
@@ -64,5 +69,9 @@ export class EventEmitter<Args extends unknown[] = []> {
                 log.warn(err, "Caught an error while emitting an event");
             }
         }
+    }
+
+    getListener(): EventListener {
+        return this;
     }
 }

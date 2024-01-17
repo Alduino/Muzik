@@ -4,7 +4,7 @@ import {PLAYBACK_CHANNELS, PLAYBACK_SAMPLE_RATE, PLAYBACK_SAMPLE_SIZE} from "../
 import {EventEmitter} from "../utils/EventEmitter.ts";
 import {ffargs, runFfmpeg} from "../utils/ffmpeg.ts";
 
-const log = childLogger("TrackReadStream");
+const log = childLogger("track-read-stream");
 
 const PACKET_DURATION_SECONDS = 1;
 
@@ -39,6 +39,10 @@ class PacketReader {
 
     #offset = 0;
     #process: ExecaChildProcess<Buffer> | undefined;
+
+    get closeEvent() {
+        return this.#closed.getListener();
+    }
 
     constructor(private readonly path: string) {
         this.#openFfmpeg(0);
@@ -178,6 +182,10 @@ export class TrackReadStream {
     #requestingPackets = new Map<number, Promise<AudioPacket | undefined>>();
 
     #lastPacket: AudioPacket | null = null;
+
+    get closeEvent() {
+        return this.#packetReader.closeEvent;
+    }
 
     constructor(path: string) {
         this.#packetReader = new PacketReader(path);

@@ -33,7 +33,7 @@ export const trackBufferRepository = {
         log.trace({id}, "Preparing track");
 
         const track = await rpc.loadTrack(id);
-        const frameCount = track.duration * PLAYBACK_SAMPLE_RATE;
+        const frameCount = Math.floor(track.duration * PLAYBACK_SAMPLE_RATE);
 
         const trackAudioBuffer = new TrackAudioBuffer(id, frameCount);
 

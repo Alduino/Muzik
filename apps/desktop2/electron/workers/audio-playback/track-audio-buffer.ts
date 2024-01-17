@@ -31,6 +31,8 @@ export class TrackAudioBuffer {
 
     #done = false;
 
+    #seekTargetFrame: number | null = null;
+
     get #currentFrame() {
         if (this.#currentPacket) {
             // Assumes `#currentPacket` is never set back to null.
@@ -105,6 +107,11 @@ export class TrackAudioBuffer {
         if (persistent) {
             this.#persistentPackets.add(packet);
         }
+
+        if (this.#seekTargetFrame != null && packet.startFrame <= this.#seekTargetFrame && packet.endFrame > this.#seekTargetFrame) {
+            // Start using this packet immediately
+            this.#usePacketAtFrame(this.#seekTargetFrame);
+        }
     }
 
     /**
@@ -133,11 +140,9 @@ export class TrackAudioBuffer {
      * If no packet contains `frame`, a new packet is requested.
      */
     #usePacketAtFrame(frame: number) {
-        const packets = this.#packets;
-
         let newPacket: Packet | undefined = undefined;
 
-        for (const packet of packets) {
+        for (const packet of this.#packets) {
             if (packet.startFrame > frame) continue;
             if (packet.endFrame <= frame) continue;
 
@@ -237,6 +242,10 @@ export class TrackAudioBuffer {
     }
 
     seek(newFrame: number) {
+        newFrame = Math.floor(newFrame);
+
+        log.info({newFrame, maxFrame: this.frameCount}, "Seeking within track");
+        this.#seekTargetFrame = newFrame;
         this.#usePacketAtFrame(newFrame);
     }
 }
