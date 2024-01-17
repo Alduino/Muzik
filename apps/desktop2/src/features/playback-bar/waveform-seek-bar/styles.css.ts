@@ -29,7 +29,9 @@ export const timeIndicatorContainerClass = style({
 
     display: "flex",
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+
+    pointerEvents: "none",
 });
 
 export const timeIndicatorClass = style({
@@ -43,7 +45,6 @@ export const timeIndicatorClass = style({
     fontSize: size(3),
     backdropFilter: "blur(8px)",
     borderRadius: size(1),
-    pointerEvents: "none",
 
     selectors: {
         [`${containerClass}:hover &`]: {
