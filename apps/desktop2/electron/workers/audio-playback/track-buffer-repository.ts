@@ -1,7 +1,9 @@
-import {log} from "../../../shared/logger.ts";
 import {PLAYBACK_SAMPLE_RATE} from "../../main/constants.ts";
 import {rpc} from "./index.ts";
+import {childLogger} from "./log.ts";
 import {TrackAudioBuffer} from "./track-audio-buffer.ts";
+
+const log = childLogger("track-buffer-repository");
 
 // Track ID -> TrackAudioBuffer
 const bufferedTracks = new Map<number, TrackAudioBuffer>();

@@ -1,7 +1,9 @@
-import {log} from "../../../shared/logger.ts";
 import {PLAYBACK_CHANNELS, PLAYBACK_SAMPLE_SIZE} from "../../main/constants.ts";
 import {observable} from "../../main/utils/Observable.ts";
 import {rpc} from "./index.ts";
+import {childLogger} from "./log.ts";
+
+const log = childLogger("track-audio-buffer");
 
 interface Packet {
     // Inclusive

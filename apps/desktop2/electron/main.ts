@@ -1,12 +1,14 @@
 import path from "node:path";
 import {app, BrowserWindow, Menu, MenuItem} from "electron";
 import { sql } from "kysely";
-import {log} from "../shared/logger.ts";
+import {childLogger} from "../shared/logger.ts";
 import {terminateWorker as terminateAudioWorker} from "./main/core/worker.ts";
 import {db} from "./main/db.ts";
 import {initialiseMuzik} from "./main/initialise.ts";
 import {attachWindow, detachWindow} from "./main/ipc-setup.ts";
 import {tempDir} from "./main/utils/tmp-dir.ts";
+
+const log = childLogger("main");
 
 // The built directory structure
 //

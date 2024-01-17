@@ -1,6 +1,6 @@
 import {join} from "path";
 import {Worker} from "worker_threads";
-import {log} from "../../../shared/logger.ts";
+import {childLogger} from "../../../shared/logger.ts";
 import type {MethodHandlers as WorkerMessageHandlers} from "../../workers/audio-playback";
 import {exposeObservable} from "../utils/observable-rpc.ts";
 import {createRpc, InferMethods} from "../utils/worker-rpc.ts";
@@ -8,6 +8,8 @@ import {trackQueue} from "./TrackQueue.ts";
 import {audioStream} from "./audio-stream.ts";
 import {loadTrack} from "./loadTrack.ts";
 import {readStreamManager} from "./read-stream-manager.ts";
+
+const log = childLogger("audio-worker-iface");
 
 const exposedObservables = {
     ...exposeObservable("tq.currentTrack", trackQueue.currentTrack),
@@ -45,6 +47,7 @@ export async function initialiseWorker() {
 
     log.debug({workerPath}, "Starting audio worker");
 
+    killingWorker = false;
     worker = new Worker(workerPath);
     rpcCtrl.attachPort(worker);
 
@@ -94,5 +97,4 @@ export async function terminateWorker() {
 
     killingWorker = true;
     await worker.terminate();
-    killingWorker = false;
 }

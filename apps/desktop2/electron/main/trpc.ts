@@ -1,7 +1,9 @@
 import {initTRPC} from "@trpc/server";
 import * as observable from "@trpc/server/observable";
 import superjson from "superjson";
-import {log} from "../../shared/logger.ts";
+import {childLogger} from "./router/_log.ts";
+
+const log = childLogger("trpc");
 
 const t = initTRPC.create({
     transformer: superjson,
@@ -14,7 +16,7 @@ export const router = t.router;
 export const mergeRouters = t.mergeRouters;
 export const middleware = t.middleware;
 export const procedure = t.procedure.use(async opts => {
-    log.trace({path: opts.path, input: opts.input}, "TRPC request");
+    log.trace({path: opts.path, input: opts.input}, "API request");
 
     try {
         return await opts.next();

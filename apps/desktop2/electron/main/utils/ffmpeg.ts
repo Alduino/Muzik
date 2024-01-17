@@ -9,8 +9,10 @@ import {
     getBinaryFilename,
     locateBinariesSync
 } from "ffbinaries";
-import {log} from "../../../shared/logger.ts";
+import {childLogger} from "../../../shared/logger.ts";
 import {configDb} from "./config.ts";
+
+const log = childLogger("ffmpeg");
 
 async function findOrDownload(component: Component) {
     const {[component]: locatedFfmpeg} = locateBinariesSync([component], {
@@ -116,7 +118,7 @@ export function runFfmpeg(
 
     log.debug({file, args}, "Running %s", component);
 
-    const promise = execa(file, args, {
+    return execa(file, args, {
         stderr:
             process.env.NODE_ENV === "production" ||
             process.env.ENABLE_FFMPEG_LOGS !== "1"
@@ -127,6 +129,4 @@ export function runFfmpeg(
         encoding: "buffer",
         buffer: !options.pipe
     });
-
-    return promise;
 }

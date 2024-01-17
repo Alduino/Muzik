@@ -1,5 +1,7 @@
-import {log} from "../../../../shared/logger.ts";
 import {observable, procedure} from "../../trpc.ts";
+import {childLogger} from "./_log.ts";
+
+const log = childLogger("init");
 
 let initialisationComplete = false;
 

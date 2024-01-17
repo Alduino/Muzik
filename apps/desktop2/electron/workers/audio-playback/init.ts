@@ -1,6 +1,6 @@
-import {log} from "../../../shared/logger.ts";
 import {cleanupSpeaker, createSpeaker} from "./audio-playback-engine.ts";
 import {connectToTrackQueue} from "./audio-stream.ts";
+import {log} from "./log.ts";
 
 export function init() {
     createSpeaker();

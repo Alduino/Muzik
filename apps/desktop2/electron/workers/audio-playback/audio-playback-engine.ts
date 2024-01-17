@@ -1,6 +1,5 @@
 import {Readable} from "stream";
 import Speaker from "speaker";
-import {log} from "../../../shared/logger.ts";
 import {
     PLAYBACK_CHANNELS,
     PLAYBACK_SAMPLE_RATE,
@@ -9,6 +8,9 @@ import {
 import {padBuffer} from "../../main/utils/padBuffer.ts";
 import {audioStream} from "./audio-stream.ts";
 import {rpc} from "./index.ts";
+import {childLogger} from "./log.ts";
+
+const log = childLogger("audio-playback-engine");
 
 class SpeakerDataReader extends Readable {
     _read(size: number) {

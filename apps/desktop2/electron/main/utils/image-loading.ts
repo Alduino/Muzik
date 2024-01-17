@@ -3,7 +3,9 @@ import {mkdir, readFile, writeFile} from "fs/promises";
 import {dirname, join} from "path";
 import {app} from "electron";
 import {parseBuffer, selectCover} from "music-metadata";
-import {log} from "../../../shared/logger.ts";
+import {childLogger} from "../../../shared/logger.ts";
+
+const log = childLogger("image-loading");
 
 function getBaseImageCachePath() {
     return join(app.getPath("userData"), "cache", "images");

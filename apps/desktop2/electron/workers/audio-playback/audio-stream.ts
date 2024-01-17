@@ -1,8 +1,10 @@
-import {log} from "../../../shared/logger.ts";
 import {observable} from "../../main/utils/Observable.ts";
+import {childLogger} from "./log.ts";
 import {TrackAudioBuffer} from "./track-audio-buffer.ts";
 import {trackBufferRepository} from "./track-buffer-repository.ts";
 import {trackQueue} from "./track-queue.ts";
+
+const log = childLogger("audio-stream");
 
 interface ReadResult {
     /**

@@ -4,7 +4,7 @@ import { app } from "electron";
 import {Kysely, SqliteDialect} from "kysely";
 import {childLogger} from "../../shared/logger.ts";
 
-const log = childLogger("db-init");
+const log = childLogger("init:database");
 
 export const dbPath = app.getPath("userData") + "/db.sqlite";
 log.info("Using database at %s", dbPath);
