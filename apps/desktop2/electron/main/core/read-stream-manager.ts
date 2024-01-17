@@ -5,18 +5,40 @@ import {trackQueue} from "./TrackQueue.ts";
 import {TrackReadStream} from "./TrackReadStream.ts";
 import {rpc} from "./worker.ts";
 
-const trackReadStreams = new Map<number, TrackReadStream>();
+interface ReadStreamItem {
+    readStream: TrackReadStream;
+    lastUsed: bigint;
+}
+
+const trackReadStreams = new Map<number, ReadStreamItem>();
+
+setInterval(() => {
+    log.debug("Closing track read streams that have not been used for 10 seconds");
+
+    const now = process.hrtime.bigint();
+    for (const [trackId, {lastUsed}] of trackReadStreams) {
+        if (now - lastUsed > 10_000_000_000n) {
+            log.trace({trackId}, "Closing unused track read stream");
+
+            trackReadStreams.get(trackId)?.readStream.close();
+            trackReadStreams.delete(trackId);
+        }
+    }
+}, 5000);
 
 async function readStreamHandler(
     newTrackId: number | null,
     oldTrackId: number | null
 ) {
     if (oldTrackId) {
+        log.debug({oldTrackId}, "Closing previous track's read stream");
+
+        trackReadStreams.get(oldTrackId)?.readStream.close();
         trackReadStreams.delete(oldTrackId);
     }
 
     if (newTrackId && !trackReadStreams.has(newTrackId)) {
-        log.debug({trackId: newTrackId}, "Creating track read stream");
+        log.debug({trackId: newTrackId}, "Creating new track's read stream");
 
         const audioSourceId = await findBestAudioSource(newTrackId);
 
@@ -25,7 +47,10 @@ async function readStreamHandler(
             .select("path")
             .executeTakeFirstOrThrow();
 
-        trackReadStreams.set(newTrackId, new TrackReadStream(path));
+        trackReadStreams.set(newTrackId, {
+            readStream: new TrackReadStream(path),
+            lastUsed: process.hrtime.bigint()
+        });
     }
 }
 
@@ -34,7 +59,8 @@ export const readStreamManager = {
         const readStream = trackReadStreams.get(trackId);
         if (!readStream) return;
 
-        const packet = await readStream.requestPacket(frameIndex);
+        readStream.lastUsed = process.hrtime.bigint();
+        const packet = await readStream.readStream.requestPacket(frameIndex);
         if (!packet) return;
 
         await rpc.importTrackPacket(trackId, packet.buffer, packet.startFrame);

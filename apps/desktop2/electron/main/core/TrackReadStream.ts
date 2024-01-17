@@ -64,6 +64,7 @@ class PacketReader {
     }
 
     close() {
+        this.#closeFfmpeg();
         this.#closed.emit();
     }
 
@@ -197,6 +198,10 @@ export class TrackReadStream {
         this.#requestingPackets.delete(containingFrame);
 
         return result;
+    }
+
+    close() {
+        this.#packetReader.close();
     }
 
     async #requestPacket(
