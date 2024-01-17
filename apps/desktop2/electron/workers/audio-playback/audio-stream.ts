@@ -49,7 +49,7 @@ export const audioStream = {
         }
 
         const currentTrackData: Buffer =
-            currentTrack.read(bytes) ?? Buffer.alloc(0);
+            currentTrack.read(bytes) ?? Buffer.alloc(0x1000);
 
         if (currentTrack.done()) {
             const nextTrackId = trackQueue.nextTrack.get();
@@ -60,8 +60,10 @@ export const audioStream = {
             currentTrack = nextTrack;
 
             if (nextTrack) {
+                connectTrackForProgress(nextTrack);
+
                 const nextTrackData: Buffer =
-                    nextTrack.read(bytes) ?? Buffer.alloc(0);
+                    nextTrack.read(bytes) ?? Buffer.alloc(0x1000);
 
                 const concatenated = Buffer.concat([
                     currentTrackData,
@@ -95,7 +97,9 @@ export const audioStream = {
     }
 };
 
-function useTrackForProgress(loadedTrack: TrackAudioBuffer) {
+function connectTrackForProgress(loadedTrack: TrackAudioBuffer) {
+    log.debug({trackId: loadedTrack.trackId}, "Using new track for progress");
+
     loadedTrack.currentFrame.onChange(frame => {
         currentTrackFrameCount = loadedTrack.frameCount ?? null;
 
@@ -115,7 +119,7 @@ export function connectToTrackQueue() {
     trackQueue.currentTrack.onChange(async trackId => {
         if (currentTrack?.trackId === trackId) return;
 
-        if (trackId === null) {
+        if (trackId == null) {
             currentTrack = null;
             return;
         }
@@ -124,7 +128,7 @@ export function connectToTrackQueue() {
 
         if (loadedTrack) {
             currentTrack = loadedTrack;
-            useTrackForProgress(loadedTrack);
+            connectTrackForProgress(loadedTrack);
             return;
         }
 
@@ -137,7 +141,7 @@ export function connectToTrackQueue() {
         }
 
         currentTrack = track;
-        useTrackForProgress(track);
+        connectTrackForProgress(track);
     });
 
     trackQueue.nextTrack.onChange(trackId => {

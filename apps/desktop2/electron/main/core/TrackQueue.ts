@@ -1,4 +1,7 @@
-import {observable} from "../utils/Observable.ts";
+import {childLogger} from "../../../shared/logger.ts";
+import {extend, observable} from "../utils/Observable.ts";
+
+const log = childLogger("track-queue");
 
 export class TrackQueue {
     #currentTrack = observable<number | null>(null);
@@ -15,19 +18,20 @@ export class TrackQueue {
     /*readonly nextTrack = this.immediateQueue.extend(
         queue => queue.at(0) ?? null
     );*/
-
     // FOR TESTING:
-    readonly nextTrack = this.currentTrack.extend(currentTrack =>
-        currentTrack ? currentTrack + 1 : null
-    );
+    readonly nextTrack = extend(this.currentTrack, this.immediateQueue).with((currentTrack, immediateQueue) => {
+        if (immediateQueue.length > 0) return immediateQueue[0];
+        if (currentTrack != null) return currentTrack + 1;
+        return null;
+    });
 
     readonly canPrevious = this.lastTrack.extend(
         lastTrack => lastTrack !== null
     );
 
-    //readonly canNext = this.nextTrack.extend(nextTrack => nextTrack !== null);
+    readonly canNext = this.nextTrack.extend(nextTrack => nextTrack !== null);
     // FOR TESTING:
-    readonly canNext = this.currentTrack.extend(() => true);
+    //readonly canNext = this.currentTrack.extend(() => true);
 
     constructor() {}
 
@@ -40,24 +44,36 @@ export class TrackQueue {
     }
 
     async previous() {
-        if (!this.canPrevious.get()) return;
+        if (!this.canPrevious.get()) {
+            log.info("Attempted to go to the previous track but there is no history");
+            return;
+        }
 
         const currentTrack = this.currentTrack.get();
-        if (currentTrack === null) return;
+        if (currentTrack === null) {
+            log.info("Attempted to go to the previous track but there is no current track");
+            return;
+        }
 
         this.unshiftToImmediateQueue(currentTrack);
 
         const history = this.history.get();
         const lastTrack = history.at(-1)!;
+        log.info({trackId: lastTrack}, "Went to the previous track");
         this.#history.set(history.slice(0, -1));
         this.#currentTrack.set(lastTrack);
     }
 
     next() {
-        if (!this.canNext.get()) return;
+        if (!this.canNext.get()) {
+            log.info("Attempted to go to the next track but there is no next track");
+            return;
+        }
 
-        const [nextTrack, ...rest] = this.immediateQueue.get();
+        const nextTrack = this.nextTrack.get()!;
+        const [firstTrackInQueue, ...rest] = this.immediateQueue.get();
         const currentTrack = this.currentTrack.get();
+        log.info({trackId: nextTrack}, "Went to the next track");
 
         // Set order must be last -> current -> next,
         // so that the current and next tracks don't get unloaded.
@@ -67,7 +83,7 @@ export class TrackQueue {
         }
 
         this.#currentTrack.set(nextTrack);
-        this.#immediateQueue.set(rest);
+        if (nextTrack === firstTrackInQueue) this.#immediateQueue.set(rest);
     }
 }
 

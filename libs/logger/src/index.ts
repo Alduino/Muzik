@@ -18,6 +18,22 @@ export interface Logger {
     child(name: string): Logger;
 }
 
+let writeToStdout = (data: string) => {
+    process.stdout.write("S" + data);
+};
+
+// @ts-expect-error Window *is* defined, sometimes
+if (typeof window === "undefined") {
+    (async () => {
+        const {writeFile} = await import("fs");
+        writeToStdout = (data: string) => {
+            writeFile(1, "F" + data, () => {
+                /* noop */
+            });
+        };
+    })();
+}
+
 class LoggerImpl implements Logger {
     trace = this.createLogFn("trace", 40, "[90m");
     debug = this.createLogFn("debug", 30, "[34m");
@@ -25,10 +41,7 @@ class LoggerImpl implements Logger {
     warn = this.createLogFn("warn ", 10, "[33m");
     fatal = this.createLogFn("fatal", 0, "[31m");
 
-    constructor(private name: string) {}
-
-    child(name: string) {
-        return new LoggerImpl(`${this.name}:${name}`);
+    constructor(private name: string) {
     }
 
     private static formatInnerContext(context: unknown): string {
@@ -38,9 +51,9 @@ class LoggerImpl implements Logger {
         if (context instanceof Error) {
             return `Error {
 ${context
-    .stack!.split("\n")
-    .map(l => "  " + l)
-    .join("\n")}
+                .stack!.split("\n")
+                .map(l => "  " + l)
+                .join("\n")}
 }`;
         } else if (typeof Buffer !== "undefined" && context instanceof Buffer) {
             const bufferString = context.subarray(0, 16).toString("hex");
@@ -84,6 +97,10 @@ ${context
         }
     }
 
+    child(name: string) {
+        return new LoggerImpl(`${this.name}:${name}`);
+    }
+
     private createLogFn(level: string, index: number, ansiCode: string): LogFunction {
         if (!this.isLogLevelEnabled(index)) {
             return () => {
@@ -112,7 +129,8 @@ ${context
 
             // @ts-expect-error Window *is* defined, sometimes
             if (typeof window === "undefined") {
-                console.log(`\x1b${ansiCode}${fullMessage}\x1b[0m`);
+                const message = `\x1b${ansiCode}${fullMessage}\x1b[0m`;
+                writeToStdout(message + "\n");
             } else {
                 console.log(fullMessage);
             }

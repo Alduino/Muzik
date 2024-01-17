@@ -1,9 +1,11 @@
-import {log} from "../../../shared/logger.ts";
+import {childLogger} from "../../../shared/logger.ts";
 import {db} from "../db.ts";
 import {findBestAudioSource} from "../utils/findBestAudioSource.ts";
 import {trackQueue} from "./TrackQueue.ts";
 import {TrackReadStream} from "./TrackReadStream.ts";
 import {rpc} from "./worker.ts";
+
+const log = childLogger("read-stream-manager");
 
 interface ReadStreamItem {
     readStream: TrackReadStream;
@@ -67,9 +69,14 @@ export const readStreamManager = {
 
         readStream.lastUsed = process.hrtime.bigint();
         const packet = await readStream.readStream.requestPacket(frameIndex);
-        if (!packet) return;
 
-        await rpc.importTrackPacket(trackId, packet.buffer, packet.startFrame);
+        if (!packet) {
+            log.debug({trackId}, "Track read stream returned no packet, end of the track?");
+            rpc.importTrackPacket(trackId, Buffer.alloc(0), frameIndex);
+            return;
+        }
+
+        rpc.importTrackPacket(trackId, packet.buffer, packet.startFrame);
     }
 };
 

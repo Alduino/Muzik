@@ -53,6 +53,8 @@ export class EventEmitter<Args extends unknown[] = []> {
     }
 
     emit(...args: Args) {
+        const emitTrace = new Error();
+
         for (const handler of this.#handlers) {
             try {
                 const result = handler(...args) as unknown;
@@ -60,7 +62,7 @@ export class EventEmitter<Args extends unknown[] = []> {
                 if (result instanceof Promise) {
                     result.catch(err => {
                         log.warn(
-                            err,
+                            {err, emitTrace},
                             "Caught an async error while emitting an event"
                         );
                     });

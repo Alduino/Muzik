@@ -198,7 +198,3 @@ export function extend<ObservableValues extends readonly unknown[]>(
         }
     };
 }
-
-export function arr<T extends readonly unknown[]>(...values: T) {
-    return values;
-}

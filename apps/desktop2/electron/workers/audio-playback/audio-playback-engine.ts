@@ -17,7 +17,11 @@ class SpeakerDataReader extends Readable {
         const result = audioStream.read(size);
 
         if (result.nextTrackStarted) {
-            rpc.nextTrack();
+            log.debug("Next track has already started");
+
+            process.nextTick(() => {
+                rpc.nextTrack();
+            });
         }
 
         try {

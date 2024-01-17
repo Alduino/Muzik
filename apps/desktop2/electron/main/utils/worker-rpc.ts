@@ -1,3 +1,4 @@
+import {AsyncLocalStorage} from "async_hooks";
 import {randomUUID} from "crypto";
 import {isMainThread, TransferListItem} from "worker_threads";
 import {log} from "../../../shared/logger.ts";
@@ -14,6 +15,7 @@ interface InternalRequest {
     id: string;
     method: string;
     params: readonly never[];
+    stack: string;
 }
 
 interface InternalResponse {
@@ -65,13 +67,15 @@ interface WithOptions<Methods extends MethodsBase> {
 }
 
 interface CreateRpcResult<Methods extends MethodsBase> {
-    attachPort(port: MessagePortLike): void;
-
     rpc: ProxiedMethods<Methods> & WithOptions<Methods>;
+
+    attachPort(port: MessagePortLike): void;
 }
 
 type RpcObject<Methods extends MethodsBase> = ProxiedMethods<Methods> &
     WithOptions<Methods>;
+
+const stackTraceContext = new AsyncLocalStorage<{stack: string}>;
 
 export function createRpc<Methods extends MethodsBase>(
     messageHandlers: MethodsBase
@@ -130,7 +134,9 @@ export function createRpc<Methods extends MethodsBase>(
                         );
                     }
 
-                    const result = await handler(...message.params);
+                    const result = await stackTraceContext.run({stack: message.stack}, async () => {
+                        return await handler(...message.params);
+                    });
 
                     port.postMessage({
                         type: "response",
@@ -158,6 +164,12 @@ export function createRpc<Methods extends MethodsBase>(
         );
     }
 
+    let devMemoryLeakStackTraceCache: Set<string>;
+
+    if (import.meta.env.DEV) {
+        devMemoryLeakStackTraceCache = new Set();
+    }
+
     function createProxy(options: MessageOptions = {}) {
         return new Proxy(
             {},
@@ -172,13 +184,21 @@ export function createRpc<Methods extends MethodsBase>(
                         };
                     }
 
-                    return (...params: readonly unknown[]) => {
+                    const caller = (...params: readonly unknown[]) => {
                         if (!messagePort) {
                             log.warn("No message port attached");
                             throw new Error("No message port attached");
                         }
 
                         const messageId = randomUUID();
+
+                        let stack: string = "(stack unavailable in production)";
+
+                        if (import.meta.env.DEV) {
+                            stack = new Error().stack!.split("\n").slice(1).join("\n");
+                            stack += "\n--- caller thread stack ---\n";
+                            stack += (stackTraceContext.getStore()?.stack ?? "    (start)");
+                        }
 
                         const promise = new Promise((resolve, reject) => {
                             let timeout: NodeJS.Timeout | null = null;
@@ -197,6 +217,20 @@ export function createRpc<Methods extends MethodsBase>(
                                 }
                             );
 
+                            if (import.meta.env.DEV && messageReceivers.size > 1000) {
+                                const stackError = new Error("Stack trace");
+                                stackError.stack = stack;
+                                const stackTrace = stackError.stack ?? "???";
+
+                                if (!devMemoryLeakStackTraceCache.has(stackTrace)) {
+                                    devMemoryLeakStackTraceCache.add(stackTrace);
+                                    log.warn({
+                                        method: prop,
+                                        stackError
+                                    }, "WorkerRPC message receiver map is getting large; lots of requests without responses?");
+                                }
+                            }
+
                             if (options.timeout) {
                                 timeout = setTimeout(() => {
                                     messageReceivers.delete(messageId);
@@ -211,13 +245,22 @@ export function createRpc<Methods extends MethodsBase>(
                                 type: "request",
                                 id: messageId,
                                 method: prop,
-                                params: params as never[]
+                                params: params as never[],
+                                stack
                             } satisfies InternalRequest,
                             options.transferList
                         );
 
                         return promise;
                     };
+
+                    if (import.meta.env.DEV) {
+                        Object.defineProperty(caller, "name", {
+                            value: `rpc:${prop}`
+                        });
+                    }
+
+                    return caller;
                 }
             }
         ) as ProxiedMethods<Methods> & WithOptions<Methods>;
