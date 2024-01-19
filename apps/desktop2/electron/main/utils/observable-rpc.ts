@@ -90,6 +90,12 @@ export interface ConsumeObservableInitialResult<
     ): ConsumeObservableResult<UniqueId, ExposeMethods, InitialValue>;
 }
 
+/**
+ * Consumes an observable exposed by `exposeObservable` over RPC.
+ *
+ * To allow proper communication between consumer and producer,
+ * add `...consumeObservable()().rpcExtension` to the RPC methods exposed by the consumer to the producer.
+ */
 export function consumeObservable<
     ExposeMethods extends SimpleExposeResult
 >(): ConsumeObservableInitialResult<ExposeMethods> {

@@ -47,3 +47,9 @@ export const artistLinkClass = style({
         textDecoration: "underline"
     }
 });
+
+export const controlsContainerClass = style({
+    display: "flex",
+    alignItems: "center",
+    gap: size(4)
+});

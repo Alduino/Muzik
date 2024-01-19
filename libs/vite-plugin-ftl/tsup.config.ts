@@ -4,6 +4,6 @@ export default defineConfig({
     dts: true,
     sourcemap: true,
     clean: true,
-    format: ["cjs"],
+    format: ["esm"],
     entry: ["src/index.ts", "src/workers/*.ts"]
 });

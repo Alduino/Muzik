@@ -1,12 +1,15 @@
+import {mdiSkipNext, mdiSkipPrevious} from "@mdi/js";
 import clsx from "clsx";
 import {Fragment, ReactElement} from "react";
 import {Artwork} from "../../components/artwork";
 import {useCurrentTrack} from "../../hooks/data/useCurrentTrack.ts";
 import {trpc} from "../../utils/trpc.ts";
+import {ActionButton} from "./action-button";
 import {
     artistLinkClass,
     artistNameClass,
     containerClass,
+    controlsContainerClass,
     metadataContainerClass,
     trackTitleClass
 } from "./styles.css.ts";
@@ -17,8 +20,8 @@ export interface PlaybackBarProps {
 }
 
 export function PlaybackBar({
-    className
-}: PlaybackBarProps): ReactElement | null {
+                                className
+                            }: PlaybackBarProps): ReactElement | null {
     const currentTrack = useCurrentTrack();
 
     const {data: trackInfo} = trpc.tracks.getTrackInfo.useQuery(
@@ -64,6 +67,14 @@ export function PlaybackBar({
                                 </Fragment>
                             ))}
                         </span>
+                    </div>
+                    <div className={controlsContainerClass}>
+                        <ActionButton icon={mdiSkipPrevious} label="TEMPORARY TODO" iconOnly
+                                      enabledQuery={trpc.playback.canPreviousTrack$}
+                                      mutationQuery={trpc.playback.previousTrack} />
+                        <ActionButton icon={mdiSkipNext} label="TEMPORARY TODO" iconOnly
+                                      enabledQuery={trpc.playback.canNextTrack$}
+                                      mutationQuery={trpc.playback.nextTrack} />
                     </div>
                     <WaveformSeekBar />
                 </>

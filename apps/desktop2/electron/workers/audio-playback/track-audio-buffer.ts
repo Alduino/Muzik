@@ -146,6 +146,7 @@ export class TrackAudioBuffer {
         }
     }
 
+    #nextPacketNotReadyCount = 0;
     read(size: number) {
         if (this.done()) {
             return null;
@@ -174,10 +175,19 @@ export class TrackAudioBuffer {
                 const nextPacketIsReady = this.#nextPacket();
 
                 if (!nextPacketIsReady) {
+                    this.#nextPacketNotReadyCount++;
                     log.warn("Next packet has not loaded yet");
+
+                    if (this.#nextPacketNotReadyCount > 10) {
+                        log.warn("Next packet has not loaded after a while");
+                        // TODO: report to frontend
+                        return null;
+                    }
+
                     break;
                 }
             } else {
+                this.#nextPacketNotReadyCount = 0;
                 result.push(next);
             }
         }

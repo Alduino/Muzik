@@ -7,6 +7,10 @@ export const audioStream = {
         "ape.seekPosition",
         0
     ),
+    frequencyBins: consumeObservable<WorkerMessageHandlers>()(
+        "ape.frequencyBins",
+        new Uint32Array(2048).fill(0)
+    ),
     async seek(seekPosition: number) {
         await rpc.seek(seekPosition);
     }

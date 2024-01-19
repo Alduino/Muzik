@@ -43,7 +43,7 @@ export class TrackQueue {
         this.#immediateQueue.set([track, ...this.immediateQueue.get()]);
     }
 
-    async previous() {
+    previous() {
         if (!this.canPrevious.get()) {
             log.info("Attempted to go to the previous track but there is no history");
             return;

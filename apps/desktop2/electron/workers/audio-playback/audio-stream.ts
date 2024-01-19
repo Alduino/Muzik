@@ -107,6 +107,7 @@ function connectTrackForProgress(loadedTrack: TrackAudioBuffer) {
             currentTrackProgress.set(frame / loadedTrack.frameCount);
         } else {
             // Progress bar + unknown track length = bad
+            currentTrackProgress.set(0);
         }
     });
 }

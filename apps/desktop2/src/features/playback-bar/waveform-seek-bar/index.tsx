@@ -511,7 +511,7 @@ export function WaveformSeekBar() {
         }
     );
 
-    trpc.playback.getCurrentSeekPosition.useSubscription(undefined, {
+    trpc.playback.getCurrentSeekPosition$.useSubscription(undefined, {
         onData(seekPosition) {
             waveformRenderer?.setProgress(seekPosition);
         }
@@ -531,7 +531,7 @@ function TimeIndicator() {
 
     const [seekPosition, setSeekPosition] = useState(0);
 
-    trpc.playback.getCurrentSeekPosition.useSubscription(undefined, {
+    trpc.playback.getCurrentSeekPosition$.useSubscription(undefined, {
         onData(seekPosition) {
             setSeekPosition(seekPosition);
         }

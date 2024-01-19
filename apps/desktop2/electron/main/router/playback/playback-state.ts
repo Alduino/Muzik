@@ -1,6 +1,6 @@
 import {z} from "zod";
 import {trackQueue} from "../../core/TrackQueue.ts";
-import {procedure} from "../../trpc.ts";
+import {observable, procedure} from "../../trpc.ts";
 
 export const play = procedure
     .input(
@@ -16,3 +16,10 @@ export const play = procedure
 
         // TODO
     });
+
+export const isPlaying$ = procedure.subscription(() => {
+    return observable.observable<boolean>(observer => {
+        // No concept of pausing atm so always true
+        observer.next(true);
+    });
+})

@@ -2,7 +2,7 @@ import {z} from "zod";
 import {audioStream} from "../../core/audio-stream.ts";
 import {observable, procedure} from "../../trpc.ts";
 
-export const getCurrentSeekPosition = procedure.subscription(() => {
+export const getCurrentSeekPosition$ = procedure.subscription(() => {
     return observable.observable<number>(observer => {
         observer.next(audioStream.currentTrackPosition.get());
 

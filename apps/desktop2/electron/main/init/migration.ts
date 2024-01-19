@@ -44,7 +44,8 @@ export async function migrateDatabase() {
         );
 
         const migrationsDirectory = join(__dirname, "./migrations");
-        const allMigrationNames = await readdir(migrationsDirectory);
+        const allMigrationNames = await readdir(migrationsDirectory)
+            .then(res => res.filter(migrationName => !migrationName.startsWith(".") && migrationName !== "migration_lock.toml"));
 
         const migrationsToApply = allMigrationNames
             .filter(migrationName => !appliedMigrationNames.has(migrationName))

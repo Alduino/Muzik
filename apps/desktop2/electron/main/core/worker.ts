@@ -26,6 +26,7 @@ const messageHandlers = {
     requestTrackPacket: readStreamManager.requestTrackPacket,
 
     ...audioStream.currentTrackPosition.rpcExtension,
+    ...audioStream.frequencyBins.rpcExtension,
     ...exposedObservables
 };
 
@@ -64,24 +65,34 @@ export async function initialiseWorker() {
         throw err;
     }
 
-    log.debug("Initialising audio worker");
-    await rpc.init();
+    let canRestartWorker = false;
 
-    log.debug("Audio worker initialised");
-
-    worker.once("error", async () => {
+    worker.once("error", async err => {
         if (killingWorker) return;
 
-        log.warn("Audio worker crashed, attempting to restart");
+        if (canRestartWorker) {
+            log.warn(err, "Audio worker crashed, attempting to restart");
 
-        if (worker) {
-            log.debug("Terminating old audio worker");
-            await worker.terminate();
-            worker = undefined;
+            if (worker) {
+                log.debug("Terminating old audio worker");
+                await worker.terminate();
+                worker = undefined;
+            }
+
+            await initialiseWorker();
+        } else {
+            log.fatal({err}, "Audio worker crashed");
+
+            // TODO: show error to user
+            process.exit(1);
         }
-
-        await initialiseWorker();
     });
+
+    log.debug("Initialising audio worker");
+    await rpc.init();
+    canRestartWorker = true;
+
+    log.debug("Audio worker initialised");
 }
 
 export async function terminateWorker() {

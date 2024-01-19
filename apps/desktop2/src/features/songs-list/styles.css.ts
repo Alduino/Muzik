@@ -85,30 +85,6 @@ export const cellLinkClass = style({
     }
 });
 
-export const playButtonContainerClass = style({
-    width: "100%",
-    height: "100%",
-    opacity: 0,
-    backgroundColor: lm(colour("grey", 0, 0.8), colour("grey", 100, 0.5)),
-    cursor: "pointer",
-    border: "none",
-
-    selectors: {
-        [`${tableRowClass}:hover &`]: {
-            opacity: 1
-        }
-    }
-});
-
-export const playButtonClass = style({
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-    color: lm(colour("grey", 100), colour("grey", 0)),
-    fontSize: size(8)
-});
-
 export const indexColumnClass = style({
     flexBasis: "50px",
     color: colours.textSecondary,

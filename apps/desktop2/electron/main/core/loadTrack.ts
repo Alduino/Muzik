@@ -1,13 +1,13 @@
 import {log} from "../../../shared/logger.ts";
 import {
     PLAYBACK_CHANNELS,
-    PLAYBACK_SAMPLE_RATE,
     TRACK_CACHED_FRAMES
 } from "../constants.ts";
 import {db} from "../db.ts";
 import {ffargs, runFfmpeg} from "../utils/ffmpeg.ts";
 import {findBestAudioSource} from "../utils/findBestAudioSource.ts";
 import {readStreamToBuffer} from "../utils/readStreamToBuffer.ts";
+import {PLAYBACK_SAMPLE_RATE} from "../../../shared/audio/constants.ts";
 
 export interface TrackInfo {
     /**

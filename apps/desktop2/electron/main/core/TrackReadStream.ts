@@ -1,8 +1,9 @@
 import {ExecaChildProcess} from "execa";
 import {childLogger} from "../../../shared/logger.ts";
-import {PLAYBACK_CHANNELS, PLAYBACK_SAMPLE_RATE, PLAYBACK_SAMPLE_SIZE} from "../constants.ts";
+import {PLAYBACK_CHANNELS, PLAYBACK_SAMPLE_SIZE} from "../constants.ts";
 import {EventEmitter} from "../utils/EventEmitter.ts";
 import {ffargs, runFfmpeg} from "../utils/ffmpeg.ts";
+import {PLAYBACK_SAMPLE_RATE} from "../../../shared/audio/constants.ts";
 
 const log = childLogger("track-read-stream");
 

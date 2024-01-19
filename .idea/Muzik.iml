@@ -27,6 +27,8 @@
       <excludeFolder url="file://$MODULE_DIR$/apps/desktop/.webpack" />
       <excludeFolder url="file://$MODULE_DIR$/native-libs/importer-native/target" />
       <excludeFolder url="file://$MODULE_DIR$/native-libs/waveform-analyser/target" />
+      <excludeFolder url="file://$MODULE_DIR$/apps/desktop2/dist" />
+      <excludeFolder url="file://$MODULE_DIR$/apps/desktop2/dist-electron" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

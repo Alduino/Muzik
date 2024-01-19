@@ -5,6 +5,8 @@ import {log} from "./log.ts";
 export function init() {
     createSpeaker();
     connectToTrackQueue();
+
+    log.info("Audio playback worker thread initialised");
 }
 
 export function prepareForShutdown() {

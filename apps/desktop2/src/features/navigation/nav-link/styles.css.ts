@@ -26,6 +26,10 @@ export const linkStyle = recipe({
         isPending: {
             true: {},
             false: {}
+        },
+        isTransitioning: {
+            true: {},
+            false: {}
         }
     }
 });
